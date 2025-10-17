@@ -1,0 +1,59 @@
+# Docker Compose 설정 파일
+# 여러 Docker 컨테이너(PostgreSQL, Next.js)를 한 번에 실행하고 관리
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kctf-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kctf-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: kctf-web
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - file-storage:/app/public/files
+    ports:
+      - "${APP_PORT}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kctf-network
+    command: npm run dev
+
+volumes:
+  postgres-data:
+    driver: local
+  file-storage:
+    driver: local
+
+networks:
+  kctf-network:
+    driver: bridge

@@ -1,0 +1,15 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+.next
+.git
+.gitignore
+README.md
+.env*.local
+.env
+.vscode
+.DS_Store
+coverage
+postgres-data
+files
