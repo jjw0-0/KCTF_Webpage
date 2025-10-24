@@ -3,54 +3,68 @@
  * Tailwind CSS 설정과 shadcn/ui 테마 색상 시스템을 정의
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* KCTF Brand Colors */
+    --kctf-black: 0 0% 1.2%; /* #030303 */
+    --kctf-bg-black: 0 0% 6.7%; /* #111111 */
+    --kctf-white: 0 0% 100%; /* #FFFFFF */
+    --kctf-primary-green: 155 55% 45%; /* #34B27B */
+    --kctf-secondary-green: 155 45% 37%; /* #2A5034 */
+    --kctf-gradient-dark: 0 0% 24%; /* #3D3D3D */
+    --kctf-primary-gradient: linear-gradient(90deg, #2A5034 0%, #34B27B 100%);
+    --kctf-bg-gradient: linear-gradient(180deg, #030303 50%, #3D3D3D 100%);
+
+    /* Dark Mode (Default) */
+    --background: var(--kctf-black);
+    --foreground: var(--kctf-white);
+    --card: var(--kctf-bg-black);
+    --card-foreground: var(--kctf-white);
+    --popover: var(--kctf-bg-black);
+    --popover-foreground: var(--kctf-white);
+    --primary: var(--kctf-primary-green);
+    --primary-foreground: var(--kctf-white);
+    --secondary: var(--kctf-secondary-green);
+    --secondary-foreground: var(--kctf-white);
+    --muted: var(--kctf-gradient-dark);
+    --muted-foreground: 0 0% 65%;
+    --accent: var(--kctf-primary-green);
+    --accent-foreground: var(--kctf-white);
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive-foreground: var(--kctf-white);
+    --border: 0 0% 20%;
+    --input: var(--kctf-bg-black);
+    --ring: var(--kctf-primary-green);
     --radius: 0.5rem;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+  .light {
+    /* Light Mode (For Future Implementation) */
+    --background: var(--kctf-white);
+    --foreground: var(--kctf-black);
+    --card: var(--kctf-white);
+    --card-foreground: var(--kctf-black);
+    --popover: var(--kctf-white);
+    --popover-foreground: var(--kctf-black);
+    --primary: var(--kctf-secondary-green);
+    --primary-foreground: var(--kctf-white);
+    --secondary: var(--kctf-primary-green);
+    --secondary-foreground: var(--kctf-white);
+    --muted: var(--kctf-white);
+    --muted-foreground: var(--kctf-black);
+    --accent: var(--kctf-primary-green);
+    --accent-foreground: var(--kctf-white);
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: var(--kctf-white);
+    --border: var(--kctf-bg-black);
+    --input: var(--kctf-bg-black);
+    --ring: var(--kctf-primary-green);
   }
 }
 
@@ -58,7 +72,20 @@
   * {
     @apply border-border;
   }
+  html {
+    background-color: hsl(var(--kctf-black));
+  }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .cta-button-hover {
+    padding: 0.5rem 1.3rem;
+  }
+
+  .cta-button-hover:hover {
+    background: var(--kctf-primary-gradient);
   }
 }
