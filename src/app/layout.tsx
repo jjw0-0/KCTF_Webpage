@@ -7,7 +7,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'KCTF',
-  description: 'KCTF 플랫폼으로, 공정하고 효율적인 대회 운영을 지원합니다.',
+  description: '경기대학교 CTF 대회 홈페이지',
   icons: {
     icon: '/kknock_favicon.png',
   },

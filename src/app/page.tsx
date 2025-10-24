@@ -3,22 +3,14 @@
  * 사용자가 처음 접속했을 때 보이는 메인 화면
  */
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import PageLayout from '@/components/PageLayout';
 
 export default function HomePage() {
   return (
-    <div
-      className="min-h-screen text-white font-inter flex flex-col"
-      style={{
-        background: 'linear-gradient(180deg, #030303 50%, #3D3D3D 100%)',
-      }}
-    >
-      <Header />
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-start pt-48">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 mb-40">
+    <PageLayout>
+      <main className="flex-1 flex flex-col items-center justify-between py-[15vh] px-[5vw]">
+        {/* Split Section - KCTF Title and Category */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 w-full max-w-7xl">
           {/* Left Section - KCTF Title and Date */}
           <div className="flex flex-col items-center justify-center px-8">
             <div className="text-center">
@@ -33,7 +25,10 @@ export default function HomePage() {
               >
                 KCTF
               </h1>
-              <div className="flex items-center justify-center gap-4 text-base text-[#34B27B]">
+              {/* <div className="flex items-center justify-center gap-4">
+                <span className="text-base text-[#34B27B] font-kctf">2025 생존게임</span>
+              </div> */}
+              <div className="flex items-center justify-center gap-4 text-base text-[#34B27B] font-kctf">
               <span>2025.12.10</span>
               <span>~</span>
               <span>2025.12.13</span>
@@ -63,7 +58,7 @@ export default function HomePage() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-32">
+        <div className="w-full max-w-7xl">
           <div className="flex items-center justify-center gap-4">
             <Link
               href="/login"
@@ -80,8 +75,6 @@ export default function HomePage() {
           </div>
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </PageLayout>
   );
 }

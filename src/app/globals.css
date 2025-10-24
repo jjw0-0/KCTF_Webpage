@@ -17,9 +17,9 @@
     --kctf-white: 0 0% 100%; /* #FFFFFF */
     --kctf-primary-green: 155 55% 45%; /* #34B27B */
     --kctf-secondary-green: 155 45% 37%; /* #2A5034 */
-    --kctf-gradient-dark: 0 0% 24%; /* #3D3D3D */
+    --kctf-gradient-dark: 0 0% 10%; /* #1F1F1F */
     --kctf-primary-gradient: linear-gradient(90deg, #2A5034 0%, #34B27B 100%);
-    --kctf-bg-gradient: linear-gradient(180deg, #030303 50%, #3D3D3D 100%);
+    --kctf-bg-gradient: linear-gradient(180deg, #030303 50%, #1F1F1F 100%);
 
     /* Dark Mode (Default) */
     --background: var(--kctf-black);
