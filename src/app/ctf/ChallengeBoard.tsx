@@ -23,6 +23,7 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
     visibleCategories.some((category) => category.slug === initialCategory) ? initialCategory : 'all',
   );
   const [selected, setSelected] = useState<Challenge | null>(null);
+  const [hoveredChallengeId, setHoveredChallengeId] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [flag, setFlag] = useState('');
   const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
@@ -147,17 +148,23 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
               <h2 id={`category-${category.id}`}>{category.shortName}</h2>
               <span>{String(items.length).padStart(2, '0')}</span>
             </div>
-            <div className="challenge-stack" style={{ '--category-accent': category.color } as React.CSSProperties}>
+            <div
+              className={`challenge-stack ${items.some((challenge) => challenge.id === hoveredChallengeId) ? 'is-engaged' : ''}`}
+              style={{ '--category-accent': category.color } as React.CSSProperties}
+            >
               {items.map((challenge, index) => (
                 <button
                   key={challenge.id}
                   type="button"
-                  className={`stacked-card ${challenge.solved ? 'is-solved' : ''}`}
+                  className={`stacked-card ${challenge.solved ? 'is-solved' : ''} ${hoveredChallengeId === challenge.id ? 'is-hovered' : ''}`}
                   style={{ '--stack-index': index } as React.CSSProperties}
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
+                  onPointerEnter={() => setHoveredChallengeId(challenge.id)}
+                  onPointerLeave={() => setHoveredChallengeId(null)}
+                  onPointerCancel={() => setHoveredChallengeId(null)}
                   onClick={() => openChallenge(challenge)}
                 >
-                  <strong data-text={challenge.title}>{challenge.title}</strong>
+                  <strong>{challenge.title}</strong>
                   <span className="stacked-card-footer">
                     <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
                     <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
@@ -192,13 +199,18 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
               <span>KCTF / {selected.category.toUpperCase()}</span>
               <button type="button" onClick={closeChallenge} aria-label="닫기" autoFocus><span>CLOSE</span> ×</button>
             </div>
-            <p className="eyebrow">{difficultyLabel[selected.difficulty]}</p>
-            <h2 id="challenge-dialog-title">{selected.title}</h2>
+            <div className="dialog-hero">
+              <div>
+                <p className="eyebrow">{difficultyLabel[selected.difficulty]}</p>
+                <h2 id="challenge-dialog-title">{selected.title}</h2>
+              </div>
+              <div className="dialog-value"><strong>{selected.points}</strong><span>POINTS</span></div>
+            </div>
             <p id="challenge-dialog-summary" className="dialog-summary">{selected.summary}</p>
             <div className="dialog-stats">
-              <div><span>VALUE</span><strong>{selected.points} PTS</strong></div>
               <div><span>SOLVES</span><strong>{selected.solves}</strong></div>
               <div><span>STATUS</span><strong>{selected.solved ? 'CLEARED' : 'OPEN'}</strong></div>
+              <div><span>CATEGORY</span><strong>{selected.category.toUpperCase()}</strong></div>
             </div>
             <div className="tag-list">{selected.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
             <InstanceControl challengeId={selected.id} enabled={Boolean(selected.instanceSlug)} />
