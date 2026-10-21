@@ -154,12 +154,14 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
                   type="button"
                   className={`stacked-card ${challenge.solved ? 'is-solved' : ''}`}
                   style={{ '--stack-index': index } as React.CSSProperties}
+                  aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={() => openChallenge(challenge)}
                 >
-                  <span className="stacked-card-state">{challenge.solved ? '✓ SOLVED' : difficultyLabel[challenge.difficulty]}</span>
-                  <span className="stacked-card-meta">{challenge.solves} solves</span>
                   <strong>{challenge.title}</strong>
-                  <span className="stacked-card-points">{challenge.points}<small> pts</small></span>
+                  <span className="stacked-card-footer">
+                    <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
+                    <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
+                  </span>
                 </button>
               ))}
             </div>
