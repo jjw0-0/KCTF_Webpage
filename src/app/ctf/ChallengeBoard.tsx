@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Category, Challenge } from '@/lib/platform-data';
 import InstanceControl from './InstanceControl';
 
@@ -22,32 +22,37 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
   const [activeCategory, setActiveCategory] = useState(
     visibleCategories.some((category) => category.slug === initialCategory) ? initialCategory : 'all',
   );
-  const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Challenge | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const [flag, setFlag] = useState('');
   const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const selectedId = selected?.id;
+
+  const closeChallenge = useCallback(() => {
+    if (closeTimerRef.current) return;
+    setIsClosing(true);
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180;
+    closeTimerRef.current = window.setTimeout(() => {
+      setSelected(null);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, duration);
+  }, []);
 
   useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
-      if (event.key === '/' && !isTyping && !selected) {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
+    return () => {
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
     };
-    window.addEventListener('keydown', handleShortcut);
-    return () => window.removeEventListener('keydown', handleShortcut);
-  }, [selected]);
+  }, []);
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selectedId) return;
     const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement as HTMLElement | null;
     const handleDialogKeys = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelected(null);
+      if (event.key === 'Escape') closeChallenge();
       if (event.key !== 'Tab') return;
       const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)') ?? [])];
       if (!focusable.length) return;
@@ -68,24 +73,22 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
       window.removeEventListener('keydown', handleDialogKeys);
       previousFocus?.focus();
     };
-  }, [selected]);
+  }, [closeChallenge, selectedId]);
 
   const groups = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
     return visibleCategories.flatMap((category) => {
       if (activeCategory !== 'all' && activeCategory !== category.slug) return [];
-      const items = challenges.filter((challenge) => challenge.category === category.slug && (
-        !normalized || [challenge.title, challenge.summary, ...challenge.tags]
-          .some((value) => value.toLowerCase().includes(normalized))
-      ));
+      const items = challenges.filter((challenge) => challenge.category === category.slug);
       return items.length ? [{ category, items }] : [];
     });
-  }, [activeCategory, challenges, query, visibleCategories]);
+  }, [activeCategory, challenges, visibleCategories]);
 
   const resultCount = groups.reduce((count, group) => count + group.items.length, 0);
   const solvedCount = challenges.filter((challenge) => challenge.solved).length;
 
   const openChallenge = (challenge: Challenge) => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    setIsClosing(false);
     setSelected(challenge);
     setFlag('');
     setSubmission({ state: 'idle' });
@@ -133,13 +136,7 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
               </button>
             ))}
           </div>
-          <label className="challenge-search">
-            <span className="sr-only">문제 검색</span>
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" /><path d="m16 16 4 4" stroke="currentColor" /></svg>
-            <input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search challenges" />
-            <kbd aria-hidden="true">/</kbd>
-          </label>
-          <span className="challenge-progress">{String(resultCount).padStart(2, '0')} SHOWN · {solvedCount}/{challenges.length} SOLVED</span>
+          <span className="challenge-progress">{String(resultCount).padStart(2, '0')} CHALLENGES · {solvedCount}/{challenges.length} SOLVED</span>
         </div>
       </header>
 
@@ -147,10 +144,7 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
         {groups.map(({ category, items }) => (
           <section className="challenge-group" key={category.id} aria-labelledby={`category-${category.id}`}>
             <div className="challenge-group-title">
-              <div>
-                <h2 id={`category-${category.id}`}>{category.shortName}</h2>
-                <p>{category.description}</p>
-              </div>
+              <h2 id={`category-${category.id}`}>{category.shortName}</h2>
               <span>{String(items.length).padStart(2, '0')}</span>
             </div>
             <div className="challenge-stack" style={{ '--category-accent': category.color } as React.CSSProperties}>
@@ -162,7 +156,7 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
                   style={{ '--stack-index': index } as React.CSSProperties}
                   onClick={() => openChallenge(challenge)}
                 >
-                  <span className="stacked-card-state">{challenge.solved ? 'SOLVED' : difficultyLabel[challenge.difficulty]}</span>
+                  <span className="stacked-card-state">{challenge.solved ? '✓ SOLVED' : difficultyLabel[challenge.difficulty]}</span>
                   <span className="stacked-card-meta">{challenge.solves} solves</span>
                   <strong>{challenge.title}</strong>
                   <span className="stacked-card-points">{challenge.points}<small> pts</small></span>
@@ -174,18 +168,27 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
 
         {!resultCount && (
           <div className="empty-state">
-            <p>조건에 맞는 문제가 없습니다.</p>
-            <button type="button" onClick={() => { setActiveCategory('all'); setQuery(''); }}>필터 초기화</button>
+            <p>선택한 카테고리에 문제가 없습니다.</p>
+            <button type="button" onClick={() => setActiveCategory('all')}>전체 문제 보기</button>
           </div>
         )}
       </div>
 
       {selected && (
-        <div className="challenge-dialog-backdrop" role="presentation" onMouseDown={() => setSelected(null)}>
-          <section ref={dialogRef} className="challenge-dialog" role="dialog" aria-modal="true" aria-labelledby="challenge-dialog-title" aria-describedby="challenge-dialog-summary" onMouseDown={(event) => event.stopPropagation()}>
+        <div className={`challenge-dialog-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={closeChallenge}>
+          <section
+            ref={dialogRef}
+            className="challenge-dialog"
+            style={{ '--category-accent': visibleCategories.find((category) => category.slug === selected.category)?.color ?? '#34b27b' } as React.CSSProperties}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="challenge-dialog-title"
+            aria-describedby="challenge-dialog-summary"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <div className="dialog-topline">
               <span>KCTF / {selected.category.toUpperCase()}</span>
-              <button type="button" onClick={() => setSelected(null)} aria-label="닫기" autoFocus><span>CLOSE</span> ×</button>
+              <button type="button" onClick={closeChallenge} aria-label="닫기" autoFocus><span>CLOSE</span> ×</button>
             </div>
             <p className="eyebrow">{difficultyLabel[selected.difficulty]}</p>
             <h2 id="challenge-dialog-title">{selected.title}</h2>
