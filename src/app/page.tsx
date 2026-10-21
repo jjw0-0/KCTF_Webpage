@@ -1,79 +1,115 @@
-/**
- * 홈페이지 (랜딩 페이지)
- * 사용자가 처음 접속했을 때 보이는 메인 화면
- */
+'use client';
+
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
+import { useCategories } from '@/components/CategoryProvider';
+import { event } from '@/lib/platform-data';
+
+function ArrowIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+      <path d="M5 12h14M14 7l5 5-5 5" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
 
 export default function HomePage() {
+  const { categories } = useCategories();
+  const visibleCategories = categories.filter((category) => category.visible);
+
   return (
     <PageLayout>
-      <main className="flex-1 flex flex-col items-center justify-between py-[15vh] px-[5vw]">
-        {/* Split Section - KCTF Title and Category */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 w-full max-w-7xl">
-          {/* Left Section - KCTF Title and Date */}
-          <div className="flex flex-col items-center justify-center px-8">
-            <div className="text-center">
-              <h1
-                className="text-[150px] leading-none mb-2 font-kctf"
-                style={{
-                  background: 'var(--kctf-primary-gradient)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                KCTF
-              </h1>
-              {/* <div className="flex items-center justify-center gap-4">
-                <span className="text-base text-[#34B27B] font-kctf">2025 생존게임</span>
-              </div> */}
-              <div className="flex items-center justify-center gap-4 text-base text-[#34B27B] font-kctf">
-              <span>2025.12.10</span>
-              <span>~</span>
-              <span>2025.12.13</span>
-              </div>
+      <main className="landing-main">
+        <section className="landing-hero" aria-labelledby="landing-title">
+          <div className="hero-copy">
+            <div className="status-pill">
+              <span className="status-dot" />
+              {event.status}
+            </div>
+
+            <p className="eyebrow mt-8">K.KNOCK SECURITY COMPETITION</p>
+            <h1 id="landing-title" className="hero-title" aria-label="KCTF">
+              <span>K</span><span>C</span><span>T</span><span>F</span>
+            </h1>
+            <p className="hero-summary">
+              경계를 의심하고, 시스템을 해체하고, 더 안전하게 다시 연결하는
+              K.knock의 해킹 대회.
+            </p>
+
+            <div className="hero-actions">
+              <Link href="/ctf" className="button button-primary">
+                문제 탐색하기 <ArrowIcon />
+              </Link>
+              <Link href="/scoreboard" className="button button-ghost">
+                스코어보드 보기
+              </Link>
             </div>
           </div>
 
-          {/* Right Section - Category */}
-          <div className="flex flex-col items-center justify-center px-8">
-            <div className="w-full max-w-md">
-            <h2 className="text-left mb-6 text-base">
-                <span className="inline-block pb-2 border-b border-[#34B27B]">
-                  category
-                </span>
-              </h2>
-              <div className="grid grid-cols-4 gap-y-4 text-left text-base">
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">web</button>
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">pwn</button>
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">rev</button>
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">crypto</button>
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">AI</button>
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">web3</button>
-                <button className="p-0 m-0 bg-transparent border-0 text-left hover:text-[#34B27B] hover:scale-[1.15] transition-all origin-left">misc</button>
+          <aside className="event-console" aria-label="대회 정보">
+            <div className="console-topline">
+              <span>KCTF://EVENT</span>
+              <span className="text-kctf">ONLINE</span>
+            </div>
+            <div className="console-grid">
+              <div className="console-block console-date">
+                <span className="console-label">START</span>
+                <strong>12.10</strong>
+                <small>10:00 KST</small>
+              </div>
+              <div className="console-separator">→</div>
+              <div className="console-block console-date">
+                <span className="console-label">END</span>
+                <strong>12.13</strong>
+                <small>22:00 KST</small>
               </div>
             </div>
-          </div>
-        </div>
+            <div className="console-metrics">
+              <div><span>MODE</span><strong>TEAM</strong></div>
+              <div><span>DURATION</span><strong>84H</strong></div>
+              <div><span>CATEGORIES</span><strong>{visibleCategories.length}</strong></div>
+            </div>
+            <div className="signal-line" aria-hidden="true">
+              {Array.from({ length: 18 }).map((_, index) => (
+                <i key={index} style={{ height: `${10 + ((index * 13) % 34)}%` }} />
+              ))}
+            </div>
+          </aside>
+        </section>
 
-        {/* CTA Section */}
-        <div className="w-full max-w-7xl">
-          <div className="flex items-center justify-center gap-4">
-            <Link
-              href="/login"
-              className="text-white text-lg rounded-lg cta-button-hover"
-            >
-              로그인
-            </Link>
-            <Link
-              href="/ctf"
-              className="text-white text-lg rounded-lg cta-button-hover"
-            >
-              참가하기 →
-            </Link>
+        <section className="category-section" aria-labelledby="category-title">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">ATTACK SURFACE / 01</p>
+              <h2 id="category-title">Choose your vector.</h2>
+            </div>
+            <p>카테고리는 운영 상황에 맞춰 관리자 화면에서 추가·정렬·비공개할 수 있습니다.</p>
           </div>
-        </div>
+
+          <div className="category-marquee">
+            {visibleCategories.map((category, index) => (
+              <Link key={category.id} href={`/ctf?category=${category.slug}`} className="category-strip">
+                <span className="category-index">0{index + 1}</span>
+                <span className="category-name">{category.shortName}</span>
+                <span className="category-description">{category.description}</span>
+                <ArrowIcon />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="manifesto-section">
+          <p className="eyebrow">K.KNOCK / SINCE 2001</p>
+          <p className="manifesto-copy">
+            우리는 정답보다 <em>좋은 질문</em>을, 우연한 성공보다
+            <em> 재현 가능한 이해</em>를 믿습니다.
+          </p>
+          <div className="manifesto-meta">
+            <span>KYONGGI UNIVERSITY</span>
+            <span>HACKING &amp; SECURITY CLUB</span>
+            <span>SUWON, KR</span>
+          </div>
+        </section>
       </main>
     </PageLayout>
   );

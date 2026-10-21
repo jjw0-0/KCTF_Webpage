@@ -39,6 +39,7 @@ next-env.d.ts
 # prisma
 prisma/*.db
 prisma/*.db-journal
+/src/generated/prisma/
 
 # docker volumes
 /postgres-data

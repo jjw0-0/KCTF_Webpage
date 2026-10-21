@@ -7,37 +7,43 @@ import Link from 'next/link';
 
 export default function Header() {
   return (
-    <header className="h-20 flex items-center justify-between px-6">
-      <div className="flex items-center">
-        <Link href="/">
+    <header className="site-header">
+      <div className="flex items-center gap-10">
+        <Link href="/" aria-label="KCTF 홈으로">
           <Image
             src="/kknock_logo.png"
-            alt="KNOCK Logo"
-            width={120}
-            height={40}
-            className="h-10 w-auto cursor-pointer"
+            alt="K.knock"
+            width={1751}
+            height={358}
+            priority
+            className="brand-logo"
           />
         </Link>
+        <span className="hidden lg:block h-5 w-px bg-white/15" />
+        <Link href="/ctf" className="hidden lg:block text-xs tracking-[0.24em] text-white/55 hover:text-white">
+          KCTF / 2026
+        </Link>
       </div>
-      <nav className="flex items-center gap-6 text-base font-medium">
+      <nav className="header-nav" aria-label="주요 메뉴">
+        <Link href="/ctf" className="header-link">
+          Challenges
+        </Link>
+        <Link href="/scoreboard" className="header-link">
+          Scoreboard
+        </Link>
         <Link
           href="/admin"
-          className="text-white hover:text-[#34B27B] transition-colors"
+          className="header-link"
         >
           Admin
         </Link>
         <Link
           href="/profile"
-          className="text-white hover:text-[#34B27B] transition-colors"
+          className="header-link"
         >
           Profile
         </Link>
-        <Link
-          href="/logout"
-          className="text-white hover:text-[#34B27B] transition-colors"
-        >
-          Logout
-        </Link>
+        <Link href="/login" className="header-login">Sign in</Link>
       </nav>
     </header>
   );
