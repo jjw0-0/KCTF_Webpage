@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Category, Challenge } from '@/lib/platform-data';
 import InstanceControl from './InstanceControl';
 
@@ -26,6 +26,49 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
   const [selected, setSelected] = useState<Challenge | null>(null);
   const [flag, setFlag] = useState('');
   const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      if (event.key === '/' && !isTyping && !selected) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [selected]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const handleDialogKeys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelected(null);
+      if (event.key !== 'Tab') return;
+      const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)') ?? [])];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleDialogKeys);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleDialogKeys);
+      previousFocus?.focus();
+    };
+  }, [selected]);
 
   const groups = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -92,9 +135,11 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
           </div>
           <label className="challenge-search">
             <span className="sr-only">문제 검색</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search challenges" />
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" /><path d="m16 16 4 4" stroke="currentColor" /></svg>
+            <input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search challenges" />
+            <kbd aria-hidden="true">/</kbd>
           </label>
-          <span className="challenge-progress">{solvedCount}/{challenges.length} SOLVED</span>
+          <span className="challenge-progress">{String(resultCount).padStart(2, '0')} SHOWN · {solvedCount}/{challenges.length} SOLVED</span>
         </div>
       </header>
 
@@ -102,10 +147,13 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
         {groups.map(({ category, items }) => (
           <section className="challenge-group" key={category.id} aria-labelledby={`category-${category.id}`}>
             <div className="challenge-group-title">
-              <h2 id={`category-${category.id}`}>{category.shortName}</h2>
+              <div>
+                <h2 id={`category-${category.id}`}>{category.shortName}</h2>
+                <p>{category.description}</p>
+              </div>
               <span>{String(items.length).padStart(2, '0')}</span>
             </div>
-            <div className="challenge-stack">
+            <div className="challenge-stack" style={{ '--category-accent': category.color } as React.CSSProperties}>
               {items.map((challenge, index) => (
                 <button
                   key={challenge.id}
@@ -115,6 +163,7 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
                   onClick={() => openChallenge(challenge)}
                 >
                   <span className="stacked-card-state">{challenge.solved ? 'SOLVED' : difficultyLabel[challenge.difficulty]}</span>
+                  <span className="stacked-card-meta">{challenge.solves} solves</span>
                   <strong>{challenge.title}</strong>
                   <span className="stacked-card-points">{challenge.points}<small> pts</small></span>
                 </button>
@@ -133,14 +182,14 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
 
       {selected && (
         <div className="challenge-dialog-backdrop" role="presentation" onMouseDown={() => setSelected(null)}>
-          <section className="challenge-dialog" role="dialog" aria-modal="true" aria-labelledby="challenge-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
+          <section ref={dialogRef} className="challenge-dialog" role="dialog" aria-modal="true" aria-labelledby="challenge-dialog-title" aria-describedby="challenge-dialog-summary" onMouseDown={(event) => event.stopPropagation()}>
             <div className="dialog-topline">
               <span>KCTF / {selected.category.toUpperCase()}</span>
-              <button type="button" onClick={() => setSelected(null)} aria-label="닫기">×</button>
+              <button type="button" onClick={() => setSelected(null)} aria-label="닫기" autoFocus><span>CLOSE</span> ×</button>
             </div>
             <p className="eyebrow">{difficultyLabel[selected.difficulty]}</p>
             <h2 id="challenge-dialog-title">{selected.title}</h2>
-            <p className="dialog-summary">{selected.summary}</p>
+            <p id="challenge-dialog-summary" className="dialog-summary">{selected.summary}</p>
             <div className="dialog-stats">
               <div><span>VALUE</span><strong>{selected.points} PTS</strong></div>
               <div><span>SOLVES</span><strong>{selected.solves}</strong></div>

@@ -34,23 +34,21 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
   return (
     <>
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">이메일</label>
-          <input name="email" type="email" id="email" required autoComplete="email" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#34B27B] transition-colors" placeholder="your@email.com" />
+      <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
+        <div className="auth-field">
+          <label htmlFor="email">이메일</label>
+          <input name="email" type="email" id="email" required autoComplete="email" placeholder="your@email.com" />
         </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">비밀번호</label>
-          <input name="password" type="password" id="password" required minLength={8} autoComplete="current-password" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#34B27B] transition-colors" placeholder="••••••••" />
+        <div className="auth-field">
+          <label htmlFor="password">비밀번호</label>
+          <input name="password" type="password" id="password" required minLength={8} autoComplete="current-password" placeholder="••••••••" />
         </div>
         {error && <p className="auth-error" role="alert">{error}</p>}
-        <button type="submit" disabled={isSubmitting} className="w-full py-3 rounded-lg font-medium transition-all disabled:opacity-50" style={{ background: 'linear-gradient(90deg, #2A5034 0%, #34B27B 100%)' }}>
+        <button type="submit" disabled={isSubmitting} className="auth-submit">
           {isSubmitting ? '로그인 중…' : '로그인'}
         </button>
       </form>
-      <div className="mt-8 text-center">
-        <p className="text-white/60">계정이 없으신가요?{' '}<Link href="/register" className="text-[#34B27B] hover:text-[#2A5034] transition-colors font-medium">회원가입</Link></p>
-      </div>
+      <p className="auth-switch">계정이 없으신가요? <Link href="/register">회원가입</Link></p>
     </>
   );
 }

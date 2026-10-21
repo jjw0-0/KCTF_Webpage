@@ -31,6 +31,7 @@ export default function NetworkBackground() {
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     // 캔버스 크기 설정
     const resizeCanvas = () => {
@@ -40,14 +41,14 @@ export default function NetworkBackground() {
     resizeCanvas();
 
     // 파티클 기본 설정
-    const particleCount = 50;        // 파티클 개수
+    const particleCount = () => window.innerWidth < 768 ? 24 : 48;
     const maxDistance = 200;          // 연결선이 그려지는 최대 거리 (px)
     const mouseDistance = 150;        // 마우스 영향 반경 (px)
 
     // 파티클 초기화 함수
     const initParticles = () => {
       particlesRef.current = [];
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < particleCount(); i++) {
         // 기본 속도 계산
         const baseVx = (Math.random() - 0.5) * 0.75;
         const baseVy = (Math.random() - 0.5) * 0.75;
@@ -249,7 +250,7 @@ export default function NetworkBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0"
+      className="network-canvas fixed inset-0"
       style={{ pointerEvents: 'none', zIndex: 0 }}
     />
   );

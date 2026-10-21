@@ -8,14 +8,15 @@ export default async function RegisterPage() {
 
   return (
     <PageLayout>
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2">회원가입</h1>
-            <p className="text-white/60">KCTF에 참가하세요</p>
-          </div>
+      <main className="auth-main">
+        <section className="auth-panel">
+          <header className="auth-heading">
+            <p className="eyebrow">PLAYER REGISTRATION / KCTF 2026</p>
+            <h1>회원가입</h1>
+            <p>개인 계정을 만들고 KCTF에 참가하세요.</p>
+          </header>
           <RegisterForm />
-        </div>
+        </section>
       </main>
     </PageLayout>
   );

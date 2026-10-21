@@ -13,14 +13,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <PageLayout>
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2">로그인</h1>
-            <p className="text-white/60">KCTF에 오신 것을 환영합니다</p>
-          </div>
+      <main className="auth-main">
+        <section className="auth-panel">
+          <header className="auth-heading">
+            <p className="eyebrow">SECURE ACCESS / KCTF 2026</p>
+            <h1>로그인</h1>
+            <p>계정으로 돌아와 문제 풀이를 이어가세요.</p>
+          </header>
           <LoginForm callbackUrl={destination} />
-        </div>
+        </section>
       </main>
     </PageLayout>
   );

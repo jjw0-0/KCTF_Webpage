@@ -39,31 +39,29 @@ export default function RegisterForm() {
 
   return (
     <>
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">이메일</label>
-          <input type="email" id="email" name="email" required autoComplete="email" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#34B27B] transition-colors" placeholder="your@email.com" />
+      <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
+        <div className="auth-field">
+          <label htmlFor="email">이메일</label>
+          <input type="email" id="email" name="email" required autoComplete="email" placeholder="your@email.com" />
         </div>
-        <div>
-          <label htmlFor="nickname" className="block text-sm font-medium mb-2">닉네임</label>
-          <input type="text" id="nickname" name="username" required minLength={2} maxLength={24} autoComplete="username" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#34B27B] transition-colors" placeholder="닉네임을 입력하세요" />
+        <div className="auth-field">
+          <label htmlFor="nickname">닉네임</label>
+          <input type="text" id="nickname" name="username" required minLength={2} maxLength={24} autoComplete="username" placeholder="닉네임을 입력하세요" />
         </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">비밀번호</label>
-          <input type="password" id="password" name="password" required minLength={10} autoComplete="new-password" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#34B27B] transition-colors" placeholder="10자 이상" />
+        <div className="auth-field">
+          <label htmlFor="password">비밀번호</label>
+          <input type="password" id="password" name="password" required minLength={10} autoComplete="new-password" placeholder="10자 이상" />
         </div>
-        <div>
-          <label htmlFor="password-confirm" className="block text-sm font-medium mb-2">비밀번호 확인</label>
-          <input type="password" id="password-confirm" name="passwordConfirm" required minLength={10} autoComplete="new-password" className="w-full px-4 py-3 bg-[#111111] border border-white/10 rounded-lg focus:outline-none focus:border-[#34B27B] transition-colors" placeholder="비밀번호를 다시 입력하세요" />
+        <div className="auth-field">
+          <label htmlFor="password-confirm">비밀번호 확인</label>
+          <input type="password" id="password-confirm" name="passwordConfirm" required minLength={10} autoComplete="new-password" placeholder="비밀번호를 다시 입력하세요" />
         </div>
         {error && <p className="auth-error" role="alert">{error}</p>}
-        <button type="submit" disabled={isSubmitting} className="w-full py-3 rounded-lg font-medium transition-all disabled:opacity-50" style={{ background: 'linear-gradient(90deg, #2A5034 0%, #34B27B 100%)' }}>
+        <button type="submit" disabled={isSubmitting} className="auth-submit">
           {isSubmitting ? '계정 생성 중…' : '회원가입'}
         </button>
       </form>
-      <div className="mt-8 text-center">
-        <p className="text-white/60">이미 계정이 있으신가요?{' '}<Link href="/login" className="text-[#34B27B] hover:text-[#2A5034] transition-colors font-medium">로그인</Link></p>
-      </div>
+      <p className="auth-switch">이미 계정이 있으신가요? <Link href="/login">로그인</Link></p>
     </>
   );
 }
