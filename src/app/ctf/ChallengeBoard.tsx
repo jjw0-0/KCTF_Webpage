@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Category, Challenge, challenges } from '@/lib/platform-data';
+import { Category, Challenge } from '@/lib/platform-data';
 import InstanceControl from './InstanceControl';
 
 type ChallengeBoardProps = {
   initialCategory: string;
   categories: Category[];
+  challenges: Challenge[];
 };
 
 const difficultyLabel = {
@@ -15,13 +16,16 @@ const difficultyLabel = {
   ADVANCED: 'Advanced',
 };
 
-export default function ChallengeBoard({ initialCategory, categories }: ChallengeBoardProps) {
-  const visibleCategories = categories.filter((category) => category.visible);
+export default function ChallengeBoard({ initialCategory, categories, challenges: initialChallenges }: ChallengeBoardProps) {
+  const visibleCategories = useMemo(() => categories.filter((category) => category.visible), [categories]);
+  const [challenges, setChallenges] = useState(initialChallenges);
   const [activeCategory, setActiveCategory] = useState(
     visibleCategories.some((category) => category.slug === initialCategory) ? initialCategory : 'all',
   );
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Challenge | null>(null);
+  const [flag, setFlag] = useState('');
+  const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
 
   const groups = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -33,10 +37,42 @@ export default function ChallengeBoard({ initialCategory, categories }: Challeng
       ));
       return items.length ? [{ category, items }] : [];
     });
-  }, [activeCategory, query, visibleCategories]);
+  }, [activeCategory, challenges, query, visibleCategories]);
 
   const resultCount = groups.reduce((count, group) => count + group.items.length, 0);
   const solvedCount = challenges.filter((challenge) => challenge.solved).length;
+
+  const openChallenge = (challenge: Challenge) => {
+    setSelected(challenge);
+    setFlag('');
+    setSubmission({ state: 'idle' });
+  };
+
+  const submitFlag = async () => {
+    if (!selected || !flag.trim()) return;
+    setSubmission({ state: 'submitting' });
+    try {
+      const response = await fetch(`/api/challenges/${encodeURIComponent(selected.id)}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flag }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? '제출에 실패했습니다.');
+      if (!payload.correct) {
+        setSubmission({ state: 'wrong', message: '올바른 플래그가 아닙니다.' });
+        return;
+      }
+      const updated = challenges.map((challenge) => challenge.id === selected.id
+        ? { ...challenge, solved: true, solves: payload.solves }
+        : challenge);
+      setChallenges(updated);
+      setSelected((challenge) => challenge ? { ...challenge, solved: true, solves: payload.solves } : null);
+      setSubmission({ state: 'correct', message: payload.alreadySolved ? '이미 해결한 문제입니다.' : `정답입니다. +${selected.points} PTS` });
+    } catch (error) {
+      setSubmission({ state: 'error', message: error instanceof Error ? error.message : '제출에 실패했습니다.' });
+    }
+  };
 
   return (
     <main className="challenge-main">
@@ -76,7 +112,7 @@ export default function ChallengeBoard({ initialCategory, categories }: Challeng
                   type="button"
                   className={`stacked-card ${challenge.solved ? 'is-solved' : ''}`}
                   style={{ '--stack-index': index } as React.CSSProperties}
-                  onClick={() => setSelected(challenge)}
+                  onClick={() => openChallenge(challenge)}
                 >
                   <span className="stacked-card-state">{challenge.solved ? 'SOLVED' : difficultyLabel[challenge.difficulty]}</span>
                   <strong>{challenge.title}</strong>
@@ -112,12 +148,13 @@ export default function ChallengeBoard({ initialCategory, categories }: Challeng
             </div>
             <div className="tag-list">{selected.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
             <InstanceControl challengeId={selected.id} enabled={Boolean(selected.instanceSlug)} />
-            <form className="flag-form" onSubmit={(event) => event.preventDefault()}>
+            <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
               <label htmlFor="flag-input">Submit flag</label>
               <div>
-                <input id="flag-input" placeholder="KCTF{...}" autoComplete="off" />
-                <button type="submit">VERIFY →</button>
+                <input id="flag-input" value={flag} onChange={(event) => setFlag(event.target.value)} placeholder="KCTF{...}" autoComplete="off" />
+                <button type="submit" disabled={submission.state === 'submitting'}>{submission.state === 'submitting' ? 'VERIFYING…' : 'VERIFY →'}</button>
               </div>
+              {submission.message && <p className={`submission-message ${submission.state}`} role="status">{submission.message}</p>}
             </form>
           </section>
         </div>

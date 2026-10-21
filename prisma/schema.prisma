@@ -28,6 +28,12 @@ enum CTFMode {
   TEAM
 }
 
+enum ChallengeDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
 model User {
   id            String   @id @default(cuid())
   instancerId   Int      @unique @default(autoincrement())
@@ -44,6 +50,7 @@ model User {
   // Relations
   teamMemberships TeamMember[]
   submissions     Submission[]
+  solves          Solve[]
   challengeInstance ChallengeInstance?
 
   @@map("users")
@@ -135,25 +142,30 @@ model Category {
 }
 
 model Challenge {
-  id          String            @id @default(cuid())
-  ctfId       String
-  title       String
-  description String
-  categoryId  String
-  points      Int
-  flag        String
-  fileUrl     String?
-  author      String?
-  hints       String?
-  isVisible   Boolean           @default(false)
-  solveCount  Int               @default(0)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id            String              @id @default(cuid())
+  ctfId         String
+  title         String
+  summary       String              @default("")
+  description   String
+  categoryId    String
+  points        Int
+  difficulty    ChallengeDifficulty @default(INTERMEDIATE)
+  tags          String[]            @default([])
+  flagHash      String
+  instanceSlug  String?             @unique
+  fileUrl       String?
+  author        String?
+  hints         String?
+  isVisible     Boolean             @default(false)
+  solveCount    Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   // Relations
   ctf         CTF        @relation(fields: [ctfId], references: [id], onDelete: Cascade)
   category    Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   submissions Submission[]
+  solves      Solve[]
 
   @@index([ctfId, categoryId, isVisible])
   @@map("challenges")
@@ -164,7 +176,7 @@ model Submission {
   challengeId String
   userId      String
   teamId      String?
-  flag        String
+  flagDigest  String
   isCorrect   Boolean
   submittedAt DateTime @default(now())
 
@@ -178,4 +190,20 @@ model Submission {
   @@index([teamId])
   @@index([submittedAt])
   @@map("submissions")
+}
+
+model Solve {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  points      Int
+  solvedAt    DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([userId, solvedAt])
+  @@index([solvedAt])
+  @@map("solves")
 }

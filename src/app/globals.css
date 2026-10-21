@@ -365,6 +365,28 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .admin-panel-footer button:hover { color: white; }
 .admin-footer-actions { display: flex; align-items: center; gap: 18px; }
 .admin-footer-actions .button-primary { min-height: 38px; color: #04110c; }
+.challenge-admin-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 28px; }
+.challenge-admin-form > label { display: flex; flex-direction: column; gap: 8px; color: #718078; font: 8px "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase; }
+.challenge-admin-form > label.wide, .challenge-form-actions { grid-column: 1 / -1; }
+.challenge-admin-form input:not([type="checkbox"]), .challenge-admin-form select, .challenge-admin-form textarea { width: 100%; border: 1px solid #26382f; border-radius: 0; outline: none; padding: 11px 12px; background: #070e0a; color: #ecf2ef; font: 11px "IBM Plex Mono", monospace; resize: vertical; }
+.challenge-admin-form input:focus, .challenge-admin-form select:focus, .challenge-admin-form textarea:focus { border-color: rgba(77,224,167,.7); }
+.challenge-visible { flex-direction: row !important; align-items: center; text-transform: none !important; }
+.challenge-visible input { accent-color: var(--green); }
+.challenge-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-top: 20px; }
+.challenge-form-actions p { color: #77857e; font: 10px "IBM Plex Mono", monospace; }
+.challenge-admin-table { border-top: 1px solid var(--line); }
+.challenge-admin-table article { display: flex; min-height: 92px; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid rgba(170,255,218,.08); padding: 17px 28px; }
+.challenge-admin-table article > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.challenge-admin-table article span, .challenge-admin-table article small { color: #5d6a63; font: 8px "IBM Plex Mono", monospace; letter-spacing: .08em; }
+.challenge-admin-table article strong { overflow: hidden; color: #e4eae7; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.challenge-admin-table article > div:last-child { display: flex; gap: 16px; }
+.challenge-admin-table button { color: var(--green); font: 8px "IBM Plex Mono", monospace; letter-spacing: .08em; }
+.challenge-admin-table button.danger { color: #895c5f; }
+.challenge-admin-table button.danger:hover { color: var(--danger); }
+.admin-summary-panel { padding: clamp(32px, 5vw, 64px); }
+.admin-summary-panel h3 { margin: 10px 0 14px; font-size: clamp(28px, 4vw, 48px); font-weight: 500; letter-spacing: -.05em; }
+.admin-summary-panel p { max-width: 700px; color: #718078; line-height: 1.8; }
+.admin-summary-panel > div { display: flex; gap: 12px; margin-top: 30px; }
 .auth-error { border-left: 2px solid #ff6b71; padding-left: 12px; color: #ff9a9e; font-size: 12px; }
 
 .load-panel { display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: 30px; padding: 28px; }
@@ -399,6 +421,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .add-category-form { width: 100%; }
   .add-category-form input { flex: 1; width: auto; }
   .admin-panel-footer { align-items: flex-start; flex-direction: column; }
+  .challenge-admin-form { grid-template-columns: 1fr; padding: 20px; }
+  .challenge-admin-form > label.wide, .challenge-form-actions { grid-column: auto; }
+  .challenge-form-actions, .challenge-admin-table article { align-items: flex-start; flex-direction: column; }
   .load-panel { grid-template-columns: 1fr; }
   .load-chart, .load-legend { grid-column: 1; }
 }
@@ -435,6 +460,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .profile-stat span { font: 8px "IBM Plex Mono", monospace; letter-spacing: .14em; color: #536058; }
 .profile-stat strong { margin: 15px 0 auto; font: 500 38px "IBM Plex Mono", monospace; }
 .profile-stat small { color: var(--green); font: 8px "IBM Plex Mono", monospace; letter-spacing: .1em; }
+.profile-empty { border: 1px dashed var(--line); padding: 28px; color: #65736c; text-align: center; }
 .recent-solves { margin-top: 60px; }
 .recent-solves > div { margin-bottom: 30px; }
 .recent-solves h2 { margin-top: 8px; font-size: 34px; font-weight: 500; letter-spacing: -.045em; }
@@ -516,6 +542,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .flag-form > div { display: flex; border: 1px solid #294137; }
 .flag-form input { min-width: 0; flex: 1; border: 0; outline: none; padding: 14px 16px; background: rgba(255,255,255,.025); color: white; font: 12px "IBM Plex Mono", monospace; }
 .flag-form button { padding: 0 20px; background: var(--green); color: #03100b; font: 600 10px "IBM Plex Mono", monospace; }
+.flag-form button:disabled { cursor: wait; opacity: .6; }
+.submission-message { margin-top: 10px; font: 10px "IBM Plex Mono", monospace; }
+.submission-message.correct { color: var(--green); }
+.submission-message.wrong, .submission-message.error { color: #ff898e; }
 
 @media (max-width: 680px) {
   .dialog-stats { grid-template-columns: 1fr 1fr 1fr; }

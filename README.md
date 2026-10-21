@@ -28,7 +28,7 @@ KCTF 플랫폼으로, 공정하고 효율적인 대회 운영을 지원합니다
 │   │   ├── ctf/             # Participant challenge board
 │   │   ├── admin/           # Admin dashboard
 │   │   ├── profile/         # Participant profile
-│   │   ├── scoreboard/      # Team rankings
+│   │   ├── scoreboard/      # Individual rankings
 │   │   └── api/             # API routes
 │   ├── lib/                 # Libraries and utilities
 │   ├── components/          # Shared UI components
@@ -63,6 +63,11 @@ repository's `.env*.local` ignore rule.
 To bootstrap an administrator, run the seed command with `ADMIN_EMAIL`,
 `ADMIN_USERNAME`, and a 14+ character `ADMIN_INITIAL_PASSWORD` in the migration
 container environment.
+
+The seed creates sample challenge cards with unguessable placeholder flags. Set
+the real flag, points, visibility, category, and optional instancer slug from the
+administrator's **Challenges** screen before the event. Flags are stored as keyed
+digests and are never returned by the API.
 
 ## License
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/auth';
+import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { createRemoteInstance, destroyRemoteInstance } from '@/lib/instancer';
-import { challenges } from '@/lib/platform-data';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: '문제 ID가 올바르지 않습니다.' }, { status: 400 });
-  const challenge = challenges.find((item) => item.id === parsed.data.challengeId);
+  const challenge = await prisma.challenge.findFirst({
+    where: { id: parsed.data.challengeId, ctfId: ACTIVE_CTF_ID, isVisible: true },
+    select: { id: true, instanceSlug: true },
+  });
   if (!challenge?.instanceSlug) return NextResponse.json({ error: '이 문제는 VM 발급을 지원하지 않습니다.' }, { status: 400 });
 
   try {

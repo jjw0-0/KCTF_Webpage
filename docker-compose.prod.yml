@@ -37,6 +37,7 @@ services:
       AUTH_TRUST_HOST: "true"
       INSTANCER_URL: http://127.0.0.1:7000
       INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN:-}
+      FLAG_SECRET: ${NEXTAUTH_SECRET}
       PORT: ${KCTF_HOST_PORT:-3020}
       HOSTNAME: 127.0.0.1
     network_mode: host
@@ -62,6 +63,7 @@ services:
     profiles: ["tools"]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      FLAG_SECRET: ${NEXTAUTH_SECRET}
     command: ["npx", "prisma", "migrate", "deploy"]
     depends_on:
       postgres:
