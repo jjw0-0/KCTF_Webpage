@@ -157,7 +157,7 @@ export default function ChallengeBoard({ initialCategory, categories, challenges
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={() => openChallenge(challenge)}
                 >
-                  <strong>{challenge.title}</strong>
+                  <strong data-text={challenge.title}>{challenge.title}</strong>
                   <span className="stacked-card-footer">
                     <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
                     <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
