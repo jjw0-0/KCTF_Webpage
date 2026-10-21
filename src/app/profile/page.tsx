@@ -1,8 +1,14 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 import PageLayout from '@/components/PageLayout';
 import { challenges } from '@/lib/platform-data';
 
-export default function ProfilePage() {
+export const dynamic = 'force-dynamic';
+
+export default async function ProfilePage() {
+  const session = await auth();
+  if (!session?.user) redirect('/login?callbackUrl=/profile');
   const solved = challenges.filter((challenge) => challenge.solved);
 
   return (
@@ -12,7 +18,7 @@ export default function ProfilePage() {
           <div className="profile-avatar">0x</div>
           <div>
             <p className="eyebrow">PLAYER PROFILE</p>
-            <h1>guest_operator</h1>
+            <h1>{session.user.username}</h1>
             <p>Team / not assigned</p>
           </div>
           <Link href="/ctf" className="button button-primary">CONTINUE →</Link>

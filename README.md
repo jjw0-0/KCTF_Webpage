@@ -48,16 +48,21 @@ CI/CD는 추후 추가 예정입니다.
 
 ## Production deployment
 
-The production stack binds the app to loopback port `3020`; Caddy terminates TLS
-for `ctf.jjw0-0.kr` and proxies requests to the container.
+The production app listens on host loopback port `3020`; Caddy terminates TLS
+for `ctf.jjw0-0.kr`. The deploy script applies migrations, seeds defaults, and
+passes the existing `jjw-instancer` token without writing it to disk.
 
 ```bash
-docker compose --env-file .env.prod.local -f docker-compose.prod.yml up -d --build
+./scripts/deploy-prod.sh
 ```
 
 Required variables are `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and
 `NEXTAUTH_SECRET`. Keep them in `.env.prod.local`, which is excluded by the
 repository's `.env*.local` ignore rule.
+
+To bootstrap an administrator, run the seed command with `ADMIN_EMAIL`,
+`ADMIN_USERNAME`, and a 14+ character `ADMIN_INITIAL_PASSWORD` in the migration
+container environment.
 
 ## License
 

@@ -3,7 +3,6 @@
  * 모든 페이지에 공통으로 적용되는 HTML 구조와 메타데이터를 정의
  */
 import type { Metadata } from 'next';
-import { CategoryProvider } from '@/components/CategoryProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -25,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="antialiased">
-        <CategoryProvider>{children}</CategoryProvider>
+        {children}
       </body>
     </html>
   );

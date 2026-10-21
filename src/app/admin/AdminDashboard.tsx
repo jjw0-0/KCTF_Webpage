@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useCategories } from '@/components/CategoryProvider';
 import { Category, challenges } from '@/lib/platform-data';
 
 type NavItem = 'overview' | 'categories' | 'challenges' | 'operations';
@@ -14,25 +13,13 @@ const navItems: { id: NavItem; label: string; marker: string }[] = [
   { id: 'operations', label: 'Operations', marker: '04' },
 ];
 
-function createCategory(name: string, length: number): Category {
-  const slug = name.toLowerCase().trim().replace(/[^a-z0-9가-힣]+/g, '-').replace(/(^-|-$)/g, '') || `category-${Date.now()}`;
-  return {
-    id: `cat-${Date.now()}`,
-    name: name.trim(),
-    shortName: name.trim().slice(0, 8).toUpperCase(),
-    slug,
-    description: '새로운 공격 표면을 위한 카테고리입니다.',
-    color: '#4de0a7',
-    order: length + 1,
-    visible: true,
-  };
-}
-
-export default function AdminDashboard() {
-  const { categories, hasLocalChanges, updateCategories, resetCategories } = useCategories();
+export default function AdminDashboard({ initialCategories }: { initialCategories: Category[] }) {
+  const [categories, setCategories] = useState(initialCategories);
   const [activeNav, setActiveNav] = useState<NavItem>('categories');
   const [newCategory, setNewCategory] = useState('');
   const [notice, setNotice] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const visibleCount = categories.filter((category) => category.visible).length;
   const challengeCountByCategory = useMemo(() => new Map(categories.map((category) => [
@@ -41,8 +28,9 @@ export default function AdminDashboard() {
   ])), [categories]);
 
   const patchCategory = (id: string, patch: Partial<Category>) => {
-    updateCategories(categories.map((category) => category.id === id ? { ...category, ...patch } : category));
-    setNotice('변경사항이 현재 브라우저에 저장되었습니다.');
+    setCategories(categories.map((category) => category.id === id ? { ...category, ...patch } : category));
+    setIsDirty(true);
+    setNotice('저장되지 않은 변경사항이 있습니다.');
   };
 
   const moveCategory = (id: string, direction: -1 | 1) => {
@@ -51,24 +39,87 @@ export default function AdminDashboard() {
     if (index < 0 || target < 0 || target >= categories.length) return;
     const reordered = [...categories];
     [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
-    updateCategories(reordered.map((category, order) => ({ ...category, order: order + 1 })));
-    setNotice('노출 순서가 변경되었습니다.');
+    setCategories(reordered.map((category, order) => ({ ...category, order: order + 1 })));
+    setIsDirty(true);
+    setNotice('노출 순서가 변경되었습니다. 저장을 눌러 반영하세요.');
   };
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategory.trim()) return;
-    updateCategories([...categories, createCategory(newCategory, categories.length)]);
-    setNewCategory('');
-    setNotice('새 카테고리가 추가되었습니다.');
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategory }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? '카테고리를 추가하지 못했습니다.');
+      setCategories(payload.categories);
+      setNewCategory('');
+      setIsDirty(false);
+      setNotice('새 카테고리가 참가자 화면에 반영되었습니다.');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '카테고리를 추가하지 못했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const deleteCategory = (category: Category) => {
+  const deleteCategory = async (category: Category) => {
     if ((challengeCountByCategory.get(category.slug) ?? 0) > 0) {
       setNotice('문제가 연결된 카테고리는 삭제할 수 없습니다. 먼저 문제를 이동해 주세요.');
       return;
     }
-    updateCategories(categories.filter((item) => item.id !== category.id));
-    setNotice('카테고리가 삭제되었습니다.');
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/categories/${encodeURIComponent(category.id)}`, { method: 'DELETE' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? '카테고리를 삭제하지 못했습니다.');
+      setCategories(payload.categories);
+      setIsDirty(false);
+      setNotice('카테고리가 삭제되었습니다.');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '카테고리를 삭제하지 못했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveCategories = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categories }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? '변경사항을 저장하지 못했습니다.');
+      setCategories(payload.categories);
+      setIsDirty(false);
+      setNotice('변경사항이 모든 참가자 화면에 반영되었습니다.');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '변경사항을 저장하지 못했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const resetCategories = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/categories/reset', { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? '기본 구성을 복원하지 못했습니다.');
+      setCategories(payload.categories);
+      setIsDirty(false);
+      setNotice('기본 구성을 복원하고 참가자 화면에 반영했습니다.');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '기본 구성을 복원하지 못했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -119,10 +170,10 @@ export default function AdminDashboard() {
               <span className="admin-kicker">LANDING + CHALLENGE TAXONOMY</span>
               <h3>Categories</h3>
             </div>
-            <form onSubmit={(event) => { event.preventDefault(); addCategory(); }} className="add-category-form">
+            <form onSubmit={(event) => { event.preventDefault(); void addCategory(); }} className="add-category-form">
               <label htmlFor="new-category" className="sr-only">새 카테고리명</label>
               <input id="new-category" value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="New category" />
-              <button type="submit">+ ADD</button>
+              <button type="submit" disabled={isSaving}>+ ADD</button>
             </form>
           </div>
 
@@ -149,14 +200,19 @@ export default function AdminDashboard() {
                   <span aria-hidden="true" />
                   <b>{category.visible ? 'VISIBLE' : 'HIDDEN'}</b>
                 </label>
-                <button type="button" className="delete-category" onClick={() => deleteCategory(category)}>DELETE</button>
+                <button type="button" className="delete-category" onClick={() => void deleteCategory(category)} disabled={isSaving}>DELETE</button>
               </div>
             ))}
           </div>
 
           <div className="admin-panel-footer">
-            <p aria-live="polite">{notice || (hasLocalChanges ? '로컬 변경사항이 적용 중입니다.' : '기본 카테고리 구성을 사용 중입니다.')}</p>
-            <button type="button" onClick={() => { resetCategories(); setNotice('기본 구성으로 복원했습니다.'); }}>RESET DEFAULTS</button>
+            <p aria-live="polite">{notice || (isDirty ? '저장되지 않은 변경사항이 있습니다.' : 'PostgreSQL과 동기화되어 있습니다.')}</p>
+            <div className="admin-footer-actions">
+              <button type="button" onClick={() => void resetCategories()} disabled={isSaving}>RESET DEFAULTS</button>
+              <button type="button" className="button button-primary" onClick={() => void saveCategories()} disabled={!isDirty || isSaving}>
+                {isSaving ? 'SAVING…' : 'SAVE CHANGES'}
+              </button>
+            </div>
           </div>
         </section>
 

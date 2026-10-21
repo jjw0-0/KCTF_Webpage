@@ -4,8 +4,12 @@
  */
 import Image from 'next/image';
 import Link from 'next/link';
+import { auth } from '@/auth';
+import AuthMenu from '@/components/AuthMenu';
 
-export default function Header() {
+export default async function Header() {
+  const session = await auth();
+
   return (
     <header className="site-header">
       <div className="flex items-center gap-10">
@@ -31,19 +35,7 @@ export default function Header() {
         <Link href="/scoreboard" className="header-link">
           Scoreboard
         </Link>
-        <Link
-          href="/admin"
-          className="header-link"
-        >
-          Admin
-        </Link>
-        <Link
-          href="/profile"
-          className="header-link"
-        >
-          Profile
-        </Link>
-        <Link href="/login" className="header-login">Sign in</Link>
+        <AuthMenu username={session?.user?.username} isAdmin={session?.user?.role === 'ADMIN'} />
       </nav>
     </header>
   );

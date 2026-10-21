@@ -19,6 +19,7 @@ export type Challenge = {
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   solved?: boolean;
   tags: string[];
+  instanceSlug?: string;
 };
 
 export const event = {
@@ -112,6 +113,7 @@ export const challenges: Challenge[] = [
     solves: 7,
     difficulty: 'ADVANCED',
     tags: ['HTTP', 'PROXY'],
+    instanceSlug: 'CRLF_injection',
   },
   {
     id: 'redis-race',
@@ -122,6 +124,7 @@ export const challenges: Challenge[] = [
     solves: 18,
     difficulty: 'INTERMEDIATE',
     tags: ['RACE', 'SESSION'],
+    instanceSlug: 'race_condition',
   },
   {
     id: 'tiny-proxy',
@@ -133,6 +136,7 @@ export const challenges: Challenge[] = [
     difficulty: 'BEGINNER',
     solved: true,
     tags: ['SSRF', 'URL'],
+    instanceSlug: 'change_http_header',
   },
   {
     id: 'signal-lost',
