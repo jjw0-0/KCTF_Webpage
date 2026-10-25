@@ -5,23 +5,23 @@ import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getAdminChallenges } from '@/lib/challenges';
 import { prisma } from '@/lib/prisma';
-import { MAX_CHALLENGE_FILE_BYTES, safeDownloadName } from '@/lib/uploads';
+import { MAX_CHALLENGE_FILE_BYTES, readBoundedFormData, safeDownloadName } from '@/lib/uploads';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
   if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
-  const contentLength = Number(request.headers.get('content-length') ?? 0);
-  if (contentLength > MAX_CHALLENGE_FILE_BYTES + 100_000) {
-    return NextResponse.json({ error: '문제 파일은 10MB 이하여야 합니다.' }, { status: 413 });
-  }
 
   const { id } = await params;
   const challenge = await prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true } });
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
-  const form = await request.formData().catch(() => null);
-  const file = form?.get('file');
+
+  const parsedForm = await readBoundedFormData(request, MAX_CHALLENGE_FILE_BYTES);
+  if (parsedForm.status === 'too_large') {
+    return NextResponse.json({ error: '문제 파일은 10MB 이하여야 합니다.' }, { status: 413 });
+  }
+  const file = parsedForm.status === 'ok' ? parsedForm.formData.get('file') : null;
   if (!(file instanceof File) || !file.size) return NextResponse.json({ error: '업로드할 파일을 선택해 주세요.' }, { status: 400 });
   if (file.size > MAX_CHALLENGE_FILE_BYTES) return NextResponse.json({ error: '문제 파일은 10MB 이하여야 합니다.' }, { status: 413 });
 

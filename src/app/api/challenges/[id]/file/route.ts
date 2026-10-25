@@ -15,14 +15,28 @@ export async function GET(request: Request, { params }: RouteContext) {
     : 'anonymous';
   const { id } = await params;
 
+  if (!session?.user?.id) {
+    recordServerLog({
+      level: 'WARN',
+      source: 'FILE',
+      action: 'FILE_DOWNLOAD_UNAUTHORIZED',
+      actor: 'anonymous',
+      request,
+      statusCode: 401,
+      message: `비로그인 사용자의 문제 첨부파일 다운로드 차단 (challengeId=${id})`,
+      params: { challengeId: id },
+    });
+    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+  }
+
   const access = await getCtfAccess(ACTIVE_CTF_ID);
-  if (!access.open) {
+  if (!access.open && session.user.role !== 'ADMIN') {
     recordServerLog({
       level: 'WARN',
       source: 'FILE',
       action: 'FILE_DOWNLOAD_DENIED',
       actor,
-      actorId: session?.user?.id,
+      actorId: session.user.id,
       request,
       statusCode: 403,
       message: `대회 비활성 중 문제 첨부파일 다운로드 차단: ${actor} (challengeId=${id})`,
@@ -32,7 +46,10 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
 
   const challenge = await prisma.challenge.findFirst({
-    where: { id, ctfId: ACTIVE_CTF_ID, isVisible: true },
+    where:
+      session.user.role === 'ADMIN'
+        ? { id, ctfId: ACTIVE_CTF_ID }
+        : { id, ctfId: ACTIVE_CTF_ID, isVisible: true, category: { isVisible: true } },
     select: {
       id: true,
       title: true,

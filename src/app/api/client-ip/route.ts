@@ -1,44 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
-  getIpv6Prefix64,
+  consumeRateLimit,
+  getRateLimitAddress,
   getRawConnectingIp,
-  isValidIpv4,
+  isPublicIpv4,
   registerClientIpv4,
 } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  const limitKey = getRateLimitAddress(request.headers);
+  const limit = consumeRateLimit(`client-ip:${limitKey}`, 10, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json({ ok: false }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => null);
   const ipv4 = typeof body?.ipv4 === 'string' ? body.ipv4.trim() : '';
-  if (!isValidIpv4(ipv4)) {
+  if (!isPublicIpv4(ipv4)) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
   const rawIp = getRawConnectingIp(request.headers);
   registerClientIpv4(rawIp, ipv4);
 
-  const prefix64 = getIpv6Prefix64(rawIp);
-
-  // Retroactively update existing audit_logs rows that recorded the raw IPv6 address
-  try {
-    if (typeof prisma.$executeRawUnsafe === 'function') {
-      if (prefix64) {
+  // Only backfill recent audit_logs rows that recorded this exact IPv6 address within the last 5 minutes
+  if (rawIp.includes(':')) {
+    try {
+      if (typeof prisma.$executeRawUnsafe === 'function') {
         await prisma.$executeRawUnsafe(
-          `UPDATE "audit_logs" SET "ip" = $1 WHERE "ip" = $2 OR "ip" LIKE $3`,
-          ipv4,
-          rawIp,
-          `${prefix64}:%`,
-        );
-      } else {
-        await prisma.$executeRawUnsafe(
-          `UPDATE "audit_logs" SET "ip" = $1 WHERE "ip" = $2`,
+          `UPDATE "audit_logs" SET "ip" = $1 WHERE "ip" = $2 AND "timestamp" >= NOW() - INTERVAL '5 minutes'`,
           ipv4,
           rawIp,
         );
       }
+    } catch {
+      // Ignore DB update errors
     }
-  } catch {
-    // Ignore DB update errors
   }
 
   const response = NextResponse.json({ ok: true, ipv4 });

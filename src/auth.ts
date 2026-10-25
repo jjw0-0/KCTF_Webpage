@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { prisma } from '@/lib/prisma';
-import { consumeRateLimit, getClientAddress } from '@/lib/rate-limit';
+import { consumeRateLimit, getRateLimitAddress } from '@/lib/rate-limit';
 
 const credentialsSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
@@ -29,7 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { type: 'password', label: 'Password' },
       },
       async authorize(rawCredentials, request) {
-        const clientAddress = getClientAddress(request.headers);
+        const clientAddress = getRateLimitAddress(request.headers);
         const rawEmail = typeof rawCredentials?.email === 'string' ? rawCredentials.email.trim().toLowerCase() : 'unknown';
         const limit = consumeRateLimit(`login:${clientAddress}`, 10, 10 * 60_000);
         if (!limit.allowed) {

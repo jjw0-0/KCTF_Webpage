@@ -1,6 +1,6 @@
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { prisma } from '@/lib/prisma';
-import { getClientAddress, ipv6ToFallbackIpv4 } from '@/lib/rate-limit';
+import { consumeRateLimit, getClientAddress, ipv6ToFallbackIpv4 } from '@/lib/rate-limit';
 
 export type ServerLogLevel = 'INFO' | 'WARN' | 'ERROR';
 export type ServerLogSource = 'VM' | 'SUBMIT' | 'AUTH' | 'FILE' | 'USER' | 'ADMIN' | 'SYSTEM' | 'HTTP';
@@ -252,6 +252,11 @@ export function recordServerLog(entry: {
   buffer.unshift(item);
   if (buffer.length > MAX_BUFFER_LOGS) {
     buffer.length = MAX_BUFFER_LOGS;
+  }
+
+  if (item.statusCode === 404 && item.actor === 'anonymous') {
+    const persistLimit = consumeRateLimit(`log404:${item.ip}`, 30, 60_000);
+    if (!persistLimit.allowed) return;
   }
 
   void persistAuditLog(item);

@@ -16,3 +16,63 @@ export function safeDownloadName(name: string) {
   const cleaned = name.replace(/[\r\n\\/\0]/g, '_').trim();
   return cleaned.slice(0, 180) || 'challenge-file';
 }
+
+export async function readBoundedFormData(
+  request: Request,
+  maxFileBytes: number,
+): Promise<{ status: 'ok'; formData: FormData } | { status: 'too_large' } | { status: 'invalid' }> {
+  const maxTotalBytes = maxFileBytes + 128 * 1024;
+  const contentLength = Number(request.headers.get('content-length') ?? 0);
+  if (contentLength > maxTotalBytes) {
+    return { status: 'too_large' };
+  }
+
+  const contentType = request.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes('multipart/form-data')) {
+    return { status: 'invalid' };
+  }
+
+  if (!request.body) {
+    return { status: 'invalid' };
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        totalBytes += value.byteLength;
+        if (totalBytes > maxTotalBytes) {
+          await reader.cancel().catch(() => undefined);
+          return { status: 'too_large' };
+        }
+        chunks.push(value);
+      }
+    }
+  } catch {
+    return { status: 'invalid' };
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  try {
+    const syntheticRequest = new Request('http://localhost/upload', {
+      method: 'POST',
+      headers: { 'content-type': contentType },
+      body: combined,
+    });
+    const formData = await syntheticRequest.formData();
+    return { status: 'ok', formData };
+  } catch {
+    return { status: 'invalid' };
+  }
+}

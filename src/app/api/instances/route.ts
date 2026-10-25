@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
         instanceSlug: instance.instanceSlug,
         instancerId: user.instancerId,
         vmUrl: instance.url,
-        token: instance.token,
         expiresAt: instance.expiresAt.toISOString(),
       },
     });
@@ -196,7 +195,6 @@ export async function POST(request: NextRequest) {
         instanceSlug: challenge.instanceSlug,
         instancerId: user.instancerId,
         vmUrl: instance.url,
-        token: instance.token,
         expiresAt: instance.expiresAt.toISOString(),
       },
     });
@@ -282,7 +280,6 @@ export async function DELETE(request: NextRequest) {
         instanceSlug: instance.instanceSlug,
         instancerId: user.instancerId,
         vmUrl: instance.url,
-        token: instance.token,
         error: error instanceof Error ? error.message : String(error),
       },
     });
@@ -305,7 +302,6 @@ export async function DELETE(request: NextRequest) {
       instanceSlug: instance.instanceSlug,
       instancerId: user.instancerId,
       vmUrl: instance.url,
-      token: instance.token,
     },
   });
   return NextResponse.json({ instance: null });

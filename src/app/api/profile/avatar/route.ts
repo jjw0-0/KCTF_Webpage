@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
-import { isValidAvatar, MAX_AVATAR_BYTES } from '@/lib/uploads';
+import { isValidAvatar, MAX_AVATAR_BYTES, readBoundedFormData } from '@/lib/uploads';
 
 async function currentUserId() {
   const session = await auth();
@@ -26,13 +26,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' }, { status: 429, headers: rateLimitHeaders(limit) });
   }
 
-  const contentLength = Number(request.headers.get('content-length') ?? 0);
-  if (contentLength > MAX_AVATAR_BYTES + 100_000) {
+  const parsedForm = await readBoundedFormData(request, MAX_AVATAR_BYTES);
+  if (parsedForm.status === 'too_large') {
     return NextResponse.json({ error: '프로필 이미지는 10MB 이하여야 합니다.' }, { status: 413, headers: rateLimitHeaders(limit) });
   }
 
-  const form = await request.formData().catch(() => null);
-  const file = form?.get('file');
+  const file = parsedForm.status === 'ok' ? parsedForm.formData.get('file') : null;
   if (!(file instanceof File) || !file.size) {
     return NextResponse.json({ error: '업로드할 이미지를 선택해 주세요.' }, { status: 400, headers: rateLimitHeaders(limit) });
   }

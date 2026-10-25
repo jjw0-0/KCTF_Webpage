@@ -33,6 +33,19 @@ export function isValidIpv4(value: string): boolean {
   return IPV4_EXACT_RE.test(value.trim());
 }
 
+export function isPublicIpv4(value: string): boolean {
+  if (!isValidIpv4(value)) return false;
+  const parts = value.trim().split('.').map(Number);
+  const [a, b] = parts;
+  if (a === 0 || a === 10 || a === 127) return false;
+  if (a === 169 && b === 254) return false;
+  if (a === 172 && b >= 16 && b <= 31) return false;
+  if (a === 192 && b === 168) return false;
+  if (a === 100 && b >= 64 && b <= 127) return false;
+  if (a >= 224) return false;
+  return true;
+}
+
 export function getIpv6Prefix64(ip: string): string | null {
   const clean = ip.trim().toLowerCase();
   if (!clean.includes(':')) return null;
@@ -124,6 +137,12 @@ export function consumeRateLimit(key: string, limit: number, windowMs: number): 
   };
 }
 
+export function getRateLimitAddress(headers: Headers): string {
+  const rawConnecting = getRawConnectingIp(headers).toLowerCase();
+  const prefix = getIpv6Prefix64(rawConnecting);
+  return prefix ? `v6:${prefix}` : rawConnecting;
+}
+
 export function getClientAddress(headers: Headers): string {
   const rawConnecting = getRawConnectingIp(headers);
 
@@ -132,7 +151,7 @@ export function getClientAddress(headers: Headers): string {
   const cookieMatch = cookieHeader.match(/(?:^|;\s*)kctf_ipv4=([^;]+)/);
   if (cookieMatch) {
     const cookieIp = decodeURIComponent(cookieMatch[1]).trim();
-    if (isValidIpv4(cookieIp)) {
+    if (isPublicIpv4(cookieIp)) {
       registerClientIpv4(rawConnecting, cookieIp);
       return cookieIp;
     }

@@ -240,7 +240,7 @@ export default function AdminDashboard({
       connectionUrl: challenge.connectionUrl,
     });
     setChallengeFile(null);
-    setNotice('플래그를 비워두면 기존 값이 유지됩니다.');
+    setNotice('');
   };
 
   const resetChallengeForm = () => {
@@ -464,7 +464,6 @@ export default function AdminDashboard({
                 <span aria-hidden="true" />
                 <label>종료<input type="datetime-local" required value={schedule.endTime} onChange={(event) => setSchedule({ ...schedule, endTime: event.target.value })} /></label>
               </div>
-              <p className="event-schedule-note">예약 상태에서는 시작 시각에 제출과 VM 발급이 자동으로 열리고, 종료 시각에 닫힙니다. 초안·일시 중지·종료 상태에서는 일정과 관계없이 닫힙니다.</p>
               <div className="challenge-form-actions"><p className={`admin-notice ${noticeTone}`} aria-live="polite">{notice}</p><button className="button button-primary" disabled={isSaving}>{isSaving ? '저장 중…' : '일정 저장'}</button></div>
             </form>
           </section>
@@ -567,7 +566,6 @@ export default function AdminDashboard({
                       <input type="checkbox" checked={challengeForm.usesVm} onChange={(event) => setChallengeForm({ ...challengeForm, usesVm: event.target.checked, connectionUrl: event.target.checked ? '' : challengeForm.connectionUrl })} />
                       <span>
                         <strong>VM 사용</strong>
-                        <small>참가자별 독립 실습 서버 발급</small>
                       </span>
                     </label>
                   </div>
@@ -593,7 +591,7 @@ export default function AdminDashboard({
               <label>
                 <span className="field-label-row">
                   <strong>플래그</strong>
-                  <small>{editingChallengeId ? '비워두면 기존 플래그 유지' : '필수 입력'}</small>
+                  {!editingChallengeId && <small>필수 입력</small>}
                 </span>
                 <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder={editingChallengeId ? '변경할 때만 새 플래그 입력…' : 'KCTF{…}'} value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
               </label>

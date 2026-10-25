@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import PageLayout from '@/components/PageLayout';
 import { auth } from '@/auth';
+import { getCurrentAdminUser } from '@/lib/admin-auth';
 import {
   extractHeadersMeta,
   formatActor,
@@ -16,7 +17,7 @@ import AdminDashboard from './AdminDashboard';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
-  const [session, hdrs] = await Promise.all([auth(), headers()]);
+  const [session, adminUser, hdrs] = await Promise.all([auth(), getCurrentAdminUser(), headers()]);
   const meta = extractHeadersMeta(hdrs, 'GET', '/admin');
 
   if (!session?.user) {
@@ -46,7 +47,7 @@ export default async function AdminPage() {
     email: session.user.email,
   });
 
-  if (session.user.role !== 'ADMIN') {
+  if (!adminUser) {
     recordServerLog({
       level: 'ERROR',
       source: 'HTTP',

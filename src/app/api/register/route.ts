@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { prisma } from '@/lib/prisma';
-import { consumeRateLimit, getClientAddress, rateLimitHeaders } from '@/lib/rate-limit';
+import { consumeRateLimit, getRateLimitAddress, rateLimitHeaders } from '@/lib/rate-limit';
 
 const registerSchema = z.object({
   username: z.string().trim().min(2).max(24).regex(/^[a-zA-Z0-9_-]+$/),
@@ -12,7 +12,7 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const clientAddress = getClientAddress(request.headers);
+  const clientAddress = getRateLimitAddress(request.headers);
   const limit = consumeRateLimit(`register:${clientAddress}`, 5, 10 * 60_000);
   if (!limit.allowed) {
     recordServerLog({
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       params: { username, email, conflictField },
     });
     return NextResponse.json(
-      { error: existing.email === email ? '이미 등록된 이메일입니다.' : '이미 사용 중인 닉네임입니다.' },
+      { error: '이미 사용 중인 이메일 또는 닉네임입니다.' },
       { status: 409, headers: rateLimitHeaders(limit) },
     );
   }

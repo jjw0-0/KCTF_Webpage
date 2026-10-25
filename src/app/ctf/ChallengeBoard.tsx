@@ -34,7 +34,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
   const [transitionChallengeId, setTransitionChallengeId] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [flag, setFlag] = useState('');
-  const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
+  const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'duplicate' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
   const dialogRef = useRef<HTMLElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const transitionSourceRef = useRef<HTMLElement | null>(null);
@@ -168,7 +168,11 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
         ? { ...challenge, solved: true, solves: payload.solves, points: payload.points }
         : challenge));
       setSelected((challenge) => challenge?.id === submittedId ? { ...challenge, solved: true, solves: payload.solves, points: payload.points } : challenge);
-      setSubmission({ state: 'correct', message: payload.alreadySolved ? '이미 해결한 문제입니다.' : `정답입니다. 현재 점수 ${payload.points} PTS` });
+      setSubmission(
+        payload.alreadySolved
+          ? { state: 'duplicate', message: '이미 해결한 문제입니다.' }
+          : { state: 'correct', message: `정답입니다 · +${payload.points} PTS` },
+      );
     } catch (error) {
       setSubmission({ state: 'error', message: error instanceof Error ? error.message : '제출에 실패했습니다.' });
     }
@@ -221,7 +225,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                     <svg className="card-circuit" viewBox="0 0 350 184" fill="none" aria-hidden="true">
                       <path d="M236 0v23l20 20h94M267 0v12l20 20h63M350 65h-37l-14 14h-40M0 142h20l12 12h50M350 129h-26l-16 16v39" />
                       <circle cx="259" cy="79" r="3" /><circle cx="82" cy="154" r="3" />
-                      <path className="circuit-ticks" d="M30 16h18m-18 5h9M320 161h-18m18 5h-9" />
+                      <path className="circuit-ticks" d="M48 16h18m-18 5h9M320 161h-18m18 5h-9" />
                     </svg>
                     <span className="card-beam" aria-hidden="true" />
                     <span className="card-id">
@@ -294,9 +298,32 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 : <div className="instance-control vm-pending"><strong>VM 연동 준비 중</strong><p>생성 방식이 연결되면 이곳에서 VM을 시작할 수 있습니다.</p></div>)}
             </div>
             <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
-              <label htmlFor="flag-input">플래그 제출</label>
-              <div>
-                <input id="flag-input" name="flag" required maxLength={256} value={flag} onChange={(event) => setFlag(event.target.value)} placeholder={isAuthenticated ? 'KCTF{…}' : '로그인 후 제출할 수 있습니다'} autoComplete="off" autoCapitalize="none" spellCheck={false} disabled={!isAuthenticated} />
+              <div className="flag-form-head">
+                <label htmlFor="flag-input">플래그 제출</label>
+                {isAuthenticated && submission.message && (
+                  <span className={`flag-status-badge is-${submission.state}`} role="status">
+                    {submission.message}
+                  </span>
+                )}
+              </div>
+              <div className={`flag-input-box is-${submission.state}`}>
+                <input
+                  id="flag-input"
+                  name="flag"
+                  required
+                  maxLength={256}
+                  value={flag}
+                  onChange={(event) => {
+                    setFlag(event.target.value);
+                    if (submission.state !== 'idle') setSubmission({ state: 'idle' });
+                  }}
+                  placeholder={isAuthenticated ? 'KCTF{…}' : '로그인 후 제출할 수 있습니다'}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={!isAuthenticated}
+                  aria-invalid={submission.state === 'wrong' || submission.state === 'error'}
+                />
                 <button type="submit" disabled={!isAuthenticated || !flag.trim() || submission.state === 'submitting'}>{submission.state === 'submitting' ? '확인 중…' : isAuthenticated ? '제출 →' : '로그인 필요'}</button>
               </div>
               {!isAuthenticated && selected && (
@@ -304,7 +331,6 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                   플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/ctf?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
                 </p>
               )}
-              {isAuthenticated && submission.message && <p className={`submission-message ${submission.state}`} role="status">{submission.message}</p>}
             </form>
           </section>
         </div>
