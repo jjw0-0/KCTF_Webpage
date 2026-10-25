@@ -22,8 +22,8 @@ export default async function HomePage() {
                 <span className="sr-only">KCTF</span>
                 <ElectricLogo
                   className="landing-electric-logo"
-                  color="#95f0d4"
-                  glowColor="#149e7a"
+                  color="#7fdcaf"
+                  glowColor="#138d62"
                   scale={0.76}
                   intensity={0.72}
                   glow={0.62}

@@ -4,7 +4,6 @@
  */
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import NetworkBackground from '@/components/NetworkBackground';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -12,13 +11,10 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children }: PageLayoutProps) {
   return (
-    <div className="app-shell">
-      <NetworkBackground />
-      <div className="relative z-10 flex flex-col flex-1">
-        <Header />
-        {children}
-        <Footer />
-      </div>
-    </div>
+    <>
+      <Header />
+      {children}
+      <Footer />
+    </>
   );
 }

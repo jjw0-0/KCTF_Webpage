@@ -15,7 +15,7 @@ export const KCTF_LOGO_SVG = `data:image/svg+xml;charset=utf-8,${encodeURICompon
   </svg>`
 )}`;
 
-const RASTER = 560;
+const RASTER = 420;
 const CELL = 4;
 const FAR = 1e20;
 const ARCS = 5;
@@ -70,6 +70,8 @@ interface Slot {
   field: Texture;
   glow: Texture;
 }
+
+const shapeCache = new Map<string, Shape>();
 
 interface Pulse {
   x: number;
@@ -718,6 +720,12 @@ const ElectricLogo = ({
 
   useEffect(() => {
     let alive = true;
+    const imageSource = src || KCTF_LOGO_SVG;
+    const cached = shapeCache.get(imageSource);
+    if (cached) {
+      shapeRef.current = cached;
+      return;
+    }
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.decoding = 'async';
@@ -729,9 +737,12 @@ const ElectricLogo = ({
       } catch {
         traced = null;
       }
-      if (traced) shapeRef.current = traced;
+      if (traced) {
+        shapeCache.set(imageSource, traced);
+        shapeRef.current = traced;
+      }
     };
-    image.src = src || KCTF_LOGO_SVG;
+    image.src = imageSource;
     return () => {
       alive = false;
       image.onload = null;
@@ -743,7 +754,7 @@ const ElectricLogo = ({
     if (!container) return undefined;
 
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio || 1, 2),
+      dpr: Math.min(window.devicePixelRatio || 1, 1.25),
       alpha: true,
       premultipliedAlpha: true,
       antialias: false
@@ -881,7 +892,7 @@ const ElectricLogo = ({
     const resize = () => {
       width = Math.max(1, container.clientWidth);
       height = Math.max(1, container.clientHeight);
-      renderer.dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(PIXEL_BUDGET / (width * height)));
+      renderer.dpr = Math.min(window.devicePixelRatio || 1, 1.25, Math.sqrt(PIXEL_BUDGET / (width * height)));
       renderer.setSize(width, height);
       uniforms.uResolution.value = [width, height];
     };

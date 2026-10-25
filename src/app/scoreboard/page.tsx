@@ -27,8 +27,8 @@ export default async function ScoreboardPage() {
                 <th scope="row">
                   <div className="scoreboard-player">
                     <div className="scoreboard-avatar" aria-hidden="true">
-                      {player.avatarData ? (
-                        <Image src={player.avatarData} alt="" width={40} height={40} unoptimized />
+                      {player.avatarUrl ? (
+                        <Image src={player.avatarUrl} alt="" width={40} height={40} unoptimized />
                       ) : (
                         player.name.slice(0, 2).toUpperCase()
                       )}

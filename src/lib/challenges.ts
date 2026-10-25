@@ -141,7 +141,7 @@ export type LeaderboardEntry = {
   rank: number;
   userId: string;
   name: string;
-  avatarData?: string;
+  avatarUrl?: string;
   score: number;
   solved: number;
 };
@@ -166,11 +166,19 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     orderBy: [{ _sum: { points: 'desc' } }, { _max: { solvedAt: 'asc' } }],
     take: 100,
   });
-  const users = await prisma.user.findMany({
-    where: { id: { in: scores.map((score) => score.userId) } },
-    select: { id: true, username: true, avatarData: true },
-  });
+  const userIds = scores.map((score) => score.userId);
+  const [users, avatarUsers] = await Promise.all([
+    prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, username: true },
+    }),
+    prisma.user.findMany({
+      where: { id: { in: userIds }, avatarData: { not: null } },
+      select: { id: true, updatedAt: true },
+    }),
+  ]);
   const userMap = new Map(users.map((user) => [user.id, user]));
+  const avatarMap = new Map(avatarUsers.map((user) => [user.id, user.updatedAt.getTime()]));
 
   return scores.map((score, index) => {
     const user = userMap.get(score.userId);
@@ -178,7 +186,9 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
       rank: index + 1,
       userId: score.userId,
       name: user?.username ?? 'unknown',
-      avatarData: user?.avatarData ?? undefined,
+      avatarUrl: avatarMap.has(score.userId)
+        ? `/api/users/${score.userId}/avatar?v=${avatarMap.get(score.userId)}`
+        : undefined,
       score: score._sum.points ?? 0,
       solved: score._count.id,
     };

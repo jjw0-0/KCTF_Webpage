@@ -177,8 +177,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(170,255,218,.07);
-  background: rgba(2, 4, 3, .78);
-  backdrop-filter: blur(12px);
+  background: rgba(2, 4, 3, .92);
 }
 
 .brand-logo { width: 150px; height: auto; opacity: .96; transition: opacity .2s ease; }
@@ -259,7 +258,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   gap: clamp(72px, 11vw, 176px);
 }
 
-.landing-mark { text-align: center; }
+.landing-mark { min-width: 0; text-align: center; }
 .landing-mark h1 {
   margin: 0;
   line-height: 1;
@@ -363,7 +362,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 /* Authentication */
 .auth-main { display: grid; min-height: calc(100vh - 224px); flex: 1; place-items: center; padding: 64px 24px 96px; }
-.auth-panel { width: min(100%, 520px); border: 1px solid var(--line); border-radius: 22px; padding: clamp(30px, 5vw, 52px); background: linear-gradient(145deg, rgba(12,24,18,.92), rgba(3,7,5,.88)); box-shadow: 0 28px 90px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.025); backdrop-filter: blur(18px); }
+.auth-panel { width: min(100%, 520px); border: 1px solid var(--line); border-radius: 22px; padding: clamp(30px, 5vw, 52px); background: linear-gradient(145deg, rgba(12,24,18,.97), rgba(3,7,5,.95)); box-shadow: 0 28px 90px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.025); }
 .auth-heading { margin-bottom: 36px; }
 .auth-heading h1 { margin: 12px 0 8px; font-size: clamp(38px, 7vw, 56px); font-weight: 600; line-height: 1.05; letter-spacing: -.055em; }
 .auth-heading > p:last-child { color: var(--text-muted); font-size: 15px; }
@@ -777,7 +776,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 
 /* A fixed header and flag dock keep long descriptions usable. */
-.challenge-dialog-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 28px; background: rgba(0,3,2,.82); backdrop-filter: blur(12px); animation: backdrop-in .34s ease-out both; }
+.challenge-dialog-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 28px; background: rgba(0,3,2,.9); animation: backdrop-in .34s ease-out both; }
 .challenge-dialog { position: relative; isolation: isolate; display: flex; flex-direction: column; width: min(100%, 620px); min-height: min(680px, calc(100dvh - 56px)); max-height: min(820px, calc(100dvh - 48px)); overflow: hidden; border: 1px solid color-mix(in srgb, var(--category-accent) 40%, #20312b); border-radius: 12px; background: #090e0d; box-shadow: 0 40px 140px #000c, 0 0 40px #28d89a0b, inset 0 0 0 5px #ffffff02; animation: dialog-in .28s var(--ease-out) both; }
 .challenge-dialog-backdrop:has(.is-shared-transition), .challenge-dialog.is-shared-transition, .challenge-dialog.is-shared-transition::before { animation: none; }
 .challenge-dialog::before { position: absolute; top: 0; left: 0; right: 0; z-index: 3; height: 2px; background: linear-gradient(90deg, transparent, #aaffeb, var(--category-accent), transparent); content: ""; transform-origin: left; animation: panel-power-on .6s ease-out both; pointer-events: none; }
@@ -923,14 +922,13 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
     radial-gradient(circle at 14% -12%, rgba(225, 255, 242, .055), transparent 38%),
     linear-gradient(112deg, rgba(103, 237, 181, .03), transparent 37%),
     linear-gradient(145deg, rgba(13, 64, 42, .035), rgba(2, 11, 7, .008) 72%);
-  -webkit-backdrop-filter: blur(1.5px) saturate(1.12);
-  backdrop-filter: blur(1.5px) saturate(1.12);
+  opacity: 1;
   color: #f4f6f5;
   text-align: left;
   transform: translate3d(0, calc(var(--stack-step) * -6px), calc(var(--stack-step) * -12px)) rotateX(8deg) rotateY(-12deg) rotateZ(-8deg);
   transform-origin: 50% 76%;
   box-shadow: 0 22px 48px rgba(0,0,0,.28), inset 0 1px rgba(235,255,247,.2), inset 0 -1px rgba(53,197,137,.08), inset 0 0 34px rgba(77,224,167,.025);
-  transition: transform .72s cubic-bezier(.16, 1, .3, 1), border-color .3s, box-shadow .55s, filter .4s;
+  transition: transform .72s cubic-bezier(.16, 1, .3, 1), border-color .3s, box-shadow .55s, opacity .35s;
   animation: card-in .85s cubic-bezier(.22, 1, .36, 1) backwards;
   animation-delay: calc(var(--stack-index) * 75ms);
 }
@@ -942,8 +940,8 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .stacked-card .card-beam, .dialog-beam { position: absolute; inset: 0; z-index: 4; overflow: hidden; border-radius: inherit; pointer-events: none; }
 /* The beam follows the actual border, including its corner radii. */
 .card-beam::before { position: absolute; top: 0; left: 0; width: 84px; height: 84px; content: ""; offset-path: border-box; offset-anchor: 50% 50%; background: radial-gradient(ellipse, #e3fff6 0, #8affd9 10%, #4de0a788 30%, transparent 68%); animation: border-orbit 5s linear infinite; animation-delay: calc(var(--stack-index) * -1.3s); }
-.card-beam { padding: 1.5px; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; }
-.dialog-beam { --stack-index: 0; padding: 2px; }
+.card-beam { padding: 1.5px; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; opacity: .72; transition: opacity .2s ease; }
+.dialog-beam { --stack-index: 0; padding: 2px; opacity: 1; }
 .dialog-beam::before { width: 180px; height: 180px; animation-duration: 7s; }
 .card-id { display: flex; justify-content: space-between; align-items: center; color: #8bb5a0; font: 9px var(--font-mono), monospace; letter-spacing: .14em; }
 .card-id > span:first-child { padding-left: 14px; }
@@ -957,13 +955,13 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .stacked-card-points { color: #99f5ce; font-size: 18px; font-weight: 500; }
 .stacked-card-meta { color: #aec9ba; font-size: 12px; }
 .stacked-card-points small, .stacked-card-meta small { color: #7a9c89; font-size: 9px; font-weight: 400; letter-spacing: .12em; }
-.challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { transform: translate3d(var(--card-shift, 0px), 14px, -35px) rotateX(10deg) rotateY(-16deg) rotateZ(-10deg) scale(.97); filter: brightness(.72) saturate(.78); }
+.challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: .72; transform: translate3d(var(--card-shift, 0px), 14px, -35px) rotateX(10deg) rotateY(-16deg) rotateZ(-10deg) scale(.97); }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) { z-index: 40; outline: none; }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface { border-color: #a6ffdc; transform: translate3d(0, -48px, 70px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1.07); box-shadow: 0 46px 78px #000b, 0 12px 45px #4de0a724, inset 0 0 0 5px #ffffff03, inset 0 0 0 6px #7ceeb626; }
 .stacked-card:focus-visible .stacked-card-surface { outline: 2px solid #d1ffe9; outline-offset: 5px; }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface::before { transform: translateX(100%); }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) .card-circuit { opacity: .55; }
-.stacked-card:is(.is-hovered, :hover, :focus-visible) .card-beam { filter: brightness(1.5); }
+.stacked-card:is(.is-hovered, :hover, :focus-visible) .card-beam { opacity: 1; }
 .stacked-card.is-hovered:active .stacked-card-surface { transform: translate3d(0, -25px, 30px) rotate(0deg) scale(1.03); }
 .stacked-card.is-solved .stacked-card-surface { border-color: color-mix(in srgb, var(--category-accent) 78%, #dfffee); background-color: rgba(13, 53, 34, .025); box-shadow: 0 22px 48px rgba(0,0,0,.28), 0 0 28px color-mix(in srgb, var(--category-accent) 12%, transparent), inset 0 1px rgba(235,255,247,.22); }
 .stacked-card.is-solved strong { color: #f4fff9; }
@@ -1020,7 +1018,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   .stacked-card-surface { inset: 0; width: 100%; min-width: 0; height: 174px; padding: 22px 26px; transform: none; }
   .stacked-card strong { font-size: 23px; }
   .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface { transform: translateY(-8px) rotate(0deg) scale(1.015); }
-  .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { transform: none; filter: none; }
+  .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: 1; transform: none; }
   .challenge-dialog-backdrop { padding: 12px; }
   .challenge-dialog { max-height: calc(100dvh - 24px); border-radius: 10px; }
   .dialog-header { padding: 62px 20px 22px; }
@@ -1032,7 +1030,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   .flag-form button { min-width: 76px; padding-inline: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .stacked-card-surface, .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface, .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { transform: none; filter: none; }
+  .stacked-card-surface, .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface, .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: 1; transform: none; }
   .stacked-card-surface::before { display: none; }
   .card-beam::before { animation: none !important; offset-distance: 15%; }
   ::view-transition-group(challenge-panel), ::view-transition-image-pair(challenge-panel), ::view-transition-old(challenge-panel), ::view-transition-new(challenge-panel) { animation-duration: .01ms !important; }

@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { Orbitron, Noto_Sans_KR } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import NetworkBackground from '@/components/NetworkBackground';
 import './globals.css';
 
 const korean = Noto_Sans_KR({
@@ -40,7 +41,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${GeistSans.variable} ${GeistMono.variable} ${korean.variable} ${display.variable} antialiased`}>
-        {children}
+        <div className="app-shell">
+          <NetworkBackground />
+          <div className="relative z-10 flex flex-1 flex-col">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );

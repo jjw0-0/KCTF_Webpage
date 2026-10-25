@@ -12,6 +12,13 @@ export function isValidAvatar(bytes: Uint8Array, type: string) {
     && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
 }
 
+export function decodeAvatarDataUrl(value: string) {
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+  if (!match) return null;
+  const bytes = Uint8Array.from(Buffer.from(match[2], 'base64'));
+  return isValidAvatar(bytes, match[1]) ? { contentType: match[1], bytes } : null;
+}
+
 export function safeDownloadName(name: string) {
   const cleaned = name.replace(/[\r\n\\/\0]/g, '_').trim();
   return cleaned.slice(0, 180) || 'challenge-file';
