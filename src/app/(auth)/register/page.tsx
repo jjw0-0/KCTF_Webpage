@@ -11,9 +11,8 @@ export default async function RegisterPage() {
       <main className="auth-main">
         <section className="auth-panel">
           <header className="auth-heading">
-            <p className="eyebrow">PLAYER REGISTRATION / KCTF 2026</p>
+            <p className="eyebrow">KCTF 2026 / REGISTER</p>
             <h1>회원가입</h1>
-            <p>개인 계정을 만들고 KCTF에 참가하세요.</p>
           </header>
           <RegisterForm />
         </section>

@@ -34,12 +34,19 @@ enum ChallengeDifficulty {
   ADVANCED
 }
 
+enum ChallengeScoringMode {
+  STATIC
+  DYNAMIC
+  LINEAR
+}
+
 model User {
   id            String   @id @default(cuid())
   instancerId   Int      @unique @default(autoincrement())
   email         String   @unique
   username      String   @unique
   passwordHash  String
+  avatarData    String?
   role          UserRole @default(USER)
   isActive      Boolean  @default(true)
   lastLoginAt   DateTime?
@@ -149,11 +156,21 @@ model Challenge {
   description   String
   categoryId    String
   points        Int
+  scoringMode   ChallengeScoringMode @default(STATIC)
+  minimumPoints Int                  @default(50)
+  decaySolves   Int                  @default(20)
+  decrementPerSolve Int              @default(10)
   difficulty    ChallengeDifficulty @default(INTERMEDIATE)
   tags          String[]            @default([])
   flagHash      String
   instanceSlug  String?             @unique
+  usesVm        Boolean             @default(false)
+  connectionUrl String?
   fileUrl       String?
+  attachmentName String?
+  attachmentMimeType String?
+  attachmentSize Int?
+  attachmentData Bytes?
   author        String?
   hints         String?
   isVisible     Boolean             @default(false)

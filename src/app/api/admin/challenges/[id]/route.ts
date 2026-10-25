@@ -1,27 +1,35 @@
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getCurrentAdminUser } from '@/lib/admin-auth';
+import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
-import { challengeInputSchema } from '@/lib/challenge-input';
+import { challengeInputSchema, deriveChallengeSummary } from '@/lib/challenge-input';
+import { calculateChallengePoints } from '@/lib/challenge-scoring';
 import { getAdminChallenges } from '@/lib/challenges';
 import { digestFlag } from '@/lib/flags';
+import { destroyRemoteInstance } from '@/lib/instancer';
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-async function requireAdmin() {
-  const session = await auth();
-  return session?.user?.role === 'ADMIN';
-}
-
 export async function PUT(request: NextRequest, { params }: RouteContext) {
-  if (!(await requireAdmin())) {
+  const admin = await getCurrentAdminUser();
+  if (!admin) {
+    recordServerLog({
+      level: 'WARN',
+      source: 'ADMIN',
+      action: 'ADMIN_CHALLENGE_UPDATE_DENIED',
+      actor: 'unauthorized',
+      request,
+      statusCode: 403,
+      message: '권한 없는 사용자의 문제 수정 시도 차단',
+    });
     return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
   }
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, _count: { select: { solves: true } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
@@ -33,16 +41,27 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, ...data } = parsed.data;
+  const { flag, visible, instanceSlug, usesVm, connectionUrl, ...data } = parsed.data;
   try {
-    await prisma.challenge.update({
-      where: { id },
-      data: {
-        ...data,
-        instanceSlug: instanceSlug || null,
-        isVisible: visible,
-        ...(flag ? { flagHash: digestFlag(flag) } : {}),
-      },
+    await prisma.$transaction(async (transaction) => {
+      const challenge = await transaction.challenge.update({
+        where: { id },
+        data: {
+          ...data,
+          summary: data.summary || deriveChallengeSummary(data.description),
+          usesVm,
+          connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
+          instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
+          isVisible: visible,
+          solveCount: existing._count.solves,
+          ...(flag ? { flagHash: digestFlag(flag) } : {}),
+        },
+        select: { points: true, scoringMode: true, minimumPoints: true, decaySolves: true, decrementPerSolve: true },
+      });
+      await transaction.solve.updateMany({
+        where: { challengeId: id },
+        data: { points: calculateChallengePoints(challenge, existing._count.solves) },
+      });
     });
   } catch (error) {
     if ((error as { code?: string }).code === 'P2002') {
@@ -51,31 +70,88 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     throw error;
   }
 
+  const actor = formatActor(admin);
+  recordServerLog({
+    level: 'INFO',
+    source: 'ADMIN',
+    action: 'ADMIN_CHALLENGE_UPDATE',
+    actor,
+    actorId: admin.id,
+    request,
+    statusCode: 200,
+    message: `관리자 문제 정보 수정: ${actor} → [${data.title}]`,
+    params: {
+      challengeId: id,
+      title: data.title,
+      categoryId: data.categoryId,
+      points: data.points,
+      scoringMode: data.scoringMode,
+      usesVm,
+      instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
+      connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
+      visible,
+      flagUpdated: Boolean(flag),
+    },
+  });
+
   revalidatePath('/ctf');
   revalidatePath('/admin');
-  return NextResponse.json({ challenges: await getAdminChallenges() });
+  return NextResponse.json({ challengeId: id, challenges: await getAdminChallenges() });
 }
-export async function DELETE(_request: NextRequest, { params }: RouteContext) {
-  if (!(await requireAdmin())) {
+
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
+  const admin = await getCurrentAdminUser();
+  if (!admin) {
+    recordServerLog({
+      level: 'WARN',
+      source: 'ADMIN',
+      action: 'ADMIN_CHALLENGE_DELETE_DENIED',
+      actor: 'unauthorized',
+      request,
+      statusCode: 403,
+      message: '권한 없는 사용자의 문제 삭제 시도 차단',
+    });
     return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
   }
 
   const { id } = await params;
   const challenge = await prisma.challenge.findFirst({
     where: { id, ctfId: ACTIVE_CTF_ID },
-    select: { id: true, _count: { select: { solves: true } } },
+    select: { id: true, title: true, instanceSlug: true },
   });
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
-  if (challenge._count.solves > 0) {
-    return NextResponse.json({ error: '풀이 기록이 있는 문제는 삭제 대신 비공개로 전환해 주세요.' }, { status: 409 });
+
+  const activeInstances = await prisma.challengeInstance.findMany({ where: { challengeId: id }, select: { token: true } });
+  try {
+    await Promise.all(activeInstances.map((instance) => destroyRemoteInstance(instance.token)));
+  } catch (error) {
+    console.error('Failed to destroy challenge instances before deletion.', error);
+    return NextResponse.json({ error: '실행 중인 VM을 종료하지 못해 문제를 삭제하지 않았습니다.' }, { status: 502 });
   }
 
-  const activeInstances = await prisma.challengeInstance.count({ where: { challengeId: id } });
-  if (activeInstances > 0) {
-    return NextResponse.json({ error: '실행 중인 VM이 있는 문제는 삭제할 수 없습니다.' }, { status: 409 });
-  }
+  await prisma.$transaction([
+    prisma.challengeInstance.deleteMany({ where: { challengeId: id } }),
+    prisma.challenge.delete({ where: { id } }),
+  ]);
 
-  await prisma.challenge.delete({ where: { id } });
+  const actor = formatActor(admin);
+  recordServerLog({
+    level: 'WARN',
+    source: 'ADMIN',
+    action: 'ADMIN_CHALLENGE_DELETE',
+    actor,
+    actorId: admin.id,
+    request,
+    statusCode: 200,
+    message: `관리자 문제 삭제: ${actor} → [${challenge.title}]`,
+    params: {
+      challengeId: challenge.id,
+      title: challenge.title,
+      instanceSlug: challenge.instanceSlug,
+      terminatedVmCount: activeInstances.length,
+    },
+  });
+
   revalidatePath('/ctf');
   revalidatePath('/admin');
   return NextResponse.json({ challenges: await getAdminChallenges() });

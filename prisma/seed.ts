@@ -14,6 +14,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  const bootstrapDefaults = !(await prisma.cTF.findUnique({ where: { id: 'kctf-2026' }, select: { id: true } }));
   await prisma.cTF.upsert({
     where: { id: 'kctf-2026' },
     create: {
@@ -28,50 +29,43 @@ async function main() {
     update: { mode: 'INDIVIDUAL' },
   });
 
-  for (const category of defaultCategories) {
-    await prisma.category.upsert({
-      where: { id: category.id },
-      create: {
-        id: category.id,
-        ctfId: 'kctf-2026',
-        name: category.name,
-        slug: category.slug,
-        shortName: category.shortName,
-        description: category.description,
-        accentColor: category.color,
-        sortOrder: category.order,
-        isVisible: category.visible,
-      },
-      update: {},
-    });
-  }
+  if (bootstrapDefaults) {
+    for (const category of defaultCategories) {
+      await prisma.category.create({
+        data: {
+          id: category.id,
+          ctfId: 'kctf-2026',
+          name: category.name,
+          slug: category.slug,
+          shortName: category.shortName,
+          description: category.description,
+          accentColor: category.color,
+          sortOrder: category.order,
+          isVisible: category.visible,
+        },
+      });
+    }
 
-  for (const challenge of challenges) {
-    const category = defaultCategories.find((item) => item.slug === challenge.category);
-    if (!category) throw new Error(`Unknown category for challenge ${challenge.id}.`);
-    const legacyDemoHash = digestFlag(`KCTF{demo_${challenge.id.replaceAll('-', '_')}}`);
-    const seedFlagHash = digestFlag(randomBytes(32).toString('base64url'));
-    const stored = await prisma.challenge.upsert({
-      where: { id: challenge.id },
-      create: {
-        id: challenge.id,
-        ctfId: 'kctf-2026',
-        categoryId: category.id,
-        title: challenge.title,
-        summary: challenge.summary,
-        description: challenge.summary,
-        points: challenge.points,
-        difficulty: challenge.difficulty,
-        tags: challenge.tags,
-        flagHash: seedFlagHash,
-        instanceSlug: challenge.instanceSlug,
-        isVisible: true,
-      },
-      update: {},
-      select: { flagHash: true },
-    });
-    if (stored.flagHash === legacyDemoHash) {
-      await prisma.challenge.update({ where: { id: challenge.id }, data: { flagHash: seedFlagHash } });
+    for (const challenge of challenges) {
+      const category = defaultCategories.find((item) => item.slug === challenge.category);
+      if (!category) throw new Error(`Unknown category for challenge ${challenge.id}.`);
+      await prisma.challenge.create({
+        data: {
+          id: challenge.id,
+          ctfId: 'kctf-2026',
+          categoryId: category.id,
+          title: challenge.title,
+          summary: challenge.summary,
+          description: challenge.summary,
+          points: challenge.points,
+          difficulty: challenge.difficulty,
+          tags: challenge.tags,
+          flagHash: digestFlag(randomBytes(32).toString('base64url')),
+          instanceSlug: challenge.instanceSlug,
+          usesVm: Boolean(challenge.instanceSlug),
+          isVisible: true,
+        },
+      });
     }
   }
 
@@ -89,20 +83,16 @@ async function main() {
         passwordHash,
         role: 'ADMIN',
       },
-      update: {
-        username: adminUsername,
-        passwordHash,
-        passwordUpdatedAt: new Date(),
-        role: 'ADMIN',
-        isActive: true,
-      },
+      update: {},
     });
     console.log(`Admin account ensured for ${adminEmail}.`);
   } else {
     console.log('Admin account skipped; provide ADMIN_EMAIL, ADMIN_USERNAME, and ADMIN_INITIAL_PASSWORD to create one.');
   }
 
-  console.log(`Seeded KCTF 2026, ${defaultCategories.length} categories, and ${challenges.length} challenges.`);
+  console.log(bootstrapDefaults
+    ? `Bootstrapped KCTF 2026 with ${defaultCategories.length} categories and ${challenges.length} challenges.`
+    : 'KCTF 2026 already exists; preserved administrator-managed categories and challenges.');
 }
 
 main()

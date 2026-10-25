@@ -1,47 +1,47 @@
+import Image from 'next/image';
 import PageLayout from '@/components/PageLayout';
-import { getLeaderboard } from '@/lib/challenges';
+import ScoreHistoryChart from '@/components/ScoreHistoryChart';
+import { getLeaderboard, getScoreHistory } from '@/lib/challenges';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ScoreboardPage() {
   const leaderboard = await getLeaderboard();
-  const podium = [leaderboard[1], leaderboard[0], leaderboard[2]].filter(Boolean);
+  const history = await getScoreHistory(leaderboard.slice(0, 10).map((player) => player.userId));
+  const pointFormatter = new Intl.NumberFormat('ko-KR');
 
   return (
     <PageLayout>
       <main className="scoreboard-main">
         <header className="scoreboard-heading">
-          <p className="eyebrow">LIVE RANKING / INDIVIDUAL</p>
           <h1>Scoreboard</h1>
-          <p>풀이 속도보다 끝까지 파고드는 집요함을 기록합니다.</p>
         </header>
-        {leaderboard.length ? (
-          <>
-            <section className="score-podium" aria-label="상위 참가자">
-              {podium.map((player) => (
-                <article key={player.userId} className={`podium-card podium-${player.rank}`}>
-                  <span>0{player.rank}</span>
-                  <strong>{player.name}</strong>
-                  <b>{player.score.toLocaleString()} PTS</b>
-                  <small>{player.solved} SOLVED</small>
-                </article>
-              ))}
-            </section>
-            <section className="score-table">
-              <div className="score-row score-head"><span>RANK</span><span>PLAYER</span><span>SOLVED</span><span>SCORE</span></div>
-              {leaderboard.map((player) => (
-                <div className="score-row" key={player.userId}>
-                  <span>#{String(player.rank).padStart(2, '0')}</span>
-                  <strong>{player.name}</strong>
-                  <span>{player.solved}</span>
-                  <b>{player.score.toLocaleString()}</b>
-                </div>
-              ))}
-            </section>
-          </>
-        ) : (
-          <section className="empty-state"><p>아직 등록된 풀이가 없습니다.</p></section>
-        )}
+        <ScoreHistoryChart leaderboard={leaderboard} history={history} />
+        <section className="score-table-wrap" aria-label="참가자 순위">
+          <table className="score-table">
+            <thead><tr><th>순위</th><th>플레이어</th><th>점수</th></tr></thead>
+            <tbody>
+            {leaderboard.map((player) => (
+              <tr className={player.rank <= 3 ? 'is-top-three' : ''} key={player.userId}>
+                <td>#{String(player.rank).padStart(2, '0')}</td>
+                <th scope="row">
+                  <div className="scoreboard-player">
+                    <div className="scoreboard-avatar" aria-hidden="true">
+                      {player.avatarData ? (
+                        <Image src={player.avatarData} alt="" width={40} height={40} unoptimized />
+                      ) : (
+                        player.name.slice(0, 2).toUpperCase()
+                      )}
+                    </div>
+                    <span>{player.name}</span>
+                  </div>
+                </th>
+                <td>{pointFormatter.format(player.score)}</td>
+              </tr>
+            ))}
+            </tbody>
+          </table>
+        </section>
       </main>
     </PageLayout>
   );

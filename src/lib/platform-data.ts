@@ -13,6 +13,9 @@ export type Challenge = {
   id: string;
   title: string;
   summary: string;
+  description?: string;
+  author?: string;
+  fileUrl?: string;
   category: string;
   points: number;
   solves: number;
@@ -20,6 +23,8 @@ export type Challenge = {
   solved?: boolean;
   tags: string[];
   instanceSlug?: string;
+  usesVm?: boolean;
+  connectionUrl?: string;
 };
 
 export const event = {

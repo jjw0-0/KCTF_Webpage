@@ -1,60 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, getClientAddress, rateLimitHeaders } from '@/lib/rate-limit';
 
 const registerSchema = z.object({
+  username: z.string().trim().min(2).max(24).regex(/^[a-zA-Z0-9_-]+$/),
   email: z.string().trim().toLowerCase().email().max(254),
-  username: z.string().trim().min(2).max(24)
-    .regex(/^[a-zA-Z0-9_가-힣-]+$/, '닉네임에는 문자, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.'),
-  password: z.string().min(10).max(128),
+  password: z.string().min(8).max(128),
 });
 
 export async function POST(request: NextRequest) {
-  const limit = consumeRateLimit(`register:${getClientAddress(request.headers)}`, 5, 60 * 60_000);
+  const clientAddress = getClientAddress(request.headers);
+  const limit = consumeRateLimit(`register:${clientAddress}`, 5, 10 * 60_000);
   if (!limit.allowed) {
+    recordServerLog({
+      level: 'WARN',
+      source: 'AUTH',
+      action: 'USER_REGISTER_RATE_LIMIT',
+      actor: 'anonymous',
+      request,
+      statusCode: 429,
+      message: '회원가입 요청 속도 제한 초과 (Rate Limit)',
+      params: { resetAt: new Date(limit.resetAt).toISOString() },
+    });
     return NextResponse.json(
-      { error: '가입 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+      { error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
       { status: 429, headers: rateLimitHeaders(limit) },
     );
   }
 
-  const parsed = registerSchema.safeParse(await request.json().catch(() => null));
+  const rawBody = await request.json().catch(() => null);
+  const parsed = registerSchema.safeParse(rawBody);
   if (!parsed.success) {
+    const safeParams = rawBody && typeof rawBody === 'object'
+      ? {
+          username: (rawBody as Record<string, unknown>).username,
+          email: (rawBody as Record<string, unknown>).email,
+        }
+      : { rawBody };
+    recordServerLog({
+      level: 'WARN',
+      source: 'AUTH',
+      action: 'USER_REGISTER_BAD_REQUEST',
+      actor: String(safeParams.username || safeParams.email || 'anonymous'),
+      request,
+      statusCode: 400,
+      message: '회원가입 입력값 검증 실패',
+      params: safeParams,
+    });
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? '입력값을 확인해 주세요.' },
+      { error: '닉네임(영문/숫자/_/- 2~24자), 이메일, 비밀번호(8자 이상)를 확인해 주세요.' },
       { status: 400, headers: rateLimitHeaders(limit) },
     );
   }
 
+  const { username, email, password } = parsed.data;
   const existing = await prisma.user.findFirst({
-    where: { OR: [{ email: parsed.data.email }, { username: parsed.data.username }] },
+    where: { OR: [{ email }, { username }] },
     select: { email: true, username: true },
   });
-  if (existing) {
-    const error = existing.email === parsed.data.email
-      ? '이미 가입된 이메일입니다.'
-      : '이미 사용 중인 닉네임입니다.';
-    return NextResponse.json({ error }, { status: 409, headers: rateLimitHeaders(limit) });
-  }
 
-  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
-  try {
-    await prisma.user.create({
-      data: {
-        email: parsed.data.email,
-        username: parsed.data.username,
-        passwordHash,
-      },
+  if (existing) {
+    const conflictField = existing.email === email ? 'email' : 'username';
+    recordServerLog({
+      level: 'WARN',
+      source: 'AUTH',
+      action: 'USER_REGISTER_CONFLICT',
+      actor: `${username} (${email})`,
+      request,
+      statusCode: 409,
+      message: `회원가입 중복 차단 (${conflictField}): ${username} (${email})`,
+      params: { username, email, conflictField },
     });
-  } catch {
     return NextResponse.json(
-      { error: '이미 사용 중인 이메일 또는 닉네임입니다.' },
+      { error: existing.email === email ? '이미 등록된 이메일입니다.' : '이미 사용 중인 닉네임입니다.' },
       { status: 409, headers: rateLimitHeaders(limit) },
     );
   }
 
-  return NextResponse.json({ ok: true }, { status: 201, headers: rateLimitHeaders(limit) });
-}
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await prisma.user.create({
+    data: { username, email, passwordHash },
+    select: { id: true, instancerId: true, username: true, email: true, role: true },
+  });
 
+  const actor = formatActor(user);
+  recordServerLog({
+    id: `user-reg-${user.id}`,
+    level: 'INFO',
+    source: 'AUTH',
+    action: 'USER_REGISTER',
+    actor,
+    actorId: user.id,
+    request,
+    statusCode: 201,
+    message: `신규 계정 회원가입 완료: ${actor}`,
+    params: {
+      userId: user.id,
+      instancerId: user.instancerId,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    },
+  });
+
+  return NextResponse.json({ user }, { status: 201, headers: rateLimitHeaders(limit) });
+}

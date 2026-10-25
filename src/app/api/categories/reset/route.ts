@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/auth';
+import { getCurrentAdminUser } from '@/lib/admin-auth';
+import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID, getCategories } from '@/lib/categories';
 import { defaultCategories } from '@/lib/platform-data';
 import { prisma } from '@/lib/prisma';
 
-export async function POST() {
-  const session = await auth();
-  if (session?.user?.role !== 'ADMIN') {
+export async function POST(request: Request) {
+  const admin = await getCurrentAdminUser();
+  if (!admin) {
     return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
   }
 
@@ -44,8 +45,19 @@ export async function POST() {
     }),
   ]);
 
+  const actor = formatActor(admin);
+  recordServerLog({
+    level: 'WARN',
+    source: 'ADMIN',
+    action: 'ADMIN_CATEGORY_RESET',
+    actor,
+    actorId: admin.id,
+    request,
+    statusCode: 200,
+    message: `관리자 카테고리 기본값 초기화: ${actor}`,
+  });
+
   revalidatePath('/');
   revalidatePath('/ctf');
   return NextResponse.json({ categories: await getCategories({ fallback: false }) });
 }
-

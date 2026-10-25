@@ -12,7 +12,7 @@ export default async function Header() {
 
   return (
     <header className="site-header">
-      <div className="flex items-center gap-10">
+      <div className="flex items-center">
         <Link href="/" aria-label="KCTF 홈으로">
           <Image
             src="/kknock_logo.png"
@@ -22,10 +22,6 @@ export default async function Header() {
             priority
             className="brand-logo"
           />
-        </Link>
-        <span className="hidden lg:block h-5 w-px bg-white/15" />
-        <Link href="/ctf" className="hidden lg:block text-xs tracking-[0.24em] text-white/55 hover:text-white">
-          KCTF / 2026
         </Link>
       </div>
       <nav className="header-nav" aria-label="주요 메뉴">

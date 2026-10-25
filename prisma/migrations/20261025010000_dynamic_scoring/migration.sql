@@ -1,0 +1,7 @@
+CREATE TYPE "ChallengeScoringMode" AS ENUM ('STATIC', 'DYNAMIC', 'LINEAR');
+
+ALTER TABLE "challenges"
+  ADD COLUMN "scoringMode" "ChallengeScoringMode" NOT NULL DEFAULT 'STATIC',
+  ADD COLUMN "minimumPoints" INTEGER NOT NULL DEFAULT 50,
+  ADD COLUMN "decaySolves" INTEGER NOT NULL DEFAULT 20,
+  ADD COLUMN "decrementPerSolve" INTEGER NOT NULL DEFAULT 10;

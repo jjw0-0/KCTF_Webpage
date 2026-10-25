@@ -5,10 +5,22 @@ import LoginForm from './LoginForm';
 
 type LoginPageProps = { searchParams: Promise<{ callbackUrl?: string }> };
 
+function safeCallbackUrl(value?: string) {
+  if (!value) return '/ctf';
+  try {
+    const base = 'https://kctf.invalid';
+    const parsed = new URL(value, base);
+    if (parsed.origin !== base) return '/ctf';
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/ctf';
+  }
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
   const { callbackUrl } = await searchParams;
-  const destination = callbackUrl?.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/ctf';
+  const destination = safeCallbackUrl(callbackUrl);
   if (session?.user) redirect(destination);
 
   return (
@@ -16,9 +28,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <main className="auth-main">
         <section className="auth-panel">
           <header className="auth-heading">
-            <p className="eyebrow">SECURE ACCESS / KCTF 2026</p>
+            <p className="eyebrow">KCTF 2026 / LOGIN</p>
             <h1>로그인</h1>
-            <p>계정으로 돌아와 문제 풀이를 이어가세요.</p>
           </header>
           <LoginForm callbackUrl={destination} />
         </section>

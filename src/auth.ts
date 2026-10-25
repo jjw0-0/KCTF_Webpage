@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, getClientAddress } from '@/lib/rate-limit';
 
@@ -29,16 +30,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(rawCredentials, request) {
         const clientAddress = getClientAddress(request.headers);
+        const rawEmail = typeof rawCredentials?.email === 'string' ? rawCredentials.email.trim().toLowerCase() : 'unknown';
         const limit = consumeRateLimit(`login:${clientAddress}`, 10, 10 * 60_000);
-        if (!limit.allowed) return null;
+        if (!limit.allowed) {
+          recordServerLog({
+            level: 'WARN',
+            source: 'AUTH',
+            action: 'AUTH_RATE_LIMIT',
+            actor: rawEmail,
+            request,
+            path: '/api/auth/callback/credentials',
+            statusCode: 429,
+            message: `로그인 시도 속도 제한 초과 (Brute-force 차단): email=${rawEmail}`,
+            params: {
+              attemptedEmail: rawEmail,
+              resetAt: new Date(limit.resetAt).toISOString(),
+            },
+          });
+          return null;
+        }
 
         const parsed = credentialsSchema.safeParse(rawCredentials);
-        if (!parsed.success) return null;
+        if (!parsed.success) {
+          recordServerLog({
+            level: 'WARN',
+            source: 'AUTH',
+            action: 'AUTH_INVALID_FORMAT',
+            actor: rawEmail,
+            request,
+            path: '/api/auth/callback/credentials',
+            statusCode: 400,
+            message: `유효하지 않은 로그인 입력 형식: email=${rawEmail}`,
+            params: { attemptedEmail: rawEmail },
+          });
+          return null;
+        }
 
         const user = await prisma.user.findUnique({
           where: { email: parsed.data.email },
           select: {
             id: true,
+            instancerId: true,
             email: true,
             username: true,
             passwordHash: true,
@@ -47,13 +79,73 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user?.isActive) return null;
-        const passwordMatches = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!passwordMatches) return null;
+        if (!user?.isActive) {
+          recordServerLog({
+            level: 'WARN',
+            source: 'AUTH',
+            action: 'AUTH_UNKNOWN_ACCOUNT',
+            actor: parsed.data.email,
+            request,
+            path: '/api/auth/callback/credentials',
+            statusCode: 401,
+            message: `존재하지 않거나 비활성화된 계정 로그인 시도: ${parsed.data.email}`,
+            params: {
+              attemptedEmail: parsed.data.email,
+              accountExists: Boolean(user),
+              isActive: user?.isActive ?? false,
+            },
+          });
+          return null;
+        }
 
+        const actor = formatActor(user);
+        const passwordMatches = await bcrypt.compare(parsed.data.password, user.passwordHash);
+        if (!passwordMatches) {
+          recordServerLog({
+            level: 'WARN',
+            source: 'AUTH',
+            action: 'AUTH_WRONG_PASSWORD',
+            actor,
+            actorId: user.id,
+            request,
+            path: '/api/auth/callback/credentials',
+            statusCode: 401,
+            message: `로그인 실패 (비밀번호 불일치): ${actor}`,
+            params: {
+              userId: user.id,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+            },
+          });
+          return null;
+        }
+
+        const now = new Date();
         await prisma.user.update({
           where: { id: user.id },
-          data: { lastLoginAt: new Date() },
+          data: { lastLoginAt: now },
+        });
+
+        recordServerLog({
+          id: `user-login-${user.id}-${now.toISOString()}`,
+          timestamp: now,
+          level: 'INFO',
+          source: 'AUTH',
+          action: 'AUTH_LOGIN_SUCCESS',
+          actor,
+          actorId: user.id,
+          request,
+          path: '/api/auth/callback/credentials',
+          statusCode: 200,
+          message: `로그인 성공 및 세션 발급: ${actor}`,
+          params: {
+            userId: user.id,
+            instancerId: user.instancerId,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+          },
         });
 
         return {

@@ -9,9 +9,13 @@ export default function Footer() {
     <footer className="site-footer">
       <div>
         <p className="eyebrow mb-2">KYONGGI UNIVERSITY</p>
-        <p className="text-sm text-white/55">Copyright © 2026 K.knock. Built for the next exploit.</p>
+        <p className="text-sm text-white/55">Copyright © 2026 K.knock.</p>
       </div>
-      <div className="flex items-center gap-5 text-sm text-white/60">
+      <div className="flex flex-col items-start sm:items-end gap-2">
+        <p className="text-xs font-mono tracking-[0.12em] text-white/45">
+          Dev by <span className="text-[#4de0a7]">jjw</span>
+        </p>
+        <div className="flex items-center gap-5 text-sm text-white/60">
           <Link
             href="https://github.com/jjw0-0"
             target="_blank"
@@ -32,6 +36,7 @@ export default function Footer() {
             </svg>
             Instagram
           </Link>
+        </div>
       </div>
     </footer>
   );

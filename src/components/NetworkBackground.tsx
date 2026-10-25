@@ -26,12 +26,32 @@ export default function NetworkBackground() {
   const mouseRef = useRef({ x: -1000, y: -1000 });
 
   useEffect(() => {
+    if (!document.cookie.includes('kctf_ipv4=')) {
+      fetch('https://api4.ipify.org?format=json')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { ip?: string } | null) => {
+          if (data?.ip) {
+            return fetch('/api/client-ip', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ipv4: data.ip }),
+            });
+          }
+          return null;
+        })
+        .catch(() => null);
+    }
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reduceMotion = motionQuery.matches;
 
     // 캔버스 크기 설정
     const resizeCanvas = () => {
@@ -41,8 +61,8 @@ export default function NetworkBackground() {
     resizeCanvas();
 
     // 파티클 기본 설정
-    const particleCount = () => window.innerWidth < 768 ? 24 : 48;
-    const maxDistance = 200;          // 연결선이 그려지는 최대 거리 (px)
+    const particleCount = () => window.innerWidth < 768 ? 33 : 66;
+    const maxDistance = 222.5;        // 연결선이 그려지는 최대 거리 (px)
     const mouseDistance = 150;        // 마우스 영향 반경 (px)
 
     // 파티클 초기화 함수
@@ -92,7 +112,7 @@ export default function NetworkBackground() {
       const particles = particlesRef.current;
 
       // 연결선 그리기
-      ctx.lineWidth = 0.5;  // 연결선 두께 (px)
+      ctx.lineWidth = 0.725; // 연결선 두께 (px)
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -222,26 +242,38 @@ export default function NetworkBackground() {
         ctx.fill();
       });
 
-      // 다음 프레임 요청
-      animationFrameRef.current = requestAnimationFrame(animate);
+      // 모션 감소 상태에서는 현재 장면을 한 번만 그려 정지 배경으로 유지한다.
+      animationFrameRef.current = reduceMotion ? null : requestAnimationFrame(animate);
     };
 
     animate();
+
+    const handleMotionPreference = (event: MediaQueryListEvent) => {
+      reduceMotion = event.matches;
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      animate();
+    };
 
     // 윈도우 리사이즈 핸들러
     const handleResize = () => {
       resizeCanvas();
       initParticles();
+      if (reduceMotion) animate();
     };
 
     window.addEventListener('resize', handleResize);
+    motionQuery.addEventListener('change', handleMotionPreference);
 
     // 클린업 (메모리 누수 방지)
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
-      if (animationFrameRef.current) {
+      motionQuery.removeEventListener('change', handleMotionPreference);
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
@@ -252,6 +284,7 @@ export default function NetworkBackground() {
       ref={canvasRef}
       className="network-canvas fixed inset-0"
       style={{ pointerEvents: 'none', zIndex: 0 }}
+      aria-hidden="true"
     />
   );
 }

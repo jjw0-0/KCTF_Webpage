@@ -13,11 +13,21 @@ export default function AuthMenu({ username, isAdmin = false }: AuthMenuProps) {
 
   return (
     <>
-      {isAdmin && <Link href="/admin" className="header-link">Admin</Link>}
-      <Link href="/profile" className="header-link">{username}</Link>
-      <button type="button" className="header-login" onClick={() => void signOut({ redirectTo: '/' })}>
-        Sign out
-      </button>
+      <span className="auth-desktop-actions">
+        {isAdmin && <Link href="/admin" className="header-link">Admin</Link>}
+        <Link href="/profile" className="header-link">{username}</Link>
+        <button type="button" className="header-login" onClick={() => void signOut({ redirectTo: '/' })}>
+          Sign out
+        </button>
+      </span>
+      <details className="auth-mobile-menu">
+        <summary aria-label={`${username} 계정 메뉴`}>계정</summary>
+        <div>
+          <Link href="/profile">프로필</Link>
+          {isAdmin && <Link href="/admin">관리자</Link>}
+          <button type="button" onClick={() => void signOut({ redirectTo: '/' })}>로그아웃</button>
+        </div>
+      </details>
     </>
   );
 }

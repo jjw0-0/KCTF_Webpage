@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import PageLayout from '@/components/PageLayout';
+import ProfileAvatar from '@/components/ProfileAvatar';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getLeaderboard } from '@/lib/challenges';
 import { prisma } from '@/lib/prisma';
@@ -12,7 +12,7 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect('/login?callbackUrl=/profile');
 
-  const [solves, challengeCount, leaderboard] = await Promise.all([
+  const [solves, challengeCount, leaderboard, user] = await Promise.all([
     prisma.solve.findMany({
       where: { userId: session.user.id, challenge: { ctfId: ACTIVE_CTF_ID } },
       include: { challenge: { include: { category: { select: { slug: true } } } } },
@@ -20,38 +20,37 @@ export default async function ProfilePage() {
     }),
     prisma.challenge.count({ where: { ctfId: ACTIVE_CTF_ID, isVisible: true } }),
     getLeaderboard(),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarData: true } }),
   ]);
   const score = solves.reduce((total, solve) => total + solve.points, 0);
   const rank = leaderboard.find((entry) => entry.userId === session.user.id)?.rank;
+  const initials = session.user.username.slice(0, 2).toUpperCase();
+  const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
     <PageLayout>
       <main className="profile-main">
-        <section className="profile-card">
-          <div className="profile-avatar">0x</div>
-          <div>
-            <p className="eyebrow">PLAYER PROFILE</p>
-            <h1>{session.user.username}</h1>
+        <section className="profile-card" aria-labelledby="profile-title">
+          <ProfileAvatar avatarData={user?.avatarData ?? undefined} initials={initials} />
+          <div className="profile-identity">
+            <h1 id="profile-title">{session.user.username}</h1>
             <p>{session.user.email}</p>
           </div>
-          <Link href="/ctf" className="button button-primary">CONTINUE →</Link>
-        </section>
-        <section className="profile-grid">
-          <article className="profile-stat"><span>RANK</span><strong>{rank ? `#${rank}` : '—'}</strong><small>LIVE</small></article>
-          <article className="profile-stat"><span>SCORE</span><strong>{score}</strong><small>PTS</small></article>
-          <article className="profile-stat"><span>SOLVED</span><strong>{solves.length}</strong><small>OF {challengeCount}</small></article>
-          <article className="profile-stat"><span>STATUS</span><strong>ACTIVE</strong><small>{session.user.role}</small></article>
+          <dl className="profile-record" aria-label="참가 기록">
+            <div><dt>순위</dt><dd>{rank ? `#${rank}` : '—'}</dd></div>
+            <div><dt>점수</dt><dd>{score}<span> PTS</span></dd></div>
+            <div><dt>해결</dt><dd>{solves.length}<span> / {challengeCount}</span></dd></div>
+          </dl>
         </section>
         <section className="recent-solves">
-          <div><p className="eyebrow">ACTIVITY / RECENT</p><h2>Solved challenges</h2></div>
+          <div><h2>해결한 문제</h2></div>
           {solves.length ? solves.map((solve) => (
             <article key={solve.id}>
-              <span className="status-dot" />
               <div><strong>{solve.challenge.title}</strong><small>{solve.challenge.category.slug.toUpperCase()}</small></div>
               <b>+{solve.points}</b>
-              <time dateTime={solve.solvedAt.toISOString()}>{solve.solvedAt.toLocaleString('ko-KR')}</time>
+              <time dateTime={solve.solvedAt.toISOString()}>{dateFormatter.format(solve.solvedAt)}</time>
             </article>
-          )) : <p className="profile-empty">아직 해결한 문제가 없습니다.</p>}
+          )) : <div className="profile-empty"><p>아직 해결한 문제가 없습니다.</p></div>}
         </section>
       </main>
     </PageLayout>

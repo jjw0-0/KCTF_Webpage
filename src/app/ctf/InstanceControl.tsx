@@ -20,7 +20,8 @@ export default function InstanceControl({ challengeId, enabled }: { challengeId:
       }
       const payload = await response.json();
       if (response.ok) setInstance(payload.instance);
-    }).finally(() => setLoading(false));
+    }).catch(() => setMessage('VM 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'))
+      .finally(() => setLoading(false));
   }, [enabled]);
 
   if (!enabled) return null;
@@ -80,7 +81,7 @@ export default function InstanceControl({ challengeId, enabled }: { challengeId:
         </div>
       ) : (
         <button type="button" onClick={() => void create()} disabled={loading}>
-          {loading ? '준비 중…' : instance ? '현재 VM 교체' : 'VM 발급'}
+          {loading ? '준비 중…' : instance ? '현재 VM 교체' : 'VM 생성'}
         </button>
       )}
       {message && <p role="alert">{message}</p>}
