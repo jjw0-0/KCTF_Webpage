@@ -935,7 +935,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   animation-delay: calc(var(--stack-index) * 75ms);
 }
 .stacked-card-surface::before { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 27%, rgba(221,255,243,.15) 48%, transparent 68%); content: ""; transform: translateX(-100%); transition: transform .7s; }
-.stacked-card-surface::after { position: absolute; top: 28px; left: 12px; width: 2px; height: 28px; content: ""; background: var(--category-accent); box-shadow: 0 0 12px var(--category-accent); opacity: .65; }
+.stacked-card-surface::after { position: absolute; top: 28px; left: 27px; width: 2px; height: 28px; content: ""; background: var(--category-accent); box-shadow: 0 0 12px var(--category-accent); opacity: .65; }
 .stacked-card-surface > * { position: relative; z-index: 1; }
 .stacked-card .card-circuit { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; stroke: var(--category-accent); stroke-width: .8; opacity: .32; transition: opacity .3s; }
 .card-circuit .circuit-ticks { stroke-width: 2; }
