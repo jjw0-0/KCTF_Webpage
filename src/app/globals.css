@@ -516,7 +516,9 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .event-schedule-note { grid-column: 1 / -1; margin: 0; border-top: 1px solid var(--line); padding-top: 17px; color: #718078; font-size: 11px; line-height: 1.7; }
 .event-admin-form .challenge-form-actions { grid-column: 1 / -1; }
 .challenge-file-grid, .vm-runtime-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
-.challenge-file-grid.is-single { grid-template-columns: minmax(0, 1fr); }
+.vm-runtime-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-8px); transition: grid-template-rows .28s var(--ease-out), opacity .2s ease, transform .28s var(--ease-out); }
+.vm-runtime-reveal.is-visible { grid-template-rows: 1fr; opacity: 1; transform: translateY(0); }
+.vm-runtime-reveal > .vm-runtime-grid { min-height: 0; overflow: hidden; }
 .admin-file-field, .vm-runtime-grid > label, .vm-runtime-option { display: flex; align-self: start; flex-direction: column; gap: 9px; color: #b5c3bc; font-size: 12px; }
 .file-picker { position: relative; display: flex; min-height: 46px; align-items: center; justify-content: space-between; gap: 12px; overflow: hidden; border: 1px solid #26382f; border-radius: 6px; padding: 0 10px 0 14px; background: rgba(3,10,7,.84); transition: border-color .18s ease, box-shadow .18s ease; }
 .file-picker:hover { border-color: rgba(77,224,167,.45); }
@@ -864,16 +866,17 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .flag-form { flex-shrink: 0; margin: 0; border-top: 1px solid #aaffda20; padding: 24px 40px 30px; background: #0c1511; }
 .flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .flag-form label { display: block; margin: 0; font-size: 11px; letter-spacing: .05em; color: #9bb1a4; }
-.flag-status-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 999px; padding: 2px 10px; font: 600 11px var(--font-mono), monospace; letter-spacing: -.01em; }
-.flag-status-badge.is-correct { border-color: rgba(59, 232, 152, .38); background: rgba(59, 232, 152, .12); color: #54f0a8; }
-.flag-status-badge.is-duplicate { border-color: rgba(245, 184, 65, .42); background: rgba(245, 184, 65, .13); color: #f7c95c; }
-.flag-status-badge.is-wrong, .flag-status-badge.is-error { border-color: rgba(255, 92, 100, .4); background: rgba(255, 92, 100, .12); color: #ff858b; }
+.flag-status-badge { display: inline-flex; align-items: center; gap: 7px; color: #92a39a; font: 500 11px var(--font-mono), monospace; }
+.flag-status-badge::before { width: 6px; height: 6px; content: ""; background: currentColor; transform: rotate(45deg); }
+.flag-status-badge.is-correct { color: #63d9a4; }
+.flag-status-badge.is-duplicate { color: #d9b96f; }
+.flag-status-badge.is-wrong, .flag-status-badge.is-error { color: #e88186; }
 .flag-form .flag-input-box { display: flex; overflow: hidden; border: 1.5px solid #2b4438; border-radius: 5px; background: #040a07; transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
 .flag-form .flag-input-box:focus-within { border-color: #466a58; box-shadow: 0 0 0 3px rgba(170,255,218,.05); }
-.flag-form .flag-input-box.is-correct, .flag-form .flag-input-box.is-correct:focus-within { border-color: #3be898; background: rgba(12, 46, 31, .52); box-shadow: 0 0 0 2px rgba(59, 232, 152, .32), 0 0 22px rgba(59, 232, 152, .24), inset 0 0 12px rgba(59, 232, 152, .08); }
-.flag-form .flag-input-box.is-duplicate, .flag-form .flag-input-box.is-duplicate:focus-within { border-color: #f5b841; background: rgba(54, 38, 10, .48); box-shadow: 0 0 0 2px rgba(245, 184, 65, .3), 0 0 20px rgba(245, 184, 65, .2), inset 0 0 12px rgba(245, 184, 65, .08); }
+.flag-form .flag-input-box.is-correct, .flag-form .flag-input-box.is-correct:focus-within { border-color: #3d8d69; background: rgba(24, 54, 41, .34); box-shadow: none; }
+.flag-form .flag-input-box.is-duplicate, .flag-form .flag-input-box.is-duplicate:focus-within { border-color: #8a7440; background: rgba(54, 43, 20, .28); box-shadow: none; }
 .flag-form .flag-input-box.is-duplicate button { border-left-color: rgba(245, 184, 65, .45); }
-.flag-form .flag-input-box.is-wrong, .flag-form .flag-input-box.is-error, .flag-form .flag-input-box.is-wrong:focus-within, .flag-form .flag-input-box.is-error:focus-within { border-color: #ff5c64; background: rgba(52, 14, 18, .52); box-shadow: 0 0 0 2px rgba(255, 92, 100, .32), 0 0 22px rgba(255, 92, 100, .24), inset 0 0 12px rgba(255, 92, 100, .08); animation: flag-shake .3s ease; }
+.flag-form .flag-input-box.is-wrong, .flag-form .flag-input-box.is-error, .flag-form .flag-input-box.is-wrong:focus-within, .flag-form .flag-input-box.is-error:focus-within { border-color: #9e4f54; background: rgba(52, 24, 27, .3); box-shadow: none; }
 .flag-form .flag-input-box.is-wrong button, .flag-form .flag-input-box.is-error button { border-left-color: rgba(255, 92, 100, .45); }
 .flag-form input { min-width: 0; flex: 1; border: 0; outline: none; padding: 14px 16px; background: transparent; color: white; font: 13px var(--font-mono), monospace; }
 .flag-form button { min-width: 96px; padding: 0 18px; border-left: 1px solid #4de0a740; background: #4de0a7; color: #03100b; font-size: 12px; font-weight: 600; transition: background .15s ease, border-color .18s ease; }
@@ -884,13 +887,6 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .submission-message.wrong, .submission-message.error { border-color: rgba(255,107,113,.26); background: rgba(255,107,113,.05); color: #ff989c; }
 .challenge-dialog-backdrop.is-closing { animation: backdrop-out .18s ease both; }
 .challenge-dialog-backdrop.is-closing .challenge-dialog { animation: dialog-out .18s var(--ease-in) both; }
-@keyframes flag-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-3px); }
-}
-
 /* Challenge stacks — follows challenge_list2.png */
 .challenge-main { width: min(100% - 48px, 1440px); margin-inline: auto; padding: 20px 0 120px; }
 .challenge-heading { display: flex; align-items: center; justify-content: flex-end; padding: 34px 4vw 14px; }

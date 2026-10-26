@@ -161,7 +161,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? '제출에 실패했습니다.');
       if (!payload.correct) {
-        setSubmission({ state: 'wrong', message: '올바른 플래그가 아닙니다.' });
+        setSubmission({ state: 'wrong', message: '오답입니다' });
         return;
       }
       setChallenges((current) => current.map((challenge) => challenge.id === submittedId
@@ -170,8 +170,8 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
       setSelected((challenge) => challenge?.id === submittedId ? { ...challenge, solved: true, solves: payload.solves, points: payload.points } : challenge);
       setSubmission(
         payload.alreadySolved
-          ? { state: 'duplicate', message: '이미 해결한 문제입니다.' }
-          : { state: 'correct', message: `정답입니다 · +${payload.points} PTS` },
+          ? { state: 'duplicate', message: '이미 해결했습니다' }
+          : { state: 'correct', message: '정답입니다' },
       );
     } catch (error) {
       setSubmission({ state: 'error', message: error instanceof Error ? error.message : '제출에 실패했습니다.' });

@@ -181,6 +181,10 @@ model Challenge {
   attachmentMimeType String?
   attachmentSize Int?
   attachmentData Bytes?
+  deploymentName String?
+  deploymentMimeType String?
+  deploymentSize Int?
+  deploymentData Bytes?
   deploymentStatus DeploymentStatus @default(NONE)
   deploymentError String?
   deploymentUpdatedAt DateTime?

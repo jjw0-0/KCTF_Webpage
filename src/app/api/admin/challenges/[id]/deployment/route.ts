@@ -31,6 +31,9 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
   const challenge = await challengeForDeployment(id);
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
+  if (!challenge.usesVm) {
+    return NextResponse.json({ deployment: null, challenges: await getAdminChallenges() });
+  }
   const slug = challenge.instanceSlug ?? challenge.id;
   const deployment = await getRemoteDeployment(slug);
   await prisma.challenge.update({
@@ -51,8 +54,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
   const challenge = await challengeForDeployment(id);
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
-  if (!challenge.usesVm) return NextResponse.json({ error: 'Instance 사용을 먼저 활성화해 주세요.' }, { status: 409 });
-  if (!challenge.instancePort) return NextResponse.json({ error: 'Instance 연결 포트를 먼저 입력해 주세요.' }, { status: 409 });
+  if (challenge.usesVm && !challenge.instancePort) return NextResponse.json({ error: 'Instance 연결 포트를 먼저 입력해 주세요.' }, { status: 409 });
 
   const parsed = await readBoundedFormData(request, MAX_DEPLOYMENT_FILE_BYTES);
   if (parsed.status === 'too_large') return NextResponse.json({ error: '배포 ZIP은 50MB 이하여야 합니다.' }, { status: 413 });
@@ -61,17 +63,50 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!isZipArchive(bytes, file.name)) return NextResponse.json({ error: '유효한 ZIP 파일만 업로드할 수 있습니다.' }, { status: 400 });
 
+  const archive = {
+    deploymentName: file.name,
+    deploymentMimeType: file.type || 'application/zip',
+    deploymentSize: file.size,
+    deploymentData: Buffer.from(bytes),
+  };
+
+  if (!challenge.usesVm) {
+    await prisma.challenge.update({
+      where: { id: challenge.id },
+      data: {
+        ...archive,
+        deploymentStatus: 'NONE',
+        deploymentError: null,
+        deploymentUpdatedAt: null,
+      },
+    });
+    recordServerLog({
+      level: 'INFO',
+      source: 'ADMIN',
+      action: 'ADMIN_DEPLOYMENT_UPLOAD',
+      actor: formatActor(admin),
+      actorId: admin.id,
+      request,
+      statusCode: 201,
+      message: `관리자 Deploy ZIP 보관: ${formatActor(admin)} → [${challenge.title}]`,
+      params: { challengeId: challenge.id, fileName: file.name, fileSize: file.size, build: false },
+    });
+    revalidatePath('/admin');
+    return NextResponse.json({ deployment: null, challenges: await getAdminChallenges() }, { status: 201 });
+  }
+
   const slug = challenge.instanceSlug ?? challenge.id;
   try {
     const deployment = await uploadRemoteDeployment(
       slug,
       new File([bytes], file.name, { type: 'application/zip' }),
-      challenge.instancePort,
+      challenge.instancePort!,
       challenge.usesCompose,
     );
     await prisma.challenge.update({
       where: { id: challenge.id },
       data: {
+        ...archive,
         instanceSlug: slug,
         deploymentStatus: deployment.status,
         deploymentError: deployment.error ?? null,
@@ -96,7 +131,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const message = error instanceof Error ? error.message : '배포 ZIP을 등록하지 못했습니다.';
     await prisma.challenge.update({
       where: { id: challenge.id },
-      data: { deploymentStatus: 'FAILED', deploymentError: message, deploymentUpdatedAt: new Date() },
+      data: { ...archive, deploymentStatus: 'FAILED', deploymentError: message, deploymentUpdatedAt: new Date() },
     });
     return NextResponse.json({ error: message }, { status: 502 });
   }
@@ -112,7 +147,15 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   await deleteRemoteDeployment(slug);
   await prisma.challenge.update({
     where: { id: challenge.id },
-    data: { deploymentStatus: 'NONE', deploymentError: null, deploymentUpdatedAt: null },
+    data: {
+      deploymentName: null,
+      deploymentMimeType: null,
+      deploymentSize: null,
+      deploymentData: null,
+      deploymentStatus: 'NONE',
+      deploymentError: null,
+      deploymentUpdatedAt: null,
+    },
   });
   recordServerLog({
     level: 'WARN',

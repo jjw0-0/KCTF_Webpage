@@ -12,6 +12,8 @@ export type AdminChallenge = {
   fileUrl: string;
   attachmentName: string;
   attachmentSize: number;
+  deploymentName: string;
+  deploymentSize: number;
   deploymentStatus: 'NONE' | 'QUEUED' | 'BUILDING' | 'READY' | 'FAILED';
   deploymentError: string;
   deploymentUpdatedAt?: string;
@@ -99,6 +101,8 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       fileUrl: true,
       attachmentName: true,
       attachmentSize: true,
+      deploymentName: true,
+      deploymentSize: true,
       deploymentStatus: true,
       deploymentError: true,
       deploymentUpdatedAt: true,
@@ -132,6 +136,8 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     fileUrl: challenge.fileUrl ?? '',
     attachmentName: challenge.attachmentName ?? '',
     attachmentSize: challenge.attachmentSize ?? 0,
+    deploymentName: challenge.deploymentName ?? '',
+    deploymentSize: challenge.deploymentSize ?? 0,
     deploymentStatus: challenge.deploymentStatus,
     deploymentError: challenge.deploymentError ?? '',
     deploymentUpdatedAt: challenge.deploymentUpdatedAt?.toISOString(),

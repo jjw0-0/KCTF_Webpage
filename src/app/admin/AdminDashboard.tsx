@@ -321,6 +321,19 @@ export default function AdminDashboard({
 
   const saveChallenge = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!deploymentFile && !editingChallenge?.deploymentName) {
+      setNotice('Deploy ZIP을 선택해 주세요.', 'error');
+      return;
+    }
+    const instanceConfigurationChanged = Boolean(editingChallenge && challengeForm.usesVm && (
+      !editingChallenge.usesVm
+      || editingChallenge.usesCompose !== challengeForm.usesCompose
+      || String(editingChallenge.instancePort ?? '') !== challengeForm.instancePort
+    ));
+    if (instanceConfigurationChanged && !deploymentFile) {
+      setNotice('Instance 설정을 변경하려면 Deploy ZIP을 다시 선택해 주세요.', 'error');
+      return;
+    }
     setIsSaving(true);
     try {
       const current = editingChallenge;
@@ -355,15 +368,19 @@ export default function AdminDashboard({
         if (!fileResponse.ok) throw new Error(`문제는 저장됐지만 파일 업로드에 실패했습니다. ${filePayload.error ?? ''}`.trim());
         setChallenges(filePayload.challenges);
       }
-      if (challengeForm.usesVm && deploymentFile) {
+      if (deploymentFile) {
         const deploymentUpload = new FormData();
         deploymentUpload.set('file', deploymentFile);
         const deploymentResponse = await fetch(`/api/admin/challenges/${encodeURIComponent(payload.challengeId)}/deployment`, { method: 'POST', body: deploymentUpload });
         const deploymentPayload = await deploymentResponse.json();
         if (!deploymentResponse.ok) throw new Error(`문제는 저장됐지만 배포 ZIP 등록에 실패했습니다. ${deploymentPayload.error ?? ''}`.trim());
         setChallenges(deploymentPayload.challenges);
-        setNotice('배포 ZIP을 등록했습니다. 이미지를 빌드하고 있습니다.');
-        void watchDeployment(payload.challengeId);
+        if (challengeForm.usesVm) {
+          setNotice('Deploy ZIP을 등록했습니다. 이미지를 빌드하고 있습니다.');
+          void watchDeployment(payload.challengeId);
+        } else {
+          setNotice(editingChallengeId ? '문제 변경사항과 Deploy ZIP을 저장했습니다.' : '새 문제와 Deploy ZIP을 저장했습니다.');
+        }
       } else {
         setNotice(editingChallengeId ? '문제 변경사항을 반영했습니다.' : '새 문제를 생성했습니다.');
       }
@@ -623,7 +640,7 @@ export default function AdminDashboard({
                 </div>
               </fieldset>
 
-              <div className={`challenge-file-grid wide${challengeForm.usesVm ? '' : ' is-single'}`}>
+              <div className="challenge-file-grid wide">
                 <label className="admin-file-field">
                   <span className="field-label-row">
                     <strong>Public ZIP</strong>
@@ -636,39 +653,39 @@ export default function AdminDashboard({
                   </span>
                 </label>
 
-                {challengeForm.usesVm && (
-                  <label className="admin-file-field deployment-file-field">
+                <label className="admin-file-field deployment-file-field">
                     <span className="field-label-row">
                       <strong>Deploy ZIP</strong>
                       <small>최대 50MB</small>
                     </span>
                     <span className="file-picker">
-                      <input name="deploymentFile" type="file" accept=".zip,application/zip" onChange={(event) => setDeploymentFile(event.target.files?.[0] ?? null)} />
+                      <input name="deploymentFile" required={!editingChallenge?.deploymentName} type="file" accept=".zip,application/zip" onChange={(event) => setDeploymentFile(event.target.files?.[0] ?? null)} />
                       <span className={!deploymentFile && editingChallenge ? `deployment-file-status ${deploymentStatusCopy[editingChallenge.deploymentStatus].tone}` : undefined}>
-                        {deploymentFile?.name || (editingChallenge && editingChallenge.deploymentStatus !== 'NONE' ? deploymentStatusCopy[editingChallenge.deploymentStatus].label : 'ZIP 파일 선택')}
+                        {deploymentFile?.name || (editingChallenge?.usesVm && editingChallenge.deploymentStatus !== 'NONE'
+                          ? deploymentStatusCopy[editingChallenge.deploymentStatus].label
+                          : editingChallenge?.deploymentName || 'ZIP 파일 선택')}
                       </span>
                       <em>찾아보기</em>
                     </span>
                     {!deploymentFile && editingChallenge?.deploymentStatus === 'FAILED' && editingChallenge.deploymentError && <small className="deployment-field-error">{editingChallenge.deploymentError}</small>}
-                  </label>
-                )}
+                </label>
               </div>
 
-              {challengeForm.usesVm && (
-                <div className="vm-runtime-grid wide">
+              <div className={`vm-runtime-reveal wide${challengeForm.usesVm ? ' is-visible' : ''}`} aria-hidden={!challengeForm.usesVm}>
+                <div className="vm-runtime-grid">
                   <div className="vm-runtime-option">
                     <span className="field-label-row"><strong>빌드 방식</strong></span>
                     <label className={challengeForm.usesCompose ? 'vm-choice is-checked' : 'vm-choice'}>
-                      <input type="checkbox" checked={challengeForm.usesCompose} onChange={(event) => setChallengeForm({ ...challengeForm, usesCompose: event.target.checked })} />
+                      <input type="checkbox" disabled={!challengeForm.usesVm} checked={challengeForm.usesCompose} onChange={(event) => setChallengeForm({ ...challengeForm, usesCompose: event.target.checked })} />
                       <span><strong>Docker Compose 사용</strong></span>
                     </label>
                   </div>
                   <label>
                     <span className="field-label-row"><strong>연결 포트</strong><small>외부에 연결할 컨테이너 내부 포트</small></span>
-                    <input name="instancePort" required type="number" min="1" max="65535" inputMode="numeric" value={challengeForm.instancePort} onChange={(event) => setChallengeForm({ ...challengeForm, instancePort: event.target.value })} />
+                    <input name="instancePort" disabled={!challengeForm.usesVm} required={challengeForm.usesVm} type="number" min="1" max="65535" inputMode="numeric" value={challengeForm.instancePort} onChange={(event) => setChallengeForm({ ...challengeForm, instancePort: event.target.value })} />
                   </label>
                 </div>
-              )}
+              </div>
 
               <label className="wide">
                 <span className="field-label-row">
@@ -702,8 +719,7 @@ export default function AdminDashboard({
                         <small>{challenge.currentPoints} / {challenge.points} PTS</small>
                         <small>{challenge.solves} SOLVES</small>
                         <small>{challenge.scoringMode}</small>
-                        {challenge.attachmentName && <small>PUBLIC {challenge.attachmentName}</small>}
-                        {challenge.usesVm && <small className={`deployment-status ${deploymentStatusCopy[challenge.deploymentStatus].tone}`}>{challenge.usesCompose ? 'COMPOSE' : 'DOCKERFILE'} · {deploymentStatusCopy[challenge.deploymentStatus].label}</small>}
+                        {challenge.usesVm && <small className={`deployment-status ${deploymentStatusCopy[challenge.deploymentStatus].tone}`}>{deploymentStatusCopy[challenge.deploymentStatus].label}</small>}
                       </div>
                     </div>
                     {challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}
