@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, username: true, email: true, isActive: true },
+    select: { id: true, username: true, email: true, role: true, isActive: true },
   });
   if (!user?.isActive) {
     return NextResponse.json({ error: '활성 계정으로 로그인해 주세요.' }, { status: 401 });
@@ -150,11 +150,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       await transaction.solve.create({
         data: { challengeId: challenge.id, userId: session.user.id, points: challenge.points },
       });
-      const updated = await transaction.challenge.update({
-        where: { id: challenge.id },
-        data: { solveCount: { increment: 1 } },
-        select: { points: true, scoringMode: true, minimumPoints: true, decaySolves: true, decrementPerSolve: true, solveCount: true },
-      });
+      const updated = user.role === 'USER'
+        ? await transaction.challenge.update({
+            where: { id: challenge.id },
+            data: { solveCount: { increment: 1 } },
+            select: { points: true, scoringMode: true, minimumPoints: true, decaySolves: true, decrementPerSolve: true, solveCount: true },
+          })
+        : challenge;
       const points = calculateChallengePoints(updated, updated.solveCount);
       await transaction.solve.updateMany({ where: { challengeId: challenge.id }, data: { points } });
       return { subId: sub.id, points, solves: updated.solveCount };

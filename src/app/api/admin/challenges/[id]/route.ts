@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, usesVm: true, usesCompose: true, instancePort: true, connectionType: true, instanceSlug: true, _count: { select: { solves: true } } } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, usesVm: true, usesCompose: true, instancePort: true, connectionType: true, instanceSlug: true, _count: { select: { solves: { where: { user: { role: 'USER' } } } } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });

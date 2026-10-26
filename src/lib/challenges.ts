@@ -64,7 +64,7 @@ export async function getChallenges(userId?: string): Promise<Challenge[]> {
         connectionUrl: true,
         category: { select: { slug: true } },
         solves: { where: { userId: userId ?? '' }, select: { id: true } },
-        _count: { select: { solves: true } },
+        _count: { select: { solves: { where: { user: { role: 'USER' } } } } },
       },
       orderBy: [{ category: { sortOrder: 'asc' } }, { points: 'asc' }, { title: 'asc' }],
     });
@@ -128,7 +128,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       connectionUrl: true,
       isVisible: true,
       category: { select: { name: true } },
-      _count: { select: { solves: true } },
+      _count: { select: { solves: { where: { user: { role: 'USER' } } } } },
     },
     orderBy: [{ category: { sortOrder: 'asc' } }, { points: 'asc' }, { title: 'asc' }],
   });
