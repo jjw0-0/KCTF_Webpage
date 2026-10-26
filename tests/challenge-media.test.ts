@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getVideoSource, safeResourceUrl } from '../src/lib/challenge-media.ts';
+import { getTcpCommand, getVideoSource, safeResourceUrl } from '../src/lib/challenge-media.ts';
 
 test('resources accept hosted and local files without executable URLs', () => {
   assert.equal(safeResourceUrl('/files/challenge.zip'), '/files/challenge.zip');
@@ -19,5 +19,14 @@ test('video links support native media and trusted embeds', () => {
   assert.deepEqual(getVideoSource('https://vimeo.com/123456'), { kind: 'embed', src: 'https://player.vimeo.com/video/123456' });
   for (const url of ['https://youtube.com.evil.example/watch?v=abcdefghijk', 'https://evil.example/embed/123', 'javascript:alert(1)', 'https://youtube.com/watch?v=invalid', 'https://example.com/notes']) {
     assert.equal(getVideoSource(url), undefined, url);
+  }
+});
+
+test('TCP addresses become safe nc commands', () => {
+  assert.equal(getTcpCommand('challenge.example.com:31337'), 'nc challenge.example.com 31337');
+  assert.equal(getTcpCommand('tcp://127.0.0.1:10008'), 'nc 127.0.0.1 10008');
+  assert.equal(getTcpCommand('nc challenge.example.com 31337'), 'nc challenge.example.com 31337');
+  for (const address of ['challenge.example.com', 'https://example.com:443', 'host:70000', 'host:1234/path', 'user@host:1234']) {
+    assert.equal(getTcpCommand(address), undefined, address);
   }
 });

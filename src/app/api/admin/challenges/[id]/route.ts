@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, usesVm: true, usesCompose: true, instancePort: true, instanceSlug: true, _count: { select: { solves: true } } } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, usesVm: true, usesCompose: true, instancePort: true, connectionType: true, instanceSlug: true, _count: { select: { solves: true } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
@@ -43,9 +43,9 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
+  const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionType, connectionUrl, ...data } = parsed.data;
   const deploymentConfigChanged = existing.usesVm && usesVm
-    && (existing.usesCompose !== usesCompose || existing.instancePort !== instancePort);
+    && (existing.usesCompose !== usesCompose || existing.instancePort !== instancePort || existing.connectionType !== connectionType);
   if (existing.instanceSlug && (existing.usesVm && !usesVm || deploymentConfigChanged)) {
     await deleteRemoteDeployment(existing.instanceSlug);
   }
@@ -59,6 +59,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           usesVm,
           usesCompose: usesVm && usesCompose,
           instancePort: usesVm ? instancePort : null,
+          connectionType,
           connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
           instanceSlug: usesVm ? (instanceSlug || existing.instanceSlug || id) : null,
           isVisible: visible,
@@ -101,6 +102,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       usesVm,
       usesCompose: usesVm && usesCompose,
       instancePort: usesVm ? instancePort : null,
+      connectionType,
       instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
       connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
       visible,

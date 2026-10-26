@@ -27,11 +27,12 @@ async function parseError(response: Response, fallback: string) {
   return typeof body.error === 'string' ? body.error : fallback;
 }
 
-export async function uploadRemoteDeployment(slug: string, file: File, entryPort: number, usesCompose: boolean) {
+export async function uploadRemoteDeployment(slug: string, file: File, entryPort: number, usesCompose: boolean, connectionType: 'HTTP' | 'TCP') {
   const form = new FormData();
   form.set('bundle', file, file.name);
   form.set('entryPort', String(entryPort));
   form.set('mode', usesCompose ? 'compose' : 'dockerfile');
+  form.set('protocol', connectionType === 'TCP' ? 'tcp' : 'http');
   const response = await fetch(`${process.env.INSTANCER_URL}/api/instancer/deployments/${encodeURIComponent(slug)}`, {
     method: 'POST',
     headers: instancerHeaders(),

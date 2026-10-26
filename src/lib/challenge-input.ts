@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { safeResourceUrl } from './challenge-media.ts';
+import { getTcpCommand, safeResourceUrl } from './challenge-media.ts';
 
 export const challengeInputSchema = z.object({
   title: z.string().trim().min(2).max(80),
@@ -23,15 +23,9 @@ export const challengeInputSchema = z.object({
   usesVm: z.boolean().default(false),
   usesCompose: z.boolean().default(false),
   instancePort: z.number().int().min(1).max(65_535).optional(),
+  connectionType: z.enum(['HTTP', 'TCP']).default('HTTP'),
   connectionUrl: z.string().trim().max(2048)
-    .refine((value) => {
-      if (!value) return true;
-      try {
-        return ['http:', 'https:'].includes(new URL(value).protocol);
-      } catch {
-        return false;
-      }
-    }, '접속 URL은 http 또는 https 주소를 입력해 주세요.').default(''),
+    .default(''),
   visible: z.boolean().default(true),
 }).superRefine((value, context) => {
   if (value.usesVm && value.connectionUrl) {
@@ -42,6 +36,20 @@ export const challengeInputSchema = z.object({
   }
   if (value.usesVm && !value.instancePort) {
     context.addIssue({ code: 'custom', path: ['instancePort'], message: 'Instance 연결 포트를 입력해 주세요.' });
+  }
+  if (!value.usesVm && value.connectionUrl) {
+    const valid = value.connectionType === 'HTTP'
+      ? Boolean(safeResourceUrl(value.connectionUrl)?.match(/^https?:\/\//))
+      : Boolean(getTcpCommand(value.connectionUrl));
+    if (!valid) {
+      context.addIssue({
+        code: 'custom',
+        path: ['connectionUrl'],
+        message: value.connectionType === 'HTTP'
+          ? 'HTTP 접속 주소는 http 또는 https URL로 입력해 주세요.'
+          : 'NC 접속 주소는 host:port 형식으로 입력해 주세요.',
+      });
+    }
   }
   if (value.scoringMode !== 'STATIC' && value.minimumPoints >= value.points) {
     context.addIssue({ code: 'custom', path: ['minimumPoints'], message: '최저 점수는 시작 점수보다 낮아야 합니다.' });

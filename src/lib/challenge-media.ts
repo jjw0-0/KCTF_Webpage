@@ -11,6 +11,21 @@ export function safeResourceUrl(value: string): string | undefined {
   }
 }
 
+export function getTcpCommand(value: string): string | undefined {
+  const raw = value.trim().replace(/^nc\s+/i, '').replace(/\s+(\d+)$/, ':$1');
+  if (!raw || /[\u0000-\u0020\\]/.test(raw)) return undefined;
+  try {
+    const parsed = new URL(raw.startsWith('tcp://') ? raw : `tcp://${raw}`);
+    if (parsed.protocol !== 'tcp:' || parsed.username || parsed.password || !parsed.hostname || !parsed.port
+      || (parsed.pathname && parsed.pathname !== '/') || parsed.search || parsed.hash) return undefined;
+    const port = Number(parsed.port);
+    if (!Number.isInteger(port) || port < 1 || port > 65_535) return undefined;
+    return `nc ${parsed.hostname.replace(/^\[|\]$/g, '')} ${port}`;
+  } catch {
+    return undefined;
+  }
+}
+
 export function getVideoSource(value: string): { kind: 'video' | 'embed'; src: string } | undefined {
   const safe = safeResourceUrl(value);
   if (!safe) return undefined;

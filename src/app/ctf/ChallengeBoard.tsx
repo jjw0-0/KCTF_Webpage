@@ -6,7 +6,7 @@ import { Category, Challenge } from '@/lib/platform-data';
 import type { CtfSchedule } from '@/lib/ctf-schedule';
 import InstanceControl from './InstanceControl';
 import ChallengeDescription from '@/components/ChallengeDescription';
-import { safeResourceUrl } from '@/lib/challenge-media';
+import { getTcpCommand, safeResourceUrl } from '@/lib/challenge-media';
 
 type ChallengeBoardProps = {
   initialCategory: string;
@@ -41,7 +41,8 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
   const closeTimerRef = useRef<number | null>(null);
   const selectedId = selected?.id;
   const selectedFileUrl = selected?.fileUrl ? safeResourceUrl(selected.fileUrl) : undefined;
-  const selectedConnectionUrl = selected?.connectionUrl ? safeResourceUrl(selected.connectionUrl) : undefined;
+  const selectedConnectionUrl = selected?.connectionType !== 'TCP' && selected?.connectionUrl ? safeResourceUrl(selected.connectionUrl) : undefined;
+  const selectedTcpCommand = selected?.connectionType === 'TCP' && selected.connectionUrl ? getTcpCommand(selected.connectionUrl) : undefined;
 
   const closeChallenge = useCallback(() => {
     if (closeTimerRef.current) return;
@@ -272,21 +273,23 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
           >
             <span className="card-beam dialog-beam" aria-hidden="true" />
             <header className="dialog-header">
-              <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
-                <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
-              </button>
+              <div className="dialog-header-actions">
+                <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
+                <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
+                  <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
+                </button>
+              </div>
               <div className="dialog-hero">
                 <div>
                   <h2 id="challenge-dialog-title">{selected.title}</h2>
                   <p className="dialog-author"><span>Author</span> {selected.author || '-'}</p>
                 </div>
-                <div className="dialog-value"><strong>{selected.points}</strong><span>POINTS</span></div>
               </div>
             </header>
             <div className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
               <ChallengeDescription content={selected.description || selected.summary} />
             </div>
-            {(selectedFileUrl || selectedConnectionUrl || selected.usesVm || selected.instanceSlug) && (
+            {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
               <div className="dialog-resources">
                 {selectedFileUrl && (
                   <a className="challenge-file" href={selectedFileUrl} target="_blank" rel="noopener noreferrer" download>
@@ -298,8 +301,14 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                     <span className="file-icon" aria-hidden="true">↗</span><span>URL<small>{selected.connectionUrl}</small></span><span aria-hidden="true">→</span>
                   </a>
                 )}
+                {!selected.usesVm && selectedTcpCommand && (
+                  <div className="challenge-file challenge-access-command">
+                    <span className="file-icon is-terminal" aria-hidden="true">NC</span>
+                    <span>NC<small><code>{selectedTcpCommand}</code></small></span>
+                  </div>
+                )}
                 {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
-                  ? <InstanceControl key={selected.id} challengeId={selected.id} enabled />
+                  ? <InstanceControl key={selected.id} challengeId={selected.id} connectionType={selected.connectionType ?? 'HTTP'} enabled />
                   : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
               </div>
             )}

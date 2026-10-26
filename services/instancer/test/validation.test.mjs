@@ -9,12 +9,13 @@ process.env.INSTANCER_DATA_DIR = await mkdtemp(path.join(tmpdir(), 'kctf-instanc
 const { inferManifest, prepareDockerfileDeployment, prepareRuntimeCompose, validateCompose, validateManifest } = await import('../src/index.mjs');
 
 test('prepares a Dockerfile deployment without a Compose build definition', () => {
-  const deployment = prepareDockerfileDeployment('simple-web', 'a'.repeat(64), 8080);
+  const deployment = prepareDockerfileDeployment('simple-web', 'a'.repeat(64), 8080, 'tcp');
   assert.equal(deployment.image, `kctf/simple-web/app:${'a'.repeat(12)}`);
   assert.equal(deployment.compose.services.app.build, undefined);
   assert.equal(deployment.compose.services.app.image, deployment.image);
   assert.equal(deployment.manifest.entryService, 'app');
   assert.equal(deployment.manifest.internalPort, 8080);
+  assert.equal(deployment.manifest.protocol, 'tcp');
 });
 
 test('infers the entry service from the single administrator-supplied port', () => {
@@ -26,10 +27,10 @@ services:
   redis:
     image: redis:7-alpine
 `, '/tmp/deployment');
-  const manifest = inferManifest(compose, '/tmp/deployment', 10008);
+  const manifest = inferManifest(compose, '/tmp/deployment', 10008, 'tcp');
   assert.equal(manifest.entryService, 'web');
   assert.equal(manifest.internalPort, 10008);
-  assert.equal(manifest.protocol, 'http');
+  assert.equal(manifest.protocol, 'tcp');
 });
 
 test('rejects a port that does not identify exactly one Compose service', () => {

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getTcpCommand } from '@/lib/challenge-media';
 
 type Instance = { challengeId: string; url: string; expiresAt: string };
 
-export default function InstanceControl({ challengeId, enabled }: { challengeId: string; enabled: boolean }) {
+export default function InstanceControl({ challengeId, connectionType, enabled }: { challengeId: string; connectionType: 'HTTP' | 'TCP'; enabled: boolean }) {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(enabled);
@@ -65,6 +66,7 @@ export default function InstanceControl({ challengeId, enabled }: { challengeId:
   };
 
   const isCurrent = instance?.challengeId === challengeId;
+  const tcpCommand = isCurrent && connectionType === 'TCP' ? getTcpCommand(instance.url) : undefined;
 
   return (
     <section className="instance-control" aria-label="Challenge Instance">
@@ -75,7 +77,9 @@ export default function InstanceControl({ challengeId, enabled }: { challengeId:
         <Link href={`/login?callbackUrl=/ctf`}>로그인 후 생성</Link>
       ) : isCurrent ? (
         <div className="instance-actions">
-          <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기 ↗</a>
+          {tcpCommand
+            ? <code className="instance-command">{tcpCommand}</code>
+            : <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기 ↗</a>}
           <button type="button" onClick={() => void destroy()} disabled={loading}>종료</button>
         </div>
       ) : (

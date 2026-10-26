@@ -25,6 +25,7 @@ export type Challenge = {
   tags: string[];
   instanceSlug?: string;
   usesVm?: boolean;
+  connectionType?: 'HTTP' | 'TCP';
   connectionUrl?: string;
 };
 

@@ -32,6 +32,7 @@ export type AdminChallenge = {
   usesVm: boolean;
   usesCompose: boolean;
   instancePort?: number;
+  connectionType: 'HTTP' | 'TCP';
   connectionUrl: string;
   visible: boolean;
   solves: number;
@@ -59,6 +60,7 @@ export async function getChallenges(userId?: string): Promise<Challenge[]> {
         instanceSlug: true,
         usesVm: true,
         deploymentStatus: true,
+        connectionType: true,
         connectionUrl: true,
         category: { select: { slug: true } },
         solves: { where: { userId: userId ?? '' }, select: { id: true } },
@@ -83,6 +85,7 @@ export async function getChallenges(userId?: string): Promise<Challenge[]> {
       tags: challenge.tags,
       instanceSlug: challenge.instanceSlug ?? undefined,
       usesVm: challenge.usesVm && challenge.deploymentStatus === 'READY',
+      connectionType: challenge.connectionType,
       connectionUrl: challenge.connectionUrl ?? undefined,
     }));
   } catch (error) {
@@ -121,6 +124,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       usesVm: true,
       usesCompose: true,
       instancePort: true,
+      connectionType: true,
       connectionUrl: true,
       isVisible: true,
       category: { select: { name: true } },
@@ -158,6 +162,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     usesVm: challenge.usesVm,
     usesCompose: challenge.usesCompose,
     instancePort: challenge.instancePort ?? undefined,
+    connectionType: challenge.connectionType,
     connectionUrl: challenge.connectionUrl ?? '',
     visible: challenge.isVisible,
     solves: challenge._count.solves,

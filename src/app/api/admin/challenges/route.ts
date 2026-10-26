@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
+  const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionType, connectionUrl, ...data } = parsed.data;
   try {
     let challenge = await prisma.challenge.create({
       data: {
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
         usesVm,
         usesCompose: usesVm && usesCompose,
         instancePort: usesVm ? instancePort : null,
+        connectionType,
         connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
         instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
         isVisible: visible,
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         usesVm: challenge.usesVm,
         usesCompose: challenge.usesCompose,
         instancePort: challenge.instancePort,
+        connectionType: challenge.connectionType,
         instanceSlug: challenge.instanceSlug,
         connectionUrl: challenge.connectionUrl,
         visible: challenge.isVisible,

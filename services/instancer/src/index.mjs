@@ -250,7 +250,7 @@ function composePortTarget(value) {
   return match ? Number(match[1]) : NaN;
 }
 
-function inferManifest(compose, sourceDir, entryPort) {
+function inferManifest(compose, sourceDir, entryPort, protocol = 'http') {
   if (!Number.isInteger(entryPort) || entryPort < 1 || entryPort > 65_535) {
     throw new Error('entryPort must be a valid TCP port');
   }
@@ -268,13 +268,13 @@ function inferManifest(compose, sourceDir, entryPort) {
     runtime: {
       composeFile: 'docker-compose.yml',
       entryService: matches[0][0],
-      protocol: 'http',
+      protocol,
       port: entryPort,
     },
   }, compose, sourceDir);
 }
 
-function prepareDockerfileDeployment(slug, hash, entryPort) {
+function prepareDockerfileDeployment(slug, hash, entryPort, protocol = 'http') {
   if (!Number.isInteger(entryPort) || entryPort < 1 || entryPort > 65_535) {
     throw new Error('entryPort must be a valid TCP port');
   }
@@ -284,7 +284,7 @@ function prepareDockerfileDeployment(slug, hash, entryPort) {
     compose: { services: { app: { image } } },
     manifest: {
       entryService: 'app',
-      protocol: 'http',
+      protocol,
       internalPort: entryPort,
       resources: { memoryMb: Math.min(256, maxMemoryMb), cpu: Math.min(0.5, maxCpu), pids: Math.min(128, maxPids) },
       composeFile: null,
@@ -693,7 +693,9 @@ app.post('/api/instancer/deployments/:slug', requireBearer, upload.single('bundl
   const sourceHash = createHash('sha256').update(request.file.buffer).digest('hex');
   const entryPort = Number(request.body?.entryPort);
   const mode = request.body?.mode;
+  const protocol = request.body?.protocol;
   if (!['compose', 'dockerfile'].includes(mode)) return response.status(400).json({ error: 'deployment mode must be compose or dockerfile' });
+  if (!['http', 'tcp'].includes(protocol)) return response.status(400).json({ error: 'deployment protocol must be http or tcp' });
   const paths = deploymentPaths(slug, sourceHash);
   try {
     await extractArchive(request.file.buffer, paths.source);
@@ -713,7 +715,8 @@ app.post('/api/instancer/deployments/:slug', requireBearer, upload.single('bundl
       compose = validateCompose(composeRaw, paths.source);
       manifest = manifestRaw
         ? validateManifest(manifestRaw, compose, paths.source)
-        : inferManifest(compose, paths.source, entryPort);
+        : inferManifest(compose, paths.source, entryPort, protocol);
+      manifest.protocol = protocol;
       manifest.serviceOverrides = {
         ...await automaticCompatibilityOverrides(compose, paths.source),
         ...manifest.serviceOverrides,
@@ -722,7 +725,7 @@ app.post('/api/instancer/deployments/:slug', requireBearer, upload.single('bundl
       await writeFile(paths.buildCompose, stringifyYaml(buildCompose), { mode: 0o600 });
     } else {
       await readFile(path.join(paths.source, 'Dockerfile'), 'utf8');
-      ({ compose, manifest, image } = prepareDockerfileDeployment(slug, sourceHash, entryPort));
+      ({ compose, manifest, image } = prepareDockerfileDeployment(slug, sourceHash, entryPort, protocol));
     }
     const record = {
       slug,

@@ -40,6 +40,11 @@ enum ChallengeScoringMode {
   LINEAR
 }
 
+enum ChallengeConnectionType {
+  HTTP
+  TCP
+}
+
 enum DeploymentStatus {
   NONE
   QUEUED
@@ -175,6 +180,7 @@ model Challenge {
   usesVm        Boolean             @default(false)
   usesCompose   Boolean             @default(false)
   instancePort  Int?
+  connectionType ChallengeConnectionType @default(HTTP)
   connectionUrl String?
   fileUrl       String?
   attachmentName String?

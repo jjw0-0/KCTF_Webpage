@@ -21,7 +21,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 async function challengeForDeployment(id: string) {
   return prisma.challenge.findFirst({
     where: { id, ctfId: ACTIVE_CTF_ID },
-    select: { id: true, title: true, usesVm: true, usesCompose: true, instanceSlug: true, instancePort: true },
+    select: { id: true, title: true, usesVm: true, usesCompose: true, instanceSlug: true, instancePort: true, connectionType: true },
   });
 }
 
@@ -102,6 +102,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       new File([bytes], file.name, { type: 'application/zip' }),
       challenge.instancePort!,
       challenge.usesCompose,
+      challenge.connectionType,
     );
     await prisma.challenge.update({
       where: { id: challenge.id },

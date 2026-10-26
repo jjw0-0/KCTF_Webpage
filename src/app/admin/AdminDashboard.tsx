@@ -24,6 +24,7 @@ type ChallengeForm = {
   usesVm: boolean;
   usesCompose: boolean;
   instancePort: string;
+  connectionType: AdminChallenge['connectionType'];
   connectionUrl: string;
 };
 
@@ -49,6 +50,7 @@ function emptyChallenge(categoryId = ''): ChallengeForm {
     usesVm: false,
     usesCompose: false,
     instancePort: '',
+    connectionType: 'HTTP',
     connectionUrl: '',
   };
 }
@@ -254,6 +256,7 @@ export default function AdminDashboard({
       usesVm: challenge.usesVm,
       usesCompose: challenge.usesCompose,
       instancePort: challenge.instancePort ? String(challenge.instancePort) : '',
+      connectionType: challenge.connectionType,
       connectionUrl: challenge.connectionUrl,
     });
     setChallengeFile(null);
@@ -329,6 +332,7 @@ export default function AdminDashboard({
       !editingChallenge.usesVm
       || editingChallenge.usesCompose !== challengeForm.usesCompose
       || String(editingChallenge.instancePort ?? '') !== challengeForm.instancePort
+      || editingChallenge.connectionType !== challengeForm.connectionType
     ));
     if (instanceConfigurationChanged && !deploymentFile) {
       setNotice('Instance 설정을 변경하려면 Deploy ZIP을 다시 선택해 주세요.', 'error');
@@ -634,9 +638,29 @@ export default function AdminDashboard({
                     </label>
                   </div>
                   <label className={challengeForm.usesVm ? 'direct-url is-disabled' : 'direct-url'}>
-                    <span className="access-sub-label">직접 접속 URL</span>
-                    <input name="connectionUrl" type="url" inputMode="url" autoComplete="url" disabled={challengeForm.usesVm} placeholder="https://challenge.example.com" value={challengeForm.connectionUrl} onChange={(event) => setChallengeForm({ ...challengeForm, connectionUrl: event.target.value })} />
+                    <span className="access-sub-label">주소로 접속</span>
+                    <input
+                      name="connectionUrl"
+                      type="text"
+                      inputMode={challengeForm.connectionType === 'HTTP' ? 'url' : 'text'}
+                      autoComplete={challengeForm.connectionType === 'HTTP' ? 'url' : 'off'}
+                      disabled={challengeForm.usesVm}
+                      placeholder={challengeForm.connectionType === 'HTTP' ? 'https://challenge.example.com' : 'challenge.example.com:31337'}
+                      value={challengeForm.connectionUrl}
+                      onChange={(event) => setChallengeForm({ ...challengeForm, connectionUrl: event.target.value })}
+                    />
                   </label>
+                  <div className="access-type-col">
+                    <span className="access-sub-label" id="connection-type-label">접속 유형</span>
+                    <div className="connection-type-options" role="radiogroup" aria-labelledby="connection-type-label">
+                      {([['HTTP', 'HTTP'], ['TCP', 'NC']] as const).map(([value, label]) => (
+                        <label key={value}>
+                          <input type="radio" name="connectionType" value={value} checked={challengeForm.connectionType === value} onChange={() => setChallengeForm({ ...challengeForm, connectionType: value })} />
+                          <span><strong>{label}</strong></span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </fieldset>
 
