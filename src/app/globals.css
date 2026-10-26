@@ -845,17 +845,19 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .description-preview { border: 1px solid #aaffda20; border-radius: 6px; padding: 16px; }
 .description-preview summary { cursor: pointer; color: #9cceb8; font-size: 12px; }
 .description-preview .challenge-description { margin-top: 20px; }
-.challenge-file { display: flex; align-items: center; gap: 16px; margin-top: 8px; border: 1px solid #aaffda23; border-radius: 6px; padding: 16px 20px; background: #ffffff03; color: #d7e7dd; font-size: 13px; transition: border-color .2s, background .2s; }
+.dialog-resources { display: flex; flex-shrink: 0; flex-direction: column; gap: 8px; border-top: 1px solid #aaffda18; padding: 12px 40px; background: #09110d; }
+.challenge-file { display: flex; min-height: 48px; align-items: center; gap: 12px; border: 1px solid #aaffda23; border-radius: 6px; padding: 8px 14px; background: #ffffff03; color: #d7e7dd; font-size: 12px; transition: border-color .2s, background .2s; }
 .challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
+.challenge-file > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .challenge-file > :last-child { margin-left: auto; color: #81bba2; }
-.challenge-file small { display: block; margin-top: 3px; color: #80968b; font-size: 11px; }
+.challenge-file small { display: block; margin-top: 1px; color: #80968b; font-size: 10px; }
 .challenge-access-link small { max-width: min(56vw, 440px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-icon { display: grid; place-items: center; width: 34px; height: 36px; border: 1px solid #4de0a738; border-radius: 4px; background: #4de0a709; color: #7ae3b5; font-size: 22px; }
-.instance-control { display: flex; min-height: 70px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; border: 1px solid #aaffda23; border-radius: 6px; padding: 16px 20px; background: #ffffff03; }
+.file-icon { display: grid; place-items: center; width: 29px; height: 30px; border: 1px solid #4de0a738; border-radius: 4px; background: #4de0a709; color: #7ae3b5; font-size: 18px; }
+.instance-control { display: flex; min-height: 52px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #aaffda23; border-radius: 6px; padding: 9px 14px; background: #ffffff03; }
 .instance-control > div:first-child { display: flex; flex-direction: column; gap: 4px; }
 .instance-control span { color: #c0d2c8; font: 500 11px var(--font-mono), monospace; letter-spacing: .1em; }
 .instance-control small { color: #83988d; font: 10px var(--font-mono), monospace; }
-.instance-control > button, .instance-control > a, .instance-actions a { border: 1px solid #4de0a74d; border-radius: 4px; padding: 10px 15px; background: #4de0a711; color: #8bf0c4; font: 600 11px var(--font-mono), monospace; }
+.instance-control > button, .instance-control > a, .instance-actions a { border: 1px solid #4de0a74d; border-radius: 4px; padding: 8px 12px; background: #4de0a711; color: #8bf0c4; font: 600 11px var(--font-mono), monospace; }
 .instance-control button:disabled { cursor: wait; opacity: .55; }
 .instance-actions { display: flex; align-items: center; gap: 12px; }
 .instance-actions button { color: #a5b7ad; font: 11px var(--font-mono), monospace; }
@@ -863,11 +865,11 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .instance-control.vm-pending { display: block; }
 .instance-control.vm-pending strong { color: #a8b7af; font-size: 12px; font-weight: 600; }
 .instance-control.vm-pending p { margin-top: 5px; color: #718078; }
-.flag-form { flex-shrink: 0; margin: 0; border-top: 1px solid #aaffda20; padding: 24px 40px 30px; background: #0c1511; }
-.flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.flag-form { flex-shrink: 0; margin: 0; border-top: 1px solid #aaffda20; padding: 18px 40px 22px; background: #0c1511; }
+.flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
 .flag-form label { display: block; margin: 0; font-size: 11px; letter-spacing: .05em; color: #9bb1a4; }
 .flag-status-badge { display: inline-flex; align-items: center; gap: 7px; color: #92a39a; font: 500 11px var(--font-mono), monospace; }
-.flag-status-badge::before { width: 6px; height: 6px; content: ""; background: currentColor; transform: rotate(45deg); }
+.flag-status-badge svg { width: 14px; height: 14px; fill: none; stroke: currentcolor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
 .flag-status-badge.is-correct { color: #63d9a4; }
 .flag-status-badge.is-duplicate { color: #d9b96f; }
 .flag-status-badge.is-wrong, .flag-status-badge.is-error { color: #e88186; }
@@ -1044,7 +1046,8 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   .dialog-hero { gap: 14px; }
   .dialog-value { padding-left: 14px; }
   .dialog-body { padding: 24px 20px; }
-  .flag-form { padding: 16px 20px max(18px, env(safe-area-inset-bottom)); }
+  .dialog-resources { padding: 10px 20px; }
+  .flag-form { padding: 14px 20px max(16px, env(safe-area-inset-bottom)); }
   .flag-form input { font-size: 16px; padding: 12px; }
   .flag-form button { min-width: 76px; padding-inline: 12px; }
 }

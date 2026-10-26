@@ -40,6 +40,8 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
   const transitionSourceRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const selectedId = selected?.id;
+  const selectedFileUrl = selected?.fileUrl ? safeResourceUrl(selected.fileUrl) : undefined;
+  const selectedConnectionUrl = selected?.connectionUrl ? safeResourceUrl(selected.connectionUrl) : undefined;
 
   const closeChallenge = useCallback(() => {
     if (closeTimerRef.current) return;
@@ -283,25 +285,36 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
             </header>
             <div className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
               <ChallengeDescription content={selected.description || selected.summary} />
-              {selected.fileUrl && safeResourceUrl(selected.fileUrl) && (
-                <a className="challenge-file" href={safeResourceUrl(selected.fileUrl)} target="_blank" rel="noopener noreferrer" download>
-                  <span className="file-icon" aria-hidden="true">↓</span><span>문제 파일<small>첨부파일 다운로드</small></span><span aria-hidden="true">↗</span>
-                </a>
-              )}
-              {!selected.usesVm && selected.connectionUrl && safeResourceUrl(selected.connectionUrl) && (
-                <a className="challenge-file challenge-access-link" href={safeResourceUrl(selected.connectionUrl)} target="_blank" rel="noopener noreferrer">
-                  <span className="file-icon" aria-hidden="true">↗</span><span>접속 주소<small>{selected.connectionUrl}</small></span><span aria-hidden="true">→</span>
-                </a>
-              )}
-              {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
-                ? <InstanceControl key={selected.id} challengeId={selected.id} enabled />
-                : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
             </div>
+            {(selectedFileUrl || selectedConnectionUrl || selected.usesVm || selected.instanceSlug) && (
+              <div className="dialog-resources">
+                {selectedFileUrl && (
+                  <a className="challenge-file" href={selectedFileUrl} target="_blank" rel="noopener noreferrer" download>
+                    <span className="file-icon" aria-hidden="true">↓</span><span>{selected.attachmentName || '문제 파일'}<small>첨부파일 다운로드</small></span><span aria-hidden="true">↗</span>
+                  </a>
+                )}
+                {!selected.usesVm && selectedConnectionUrl && (
+                  <a className="challenge-file challenge-access-link" href={selectedConnectionUrl} target="_blank" rel="noopener noreferrer">
+                    <span className="file-icon" aria-hidden="true">↗</span><span>URL<small>{selected.connectionUrl}</small></span><span aria-hidden="true">→</span>
+                  </a>
+                )}
+                {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
+                  ? <InstanceControl key={selected.id} challengeId={selected.id} enabled />
+                  : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
+              </div>
+            )}
             <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
               <div className="flag-form-head">
                 <label htmlFor="flag-input">플래그 제출</label>
                 {isAuthenticated && submission.message && (
                   <span className={`flag-status-badge is-${submission.state}`} role="status">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      {submission.state === 'correct'
+                        ? <path d="m3 8.2 3.1 3.1L13 4.5" />
+                        : submission.state === 'duplicate'
+                          ? <><path d="M8 2.1 14 13H2L8 2.1Z" /><path d="M8 5.7v3.5M8 11.4v.1" /></>
+                          : <path d="m4 4 8 8m0-8-8 8" />}
+                    </svg>
                     {submission.message}
                   </span>
                 )}

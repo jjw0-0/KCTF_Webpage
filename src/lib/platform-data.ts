@@ -16,6 +16,7 @@ export type Challenge = {
   description?: string;
   author?: string;
   fileUrl?: string;
+  attachmentName?: string;
   category: string;
   points: number;
   solves: number;
