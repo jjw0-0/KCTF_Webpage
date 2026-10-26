@@ -1,10 +1,8 @@
 import 'dotenv/config';
-import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
-import { digestFlag } from '../src/lib/flags';
-import { challenges, defaultCategories } from '../src/lib/platform-data';
+import { defaultCategories } from '../src/lib/platform-data';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is required to seed KCTF.');
@@ -45,28 +43,6 @@ async function main() {
         },
       });
     }
-
-    for (const challenge of challenges) {
-      const category = defaultCategories.find((item) => item.slug === challenge.category);
-      if (!category) throw new Error(`Unknown category for challenge ${challenge.id}.`);
-      await prisma.challenge.create({
-        data: {
-          id: challenge.id,
-          ctfId: 'kctf-2026',
-          categoryId: category.id,
-          title: challenge.title,
-          summary: challenge.summary,
-          description: challenge.summary,
-          points: challenge.points,
-          difficulty: challenge.difficulty,
-          tags: challenge.tags,
-          flagHash: digestFlag(randomBytes(32).toString('base64url')),
-          instanceSlug: challenge.instanceSlug,
-          usesVm: Boolean(challenge.instanceSlug),
-          isVisible: true,
-        },
-      });
-    }
   }
 
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
@@ -91,7 +67,7 @@ async function main() {
   }
 
   console.log(bootstrapDefaults
-    ? `Bootstrapped KCTF 2026 with ${defaultCategories.length} categories and ${challenges.length} challenges.`
+    ? `Bootstrapped KCTF 2026 with ${defaultCategories.length} categories and an empty challenge catalog.`
     : 'KCTF 2026 already exists; preserved administrator-managed categories and challenges.');
 }
 

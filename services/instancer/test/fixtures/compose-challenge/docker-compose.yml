@@ -1,0 +1,14 @@
+services:
+  web:
+    build: ./web
+    depends_on:
+      - helper
+    expose:
+      - "8080"
+    ports:
+      - "9999:8080"
+    volumes:
+      - ./message.txt:/app/message.txt:ro
+  helper:
+    image: alpine:3.22
+    command: ["sh", "-c", "sleep infinity"]

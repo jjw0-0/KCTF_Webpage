@@ -34,6 +34,10 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - FLAG_SECRET=${NEXTAUTH_SECRET}
+      - INSTANCE_FLAG_SECRET=${INSTANCE_FLAG_SECRET}
+      - INSTANCER_URL=http://instancer:7000
+      - INSTANCER_TOKEN=${KCTF_INSTANCER_TOKEN}
     volumes:
       - .:/app
       - /app/node_modules
@@ -44,9 +48,34 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      instancer:
+        condition: service_healthy
     networks:
       - kctf-network
     command: npm run dev
+
+  instancer:
+    build:
+      context: ./services/instancer
+    restart: unless-stopped
+    environment:
+      INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN}
+      INSTANCER_PUBLIC_HOST: ${INSTANCER_PUBLIC_HOST:-127.0.0.1}
+      INSTANCER_DATA_DIR: /var/lib/kctf-instancer
+      INSTANCER_TTL_MS: ${INSTANCER_TTL_MS:-3600000}
+      INSTANCER_PORT_MIN: ${INSTANCER_PORT_MIN:-10000}
+      INSTANCER_PORT_MAX: ${INSTANCER_PORT_MAX:-19999}
+      INSTANCER_INSTALL_AMD64_EMULATION: ${INSTANCER_INSTALL_AMD64_EMULATION:-true}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/kctf-instancer:/var/lib/kctf-instancer
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:7000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - kctf-network
 
 volumes:
   postgres-data:

@@ -5,7 +5,7 @@ import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getCtfAccess } from '@/lib/ctf-access';
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
-import { matchesFlag } from '@/lib/flags';
+import { digestFlag, matchesFlag, matchesInstanceFlag } from '@/lib/flags';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       request,
       statusCode: 400,
       message: `잘못된 플래그 제출 형식: ${actor} (challengeId=${id})`,
-      params: { challengeId: id, rawBody },
+      params: { challengeId: id, reason: parsed.success ? 'invalid_flag' : parsed.error.issues[0]?.code },
     });
     return NextResponse.json({ error: '플래그를 확인해 주세요.' }, { status: 400 });
   }
@@ -101,19 +101,23 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       decaySolves: true,
       decrementPerSolve: true,
       flagHash: true,
+      usesVm: true,
+      dynamicFlag: true,
       solveCount: true,
     },
   });
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
 
   const submittedFlag = parsed.data.flag.trim();
-  const correct = matchesFlag(submittedFlag, challenge.flagHash);
+  const correct = challenge.usesVm && challenge.dynamicFlag
+    ? matchesInstanceFlag(submittedFlag, challenge.id, user.id)
+    : matchesFlag(submittedFlag, challenge.flagHash);
   if (!correct) {
     const sub = await prisma.submission.create({
       data: {
         challengeId: challenge.id,
         userId: session.user.id,
-        flagDigest: submittedFlag,
+        flagDigest: digestFlag(submittedFlag),
         isCorrect: false,
       },
     });
@@ -131,7 +135,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         submissionId: sub.id,
         challengeId: challenge.id,
         challengeTitle: challenge.title,
-        flag: submittedFlag,
         isCorrect: false,
       },
     });
@@ -144,7 +147,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         data: {
           challengeId: challenge.id,
           userId: session.user.id,
-          flagDigest: submittedFlag,
+          flagDigest: digestFlag(submittedFlag),
           isCorrect: true,
         },
       });
@@ -175,7 +178,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         submissionId: result.subId,
         challengeId: challenge.id,
         challengeTitle: challenge.title,
-        flag: submittedFlag,
         isCorrect: true,
         points: result.points,
         totalSolves: result.solves,
@@ -201,7 +203,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         params: {
           challengeId: challenge.id,
           challengeTitle: challenge.title,
-          flag: submittedFlag,
           alreadySolved: true,
         },
       });

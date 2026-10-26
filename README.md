@@ -13,9 +13,9 @@ KCTF 플랫폼으로, 공정하고 효율적인 대회 운영을 지원합니다
 
 ## Prerequisites
 
-- Docker and Docker Compose
-- Node.js 22+
-- npm
+- Docker Engine and Docker Compose v2
+- A domain whose A/AAAA record points to the server (production)
+- Node.js 22+ and npm (local development only)
 
 ## Installation and running
 
@@ -29,7 +29,8 @@ docker compose up --build
 ```
 
 Update the values in `.env` before starting, then open
-`http://localhost:3000`. To run Next.js directly while keeping PostgreSQL in
+`http://localhost:3000`. The stack includes PostgreSQL and the Compose
+instancer, so the Docker socket must be available on the host. To run Next.js directly while keeping PostgreSQL in
 Docker:
 
 ```bash
@@ -82,26 +83,97 @@ CI/CD는 추후 추가 예정입니다.
 
 ## Production deployment
 
-The production app listens on host loopback port `3020`; Caddy terminates TLS
-for `ctf.jjw0-0.kr`. The deploy script applies migrations, seeds defaults, and
-passes the existing `jjw-instancer` token without writing it to disk.
+A new server can be initialized with one command. Point DNS at the server first,
+then allow inbound TCP 80, 443, and 10000-19999 (plus UDP 443):
+
+```bash
+git clone git@github.com:jjw0-0/KCTF_Webpage.git
+cd KCTF_Webpage
+./scripts/install.sh ctf.example.com
+```
+
+The installer generates secrets in the ignored, owner-readable
+`.env.prod.local`, creates an initial administrator, applies migrations, starts
+the bundled Caddy proxy, and launches an empty challenge catalog. It prints the
+initial administrator password once. No existing database or challenge data is
+required. On ARM64 hosts the instancer registers amd64 emulation at startup so
+x86-only challenge images can be built and run. This narrowly scoped setup uses
+a pinned privileged `binfmt` helper container; challenge containers themselves
+remain unprivileged.
+
+If the server already has a reverse proxy, copy `.env.example` to
+`.env.prod.local`, set its production values, and use the deployment script.
+The app listens on host loopback port `3020` in this mode:
 
 ```bash
 ./scripts/deploy-prod.sh
 ```
 
 Required variables are `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and
-`NEXTAUTH_SECRET`. Keep them in `.env.prod.local`, which is excluded by the
-repository's `.env*.local` ignore rule.
+`NEXTAUTH_SECRET`, `INSTANCE_FLAG_SECRET`, `KCTF_INSTANCER_TOKEN`, `DOMAIN`, and
+`INSTANCER_PUBLIC_HOST`. Keep them in `.env.prod.local`, which is excluded by
+the repository's `.env*.local` ignore rule.
 
 To bootstrap an administrator, run the seed command with `ADMIN_EMAIL`,
 `ADMIN_USERNAME`, and a 14+ character `ADMIN_INITIAL_PASSWORD` in the migration
 container environment.
 
-The seed creates sample challenge cards with unguessable placeholder flags. Set
-the real flag, points, visibility, category, and optional instancer slug from the
-administrator's **Challenges** screen before the event. Flags are stored as keyed
-digests and are never returned by the API.
+The seed creates categories but no sample problems. Create problems from the
+administrator's **Challenges** screen. Static flags are stored as keyed digests
+and are never returned by the API.
+
+## Compose challenge instances
+
+The administrator can attach two separate ZIP files to a problem:
+
+- **풀이자 제공 ZIP**: optional download shown in the participant problem modal.
+- **VM 배포 ZIP**: shown only when **VM 사용** is enabled; kept private and built
+  by the instancer.
+
+The deployment ZIP only needs the existing `docker-compose.yml` and its build
+files. In the administrator form, enter the problem name, flag, and the one
+internal TCP port participants should reach. The instancer finds the single
+Compose service that declares that port and generates its private runtime
+manifest automatically; challenge authors do not write `challenge.yaml`.
+
+```yaml
+# docker-compose.yml
+services:
+  web:
+    build: ./web
+    depends_on: [db]
+  db:
+    image: postgres:16-alpine
+    volumes: [data:/var/lib/postgresql/data]
+volumes:
+  data: {}
+```
+
+VM problems use the flag entered in the administrator form by default, so an
+existing Compose bundle and its original flag file can run unchanged. Legacy
+amd64 Redis 5.0.7 images receive an ARM64 runtime compatibility adjustment
+automatically without changing the uploaded source. Enable
+**플레이어별 동적 플래그** only when each instance should receive a generated
+flag through the entry service's `FLAG` environment variable. Compose may use
+multiple services, images, build contexts, networks, named
+volumes, and project-relative read-only bind mounts. Declared published ports
+are ignored because the instancer exposes only the manifest entry port. Absolute
+host paths, privileged mode, Docker sockets, host
+namespaces, device access, capability additions, external networks/volumes,
+scaling, and user-defined resource overrides are rejected. The instancer owns
+the public port and applies CPU, memory, PID, dropped-capability, and
+`no-new-privileges` limits. Every challenge network is forced to be internal;
+a small read-only gateway container accepts the public port and forwards only
+to the selected entry service, so compromised challenge containers cannot use
+the gateway for general Internet, host, or cross-instance access.
+
+Each player may run one instance across the entire platform. Starting another
+problem replaces their current instance; any number of different players may
+run the same problem. Instances expire after `INSTANCER_TTL_MS` and there is no
+platform-wide instance count limit. Capacity is therefore bounded only by the
+host, so production operators should monitor Docker and choose conservative
+per-instance limits. Build metadata and uploaded deployment sources live in
+`/var/lib/kctf-instancer` on the Docker host.
 
 ## Challenge content
 

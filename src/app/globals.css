@@ -533,6 +533,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .challenge-admin-table article { display: flex; min-height: 92px; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid rgba(170,255,218,.08); padding: 17px 28px; }
 .challenge-admin-table article > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
 .challenge-admin-table article span, .challenge-admin-table article small { color: #748179; font: 10px var(--font-mono), monospace; letter-spacing: .08em; }
+.challenge-admin-table article small.deployment-error { max-width: 720px; overflow: hidden; color: #ff989c; text-overflow: ellipsis; white-space: nowrap; }
 .challenge-admin-table article strong { overflow: hidden; color: #e4eae7; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .challenge-admin-table article > div:last-child { display: flex; gap: 16px; }
 .challenge-admin-table button { min-height: 36px; border: 1px solid rgba(77,224,167,.18); border-radius: 4px; padding: 0 10px; background: rgba(77,224,167,.035); color: var(--green); font: 10px var(--font-mono), monospace; letter-spacing: .04em; }

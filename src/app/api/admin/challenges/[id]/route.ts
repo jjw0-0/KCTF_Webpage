@@ -7,7 +7,7 @@ import { challengeInputSchema, deriveChallengeSummary } from '@/lib/challenge-in
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
 import { getAdminChallenges } from '@/lib/challenges';
 import { digestFlag } from '@/lib/flags';
-import { destroyRemoteInstance } from '@/lib/instancer';
+import { deleteRemoteDeployment, destroyRemoteInstance } from '@/lib/instancer';
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -29,11 +29,17 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, _count: { select: { solves: true } } } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, usesVm: true, dynamicFlag: true, instanceSlug: true, _count: { select: { solves: true } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? '입력값을 확인해 주세요.' }, { status: 400 });
+  if (existing.usesVm && !parsed.data.usesVm && !parsed.data.flag) {
+    return NextResponse.json({ error: '일반 문제로 변경할 때는 플래그를 입력해 주세요.' }, { status: 400 });
+  }
+  if (parsed.data.usesVm && !parsed.data.dynamicFlag && existing.dynamicFlag && !parsed.data.flag) {
+    return NextResponse.json({ error: '고정 플래그로 변경할 때는 원본 플래그를 입력해 주세요.' }, { status: 400 });
+  }
 
   const category = await prisma.category.findFirst({
     where: { id: parsed.data.categoryId, ctfId: ACTIVE_CTF_ID },
@@ -41,7 +47,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, usesVm, connectionUrl, ...data } = parsed.data;
+  const { flag, visible, instanceSlug, usesVm, dynamicFlag, instancePort, connectionUrl, ...data } = parsed.data;
+  if (existing.usesVm && !usesVm && existing.instanceSlug) {
+    await deleteRemoteDeployment(existing.instanceSlug);
+  }
   try {
     await prisma.$transaction(async (transaction) => {
       const challenge = await transaction.challenge.update({
@@ -50,9 +59,12 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           ...data,
           summary: data.summary || deriveChallengeSummary(data.description),
           usesVm,
+          dynamicFlag: usesVm && dynamicFlag,
+          instancePort: usesVm ? instancePort : null,
           connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
-          instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
+          instanceSlug: usesVm ? (instanceSlug || existing.instanceSlug || id) : null,
           isVisible: visible,
+          ...(!usesVm ? { deploymentStatus: 'NONE' as const, deploymentError: null, deploymentUpdatedAt: null } : {}),
           solveCount: existing._count.solves,
           ...(flag ? { flagHash: digestFlag(flag) } : {}),
         },
@@ -87,6 +99,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       points: data.points,
       scoringMode: data.scoringMode,
       usesVm,
+      dynamicFlag: usesVm && dynamicFlag,
+      instancePort: usesVm ? instancePort : null,
       instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
       connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
       visible,
@@ -124,6 +138,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const activeInstances = await prisma.challengeInstance.findMany({ where: { challengeId: id }, select: { token: true } });
   try {
     await Promise.all(activeInstances.map((instance) => destroyRemoteInstance(instance.token)));
+    if (challenge.instanceSlug) await deleteRemoteDeployment(challenge.instanceSlug);
   } catch (error) {
     console.error('Failed to destroy challenge instances before deletion.', error);
     return NextResponse.json({ error: '실행 중인 VM을 종료하지 못해 문제를 삭제하지 않았습니다.' }, { status: 502 });

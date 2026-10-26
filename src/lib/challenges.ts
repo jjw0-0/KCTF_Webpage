@@ -12,6 +12,9 @@ export type AdminChallenge = {
   fileUrl: string;
   attachmentName: string;
   attachmentSize: number;
+  deploymentStatus: 'NONE' | 'QUEUED' | 'BUILDING' | 'READY' | 'FAILED';
+  deploymentError: string;
+  deploymentUpdatedAt?: string;
   categoryId: string;
   category: string;
   points: number;
@@ -24,6 +27,8 @@ export type AdminChallenge = {
   tags: string[];
   instanceSlug: string;
   usesVm: boolean;
+  dynamicFlag: boolean;
+  instancePort?: number;
   connectionUrl: string;
   visible: boolean;
   solves: number;
@@ -49,6 +54,7 @@ export async function getChallenges(userId?: string): Promise<Challenge[]> {
         tags: true,
         instanceSlug: true,
         usesVm: true,
+        deploymentStatus: true,
         connectionUrl: true,
         category: { select: { slug: true } },
         solves: { where: { userId: userId ?? '' }, select: { id: true } },
@@ -71,7 +77,7 @@ export async function getChallenges(userId?: string): Promise<Challenge[]> {
       solved: challenge.solves.length > 0,
       tags: challenge.tags,
       instanceSlug: challenge.instanceSlug ?? undefined,
-      usesVm: challenge.usesVm,
+      usesVm: challenge.usesVm && challenge.deploymentStatus === 'READY',
       connectionUrl: challenge.connectionUrl ?? undefined,
     }));
   } catch (error) {
@@ -92,6 +98,9 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       fileUrl: true,
       attachmentName: true,
       attachmentSize: true,
+      deploymentStatus: true,
+      deploymentError: true,
+      deploymentUpdatedAt: true,
       categoryId: true,
       points: true,
       scoringMode: true,
@@ -102,6 +111,8 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       tags: true,
       instanceSlug: true,
       usesVm: true,
+      dynamicFlag: true,
+      instancePort: true,
       connectionUrl: true,
       isVisible: true,
       category: { select: { name: true } },
@@ -119,6 +130,9 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     fileUrl: challenge.fileUrl ?? '',
     attachmentName: challenge.attachmentName ?? '',
     attachmentSize: challenge.attachmentSize ?? 0,
+    deploymentStatus: challenge.deploymentStatus,
+    deploymentError: challenge.deploymentError ?? '',
+    deploymentUpdatedAt: challenge.deploymentUpdatedAt?.toISOString(),
     categoryId: challenge.categoryId,
     category: challenge.category.name,
     points: challenge.points,
@@ -131,6 +145,8 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     tags: challenge.tags,
     instanceSlug: challenge.instanceSlug ?? '',
     usesVm: challenge.usesVm,
+    dynamicFlag: challenge.dynamicFlag,
+    instancePort: challenge.instancePort ?? undefined,
     connectionUrl: challenge.connectionUrl ?? '',
     visible: challenge.isVisible,
     solves: challenge._count.solves,

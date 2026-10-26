@@ -5,7 +5,7 @@ import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getAdminChallenges } from '@/lib/challenges';
 import { prisma } from '@/lib/prisma';
-import { MAX_CHALLENGE_FILE_BYTES, readBoundedFormData, safeDownloadName } from '@/lib/uploads';
+import { isZipArchive, MAX_CHALLENGE_FILE_BYTES, readBoundedFormData, safeDownloadName } from '@/lib/uploads';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -26,14 +26,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (file.size > MAX_CHALLENGE_FILE_BYTES) return NextResponse.json({ error: '문제 파일은 10MB 이하여야 합니다.' }, { status: 413 });
 
   const name = safeDownloadName(file.name);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!isZipArchive(bytes, name)) return NextResponse.json({ error: '풀이자 제공 파일은 ZIP 형식이어야 합니다.' }, { status: 400 });
   await prisma.challenge.update({
     where: { id },
     data: {
       fileUrl: `/api/challenges/${encodeURIComponent(id)}/file`,
       attachmentName: name,
-      attachmentMimeType: file.type || 'application/octet-stream',
+      attachmentMimeType: 'application/zip',
       attachmentSize: file.size,
-      attachmentData: new Uint8Array(await file.arrayBuffer()),
+      attachmentData: bytes,
     },
   });
 
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       challengeId: challenge.id,
       challengeTitle: challenge.title,
       fileName: name,
-      mimeType: file.type || 'application/octet-stream',
+      mimeType: 'application/zip',
       fileSize: file.size,
     },
   });

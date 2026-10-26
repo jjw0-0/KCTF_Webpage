@@ -50,9 +50,12 @@ test('dynamic scoring configuration keeps its floor below the initial score', ()
 });
 
 test('VM and direct URL access modes are mutually exclusive', () => {
-  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, connectionUrl: '' }).success, true);
+  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, instancePort: 8080, connectionUrl: '' }).success, true);
+  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, instancePort: 8080, dynamicFlag: true, connectionUrl: '' }).success, true);
+  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, connectionUrl: '' }).success, false);
+  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: false, dynamicFlag: true, connectionUrl: '' }).success, false);
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: false, connectionUrl: 'https://challenge.example.com' }).success, true);
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: false, connectionUrl: '' }).success, true);
-  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, connectionUrl: 'https://challenge.example.com' }).success, false);
+  assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, instancePort: 8080, connectionUrl: 'https://challenge.example.com' }).success, false);
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, connectionUrl: 'javascript:alert(1)' }).success, false);
 });

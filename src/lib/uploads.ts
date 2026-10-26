@@ -1,5 +1,6 @@
 export const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 export const MAX_CHALLENGE_FILE_BYTES = 10 * 1024 * 1024;
+export const MAX_DEPLOYMENT_FILE_BYTES = 50 * 1024 * 1024;
 
 const AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -22,6 +23,15 @@ export function decodeAvatarDataUrl(value: string) {
 export function safeDownloadName(name: string) {
   const cleaned = name.replace(/[\r\n\\/\0]/g, '_').trim();
   return cleaned.slice(0, 180) || 'challenge-file';
+}
+
+export function isZipArchive(bytes: Uint8Array, name: string) {
+  const signature = bytes.length >= 4
+    && bytes[0] === 0x50
+    && bytes[1] === 0x4b
+    && [0x03, 0x05, 0x07].includes(bytes[2])
+    && [0x04, 0x06, 0x08].includes(bytes[3]);
+  return signature && name.toLowerCase().endsWith('.zip');
 }
 
 export async function readBoundedFormData(

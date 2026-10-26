@@ -1,0 +1,16 @@
+version: 1
+runtime:
+  type: compose
+  composeFile: docker-compose.yml
+  entryService: web
+  protocol: http
+  port: 8080
+flagTargets:
+  - service: web
+    mode: env
+    name: FLAG
+resources:
+  defaults:
+    memoryMb: 128
+    cpu: 0.25
+    pids: 64

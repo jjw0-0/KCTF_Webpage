@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getCtfAccess } from '@/lib/ctf-access';
+import { deriveInstanceFlag } from '@/lib/flags';
 import { createRemoteInstance, destroyRemoteInstance } from '@/lib/instancer';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
@@ -138,8 +139,9 @@ export async function POST(request: NextRequest) {
       isVisible: true,
       usesVm: true,
       instanceSlug: { not: null },
+      deploymentStatus: 'READY',
     },
-    select: { id: true, title: true, instanceSlug: true },
+    select: { id: true, title: true, instanceSlug: true, dynamicFlag: true },
   });
   if (!challenge?.instanceSlug) {
     recordServerLog({
@@ -157,7 +159,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const remote = await createRemoteInstance(challenge.instanceSlug, user.instancerId);
+    const remote = await createRemoteInstance(
+      challenge.instanceSlug,
+      user.instancerId,
+      challenge.dynamicFlag ? deriveInstanceFlag(challenge.id, user.id) : undefined,
+    );
     const expiresAt = new Date(remote.expires_at);
     const instance = await prisma.challengeInstance.upsert({
       where: { userId: user.id },

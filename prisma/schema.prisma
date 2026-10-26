@@ -40,6 +40,14 @@ enum ChallengeScoringMode {
   LINEAR
 }
 
+enum DeploymentStatus {
+  NONE
+  QUEUED
+  BUILDING
+  READY
+  FAILED
+}
+
 model User {
   id            String   @id @default(cuid())
   instancerId   Int      @unique @default(autoincrement())
@@ -165,12 +173,17 @@ model Challenge {
   flagHash      String
   instanceSlug  String?             @unique
   usesVm        Boolean             @default(false)
+  dynamicFlag   Boolean             @default(false)
+  instancePort  Int?
   connectionUrl String?
   fileUrl       String?
   attachmentName String?
   attachmentMimeType String?
   attachmentSize Int?
   attachmentData Bytes?
+  deploymentStatus DeploymentStatus @default(NONE)
+  deploymentError String?
+  deploymentUpdatedAt DateTime?
   author        String?
   hints         String?
   isVisible     Boolean             @default(false)

@@ -9,8 +9,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - kctf-postgres-data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
@@ -30,22 +28,26 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB}
-      NEXTAUTH_URL: https://ctf.jjw0-0.kr
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NEXTAUTH_URL: https://${DOMAIN:-ctf.jjw0-0.kr}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_TRUST_HOST: "true"
-      INSTANCER_URL: http://127.0.0.1:7000
+      INSTANCER_URL: http://instancer:7000
       INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN:-}
       FLAG_SECRET: ${NEXTAUTH_SECRET}
-      PORT: ${KCTF_HOST_PORT:-3020}
-      HOSTNAME: 127.0.0.1
-    network_mode: host
+      INSTANCE_FLAG_SECRET: ${INSTANCE_FLAG_SECRET}
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "127.0.0.1:${KCTF_HOST_PORT:-3020}:3000"
     depends_on:
       postgres:
         condition: service_healthy
+      instancer:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3020/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -54,6 +56,58 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    networks:
+      - kctf-internal
+
+  instancer:
+    build:
+      context: ./services/instancer
+    restart: unless-stopped
+    environment:
+      INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN}
+      INSTANCER_PUBLIC_HOST: ${INSTANCER_PUBLIC_HOST:-ctf.jjw0-0.kr}
+      INSTANCER_DATA_DIR: /var/lib/kctf-instancer
+      INSTANCER_TTL_MS: ${INSTANCER_TTL_MS:-3600000}
+      INSTANCER_PORT_MIN: ${INSTANCER_PORT_MIN:-10000}
+      INSTANCER_PORT_MAX: ${INSTANCER_PORT_MAX:-19999}
+      INSTANCER_MAX_MEMORY_MB: ${INSTANCER_MAX_MEMORY_MB:-1024}
+      INSTANCER_MAX_CPU: ${INSTANCER_MAX_CPU:-2}
+      INSTANCER_MAX_PIDS: ${INSTANCER_MAX_PIDS:-256}
+      INSTANCER_INSTALL_AMD64_EMULATION: ${INSTANCER_INSTALL_AMD64_EMULATION:-true}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/kctf-instancer:/var/lib/kctf-instancer
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:7000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - kctf-internal
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["bundled-proxy"]
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-ctf.jjw0-0.kr}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./nginx/Caddyfile.portable:/etc/caddy/Caddyfile:ro
+      - kctf-caddy-data:/data
+      - kctf-caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - kctf-internal
 
   migrate:
     build:
@@ -64,6 +118,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       FLAG_SECRET: ${NEXTAUTH_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
     command: ["npx", "prisma", "migrate", "deploy"]
     depends_on:
       postgres:
@@ -75,6 +132,8 @@ services:
 
 volumes:
   kctf-postgres-data:
+  kctf-caddy-data:
+  kctf-caddy-config:
 
 networks:
   kctf-internal:
