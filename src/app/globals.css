@@ -425,7 +425,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .admin-heading > div > p:last-child { color: #78867f; font-size: 13px; }
 
 .admin-panel, .load-panel { overflow: hidden; border-block: 1px solid var(--line); background: rgba(4,12,8,.32); }
-.challenge-admin-panel { scroll-margin-top: 24px; }
+.challenge-admin-panel { scroll-margin-top: 116px; }
 .admin-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); padding: 25px 28px; }
 .admin-kicker { font: 10px var(--font-mono), monospace; letter-spacing: .15em; color: #6d7a73; }
 .admin-panel-heading h3, .load-panel h3 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.03em; }
@@ -623,6 +623,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 @media (max-width: 760px) {
   .admin-main { display: block; width: min(100% - 30px, 1440px); margin-top: 22px; }
+  .challenge-admin-panel { scroll-margin-top: 96px; }
   .admin-sidebar { position: static; height: auto; min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); padding: 18px 0 14px; }
   .admin-sidebar h1 { margin: 0; }
   .admin-scope { margin: 5px 0 16px; }

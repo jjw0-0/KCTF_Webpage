@@ -171,7 +171,7 @@ export const challenges: Challenge[] = [
     points: 400,
     solves: 9,
     difficulty: 'ADVANCED',
-    tags: ['VM', 'BYTECODE'],
+    tags: ['INSTANCE', 'BYTECODE'],
   },
   {
     id: 'clockwork',

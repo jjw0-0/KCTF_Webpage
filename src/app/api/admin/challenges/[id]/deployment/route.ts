@@ -51,8 +51,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
   const challenge = await challengeForDeployment(id);
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
-  if (!challenge.usesVm) return NextResponse.json({ error: 'VM 사용을 먼저 활성화해 주세요.' }, { status: 409 });
-  if (!challenge.instancePort) return NextResponse.json({ error: 'VM 연결 포트를 먼저 입력해 주세요.' }, { status: 409 });
+  if (!challenge.usesVm) return NextResponse.json({ error: 'Instance 사용을 먼저 활성화해 주세요.' }, { status: 409 });
+  if (!challenge.instancePort) return NextResponse.json({ error: 'Instance 연결 포트를 먼저 입력해 주세요.' }, { status: 409 });
 
   const parsed = await readBoundedFormData(request, MAX_DEPLOYMENT_FILE_BYTES);
   if (parsed.status === 'too_large') return NextResponse.json({ error: '배포 ZIP은 50MB 이하여야 합니다.' }, { status: 413 });

@@ -128,7 +128,7 @@ have their flags entered again once after upgrading from digest-only storage.
 The administrator can attach two separate ZIP files to a problem:
 
 - **풀이자 제공 ZIP**: optional download shown in the participant problem modal.
-- **VM 배포 ZIP**: shown only when **VM 사용** is enabled; kept private and built
+- **Instance 배포 ZIP**: shown only when **Instance 사용** is enabled; kept private and built
   by the instancer.
 
 The deployment archive may use any `.zip` filename. In the administrator form,
@@ -158,7 +158,7 @@ volumes:
   data: {}
 ```
 
-VM problems use the flag entered in the administrator form, so an existing
+Instance problems use the flag entered in the administrator form, so an existing
 deployment bundle and its original flag file can run unchanged. Legacy
 amd64 Redis 5.0.7 images receive an ARM64 runtime compatibility adjustment
 automatically without changing the uploaded source. Compose mode may use
@@ -208,7 +208,7 @@ continue to work. Use blank lines between media and text:
 MP4, WebM, OGV and M4V links render native video controls; YouTube and Vimeo
 links render embedded players. Raw HTML is not rendered. Media and attachment
 URLs must use HTTP(S) or a same-site path starting with `/`. Upload files to
-your hosting first, then use their URL. A missing file or VM slug hides that
+your hosting first, then use their URL. A missing file or Instance slug hides that
 section in the participant dialog. The description scrolls while the flag
 submission form stays visible.
 

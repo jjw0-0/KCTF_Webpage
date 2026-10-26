@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 200,
-      message: `만료된 VM 인스턴스 자동 정리: ${formatActor(user)} → slug=${instance.instanceSlug}`,
+      message: `만료된 Instance 자동 정리: ${formatActor(user)} → slug=${instance.instanceSlug}`,
       params: {
         challengeId: instance.challengeId,
         instanceSlug: instance.instanceSlug,
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       actor: 'anonymous',
       request,
       statusCode: 401,
-      message: '비로그인 사용자의 VM 생성 요청 차단',
+      message: '비로그인 사용자의 Instance 생성 요청 차단',
     });
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
   }
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 403,
-      message: `대회 비활성 중 VM 생성 요청 차단: ${actor} (${access.reason})`,
+      message: `대회 비활성 중 Instance 생성 요청 차단: ${actor} (${access.reason})`,
       params: { instancerId: user.instancerId, reason: access.reason },
     });
     return NextResponse.json({ error: access.reason }, { status: 403 });
@@ -102,14 +102,14 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 429,
-      message: `VM 생성 요청 속도 제한 초과 (Rate Limit): ${actor}`,
+      message: `Instance 생성 요청 속도 제한 초과 (Rate Limit): ${actor}`,
       params: {
         instancerId: user.instancerId,
         resetAt: new Date(limit.resetAt).toISOString(),
       },
     });
     return NextResponse.json(
-      { error: 'VM 요청이 너무 빠릅니다. 잠시 후 다시 시도해 주세요.' },
+      { error: 'Instance 요청이 너무 빠릅니다. 잠시 후 다시 시도해 주세요.' },
       { status: 429, headers: rateLimitHeaders(limit) },
     );
   }
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 400,
-      message: `잘못된 VM 생성 요청 파라미터: ${actor}`,
+      message: `잘못된 Instance 생성 요청 파라미터: ${actor}`,
       params: { rawBody, instancerId: user.instancerId },
     });
     return NextResponse.json({ error: '문제 정보를 확인해 주세요.' }, { status: 400 });
@@ -151,10 +151,10 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 404,
-      message: `존재하지 않거나 비활성화된 VM 문제 요청: ${actor} → challengeId=${parsed.data.challengeId}`,
+      message: `존재하지 않거나 비활성화된 Instance 문제 요청: ${actor} → challengeId=${parsed.data.challengeId}`,
       params: { challengeId: parsed.data.challengeId, instancerId: user.instancerId },
     });
-    return NextResponse.json({ error: 'VM을 사용할 수 없는 문제입니다.' }, { status: 404 });
+    return NextResponse.json({ error: 'Instance를 사용할 수 없는 문제입니다.' }, { status: 404 });
   }
 
   try {
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 200,
-      message: `VM 인스턴스 생성 요청 및 할당 완료: ${actor} → [${challenge.title}] (${instance.url})`,
+      message: `Instance 생성 요청 및 할당 완료: ${actor} → [${challenge.title}] (${instance.url})`,
       params: {
         instanceId: instance.id,
         challengeId: challenge.id,
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 502,
-      message: `VM 인스턴스 생성 실패: ${actor} → [${challenge.title}] (slug=${challenge.instanceSlug})`,
+      message: `Instance 생성 실패: ${actor} → [${challenge.title}] (slug=${challenge.instanceSlug})`,
       params: {
         challengeId: challenge.id,
         challengeTitle: challenge.title,
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error),
       },
     });
-    return NextResponse.json({ error: 'VM을 시작하지 못했습니다. 관리자에게 문의해 주세요.' }, { status: 502 });
+    return NextResponse.json({ error: 'Instance를 시작하지 못했습니다. 관리자에게 문의해 주세요.' }, { status: 502 });
   }
 }
 
@@ -241,7 +241,7 @@ export async function DELETE(request: NextRequest) {
       actor: 'anonymous',
       request,
       statusCode: 401,
-      message: '비로그인 사용자의 VM 종료 요청 차단',
+      message: '비로그인 사용자의 Instance 종료 요청 차단',
     });
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
   }
@@ -257,7 +257,7 @@ export async function DELETE(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 200,
-      message: `활성 VM 없음 상태에서 종료 요청: ${actor}`,
+      message: `활성 Instance 없음 상태에서 종료 요청: ${actor}`,
       params: { instancerId: user.instancerId },
     });
     return NextResponse.json({ instance: null });
@@ -275,7 +275,7 @@ export async function DELETE(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 502,
-      message: `VM 인스턴스 원격 종료 실패: ${actor} → slug=${instance.instanceSlug} (${instance.url})`,
+      message: `Instance 원격 종료 실패: ${actor} → slug=${instance.instanceSlug} (${instance.url})`,
       params: {
         challengeId: instance.challengeId,
         instanceSlug: instance.instanceSlug,
@@ -284,7 +284,7 @@ export async function DELETE(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error),
       },
     });
-    return NextResponse.json({ error: 'VM을 종료하지 못했습니다. 잠시 후 다시 시도해 주세요.' }, { status: 502 });
+    return NextResponse.json({ error: 'Instance를 종료하지 못했습니다. 잠시 후 다시 시도해 주세요.' }, { status: 502 });
   }
 
   await prisma.challengeInstance.delete({ where: { id: instance.id } }).catch(() => null);
@@ -296,7 +296,7 @@ export async function DELETE(request: NextRequest) {
     actorId: user.id,
     request,
     statusCode: 200,
-    message: `VM 인스턴스 종료 완료: ${actor} → slug=${instance.instanceSlug} (${instance.url})`,
+    message: `Instance 종료 완료: ${actor} → slug=${instance.instanceSlug} (${instance.url})`,
     params: {
       instanceId: instance.id,
       challengeId: instance.challengeId,

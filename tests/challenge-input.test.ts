@@ -49,7 +49,7 @@ test('dynamic scoring configuration keeps its floor below the initial score', ()
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, scoringMode: 'DYNAMIC', minimumPoints: 300 }).success, false);
 });
 
-test('VM and direct URL access modes are mutually exclusive', () => {
+test('Instance and direct URL access modes are mutually exclusive', () => {
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, instancePort: 8080, connectionUrl: '' }).success, true);
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, usesCompose: true, instancePort: 8080, connectionUrl: '' }).success, true);
   assert.equal(challengeInputSchema.safeParse({ ...validChallenge, usesVm: true, connectionUrl: '' }).success, false);

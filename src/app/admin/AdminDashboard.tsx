@@ -376,7 +376,7 @@ export default function AdminDashboard({
   };
 
   const deleteChallenge = async (challenge: AdminChallenge) => {
-    if (!(await confirm({ title: '문제 영구 삭제', description: `“${challenge.title}”의 풀이·제출 기록과 실행 중인 VM을 함께 정리합니다. 삭제 후 복구할 수 없습니다.`, confirmLabel: '문제 삭제', danger: true }))) return;
+    if (!(await confirm({ title: '문제 영구 삭제', description: `“${challenge.title}”의 풀이·제출 기록과 실행 중인 Instance를 함께 정리합니다. 삭제 후 복구할 수 없습니다.`, confirmLabel: '문제 삭제', danger: true }))) return;
     setIsSaving(true);
     try {
       const response = await fetch(`/api/admin/challenges/${encodeURIComponent(challenge.id)}`, { method: 'DELETE' });
@@ -612,7 +612,7 @@ export default function AdminDashboard({
                     <label className={challengeForm.usesVm ? 'vm-choice is-checked' : 'vm-choice'}>
                       <input type="checkbox" checked={challengeForm.usesVm} onChange={(event) => setChallengeForm({ ...challengeForm, usesVm: event.target.checked, usesCompose: event.target.checked ? challengeForm.usesCompose : false, connectionUrl: event.target.checked ? '' : challengeForm.connectionUrl })} />
                       <span>
-                        <strong>VM 사용</strong>
+                        <strong>Instance 사용</strong>
                       </span>
                     </label>
                   </div>
@@ -665,7 +665,7 @@ export default function AdminDashboard({
                   </div>
                   <label>
                     <span className="field-label-row"><strong>연결 포트</strong><small>외부에 연결할 컨테이너 내부 포트</small></span>
-                    <input name="instancePort" required type="number" min="1" max="65535" inputMode="numeric" placeholder="10008" value={challengeForm.instancePort} onChange={(event) => setChallengeForm({ ...challengeForm, instancePort: event.target.value })} />
+                    <input name="instancePort" required type="number" min="1" max="65535" inputMode="numeric" value={challengeForm.instancePort} onChange={(event) => setChallengeForm({ ...challengeForm, instancePort: event.target.value })} />
                   </label>
                 </div>
               )}

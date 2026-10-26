@@ -295,7 +295,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
               )}
               {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
                 ? <InstanceControl key={selected.id} challengeId={selected.id} enabled />
-                : <div className="instance-control vm-pending"><strong>VM 연동 준비 중</strong><p>생성 방식이 연결되면 이곳에서 VM을 시작할 수 있습니다.</p></div>)}
+                : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
             </div>
             <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
               <div className="flag-form-head">

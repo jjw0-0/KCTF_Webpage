@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     });
   } catch (error) {
     if ((error as { code?: string }).code === 'P2002') {
-      return NextResponse.json({ error: '이미 사용 중인 VM slug입니다.' }, { status: 409 });
+      return NextResponse.json({ error: '이미 사용 중인 Instance slug입니다.' }, { status: 409 });
     }
     throw error;
   }
@@ -141,7 +141,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (challenge.instanceSlug) await deleteRemoteDeployment(challenge.instanceSlug);
   } catch (error) {
     console.error('Failed to destroy challenge instances before deletion.', error);
-    return NextResponse.json({ error: '실행 중인 VM을 종료하지 못해 문제를 삭제하지 않았습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '실행 중인 Instance를 종료하지 못해 문제를 삭제하지 않았습니다.' }, { status: 502 });
   }
 
   await prisma.$transaction([

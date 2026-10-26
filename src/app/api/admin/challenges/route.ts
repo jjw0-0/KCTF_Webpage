@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ challengeId: challenge.id, challenges: await getAdminChallenges() }, { status: 201 });
   } catch (error) {
     if ((error as { code?: string }).code === 'P2002') {
-      return NextResponse.json({ error: '이미 사용 중인 VM slug입니다.' }, { status: 409 });
+      return NextResponse.json({ error: '이미 사용 중인 Instance slug입니다.' }, { status: 409 });
     }
     throw error;
   }
