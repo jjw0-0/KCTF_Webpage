@@ -5,7 +5,7 @@ import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getCtfAccess } from '@/lib/ctf-access';
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
-import { digestFlag, matchesInstanceFlag, matchesPlainFlag } from '@/lib/flags';
+import { matchesPlainFlag } from '@/lib/flags';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
@@ -101,25 +101,19 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       decaySolves: true,
       decrementPerSolve: true,
       flag: true,
-      usesVm: true,
-      dynamicFlag: true,
       solveCount: true,
     },
   });
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
 
   const submittedFlag = parsed.data.flag.trim();
-  const correct = challenge.usesVm && challenge.dynamicFlag
-    ? matchesInstanceFlag(submittedFlag, challenge.id, user.id)
-    : challenge.flag
-      ? matchesPlainFlag(submittedFlag, challenge.flag)
-      : false;
+  const correct = challenge.flag ? matchesPlainFlag(submittedFlag, challenge.flag) : false;
   if (!correct) {
     const sub = await prisma.submission.create({
       data: {
         challengeId: challenge.id,
         userId: session.user.id,
-        flagDigest: digestFlag(submittedFlag),
+        flag: submittedFlag,
         isCorrect: false,
       },
     });
@@ -149,7 +143,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         data: {
           challengeId: challenge.id,
           userId: session.user.id,
-          flagDigest: digestFlag(submittedFlag),
+          flag: submittedFlag,
           isCorrect: true,
         },
       });

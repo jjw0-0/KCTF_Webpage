@@ -109,13 +109,13 @@ The app listens on host loopback port `3020` in this mode:
 ./scripts/deploy-prod.sh
 ```
 
-Required variables are `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, and
-`NEXTAUTH_SECRET`, `INSTANCE_FLAG_SECRET`, `KCTF_INSTANCER_TOKEN`, `DOMAIN`, and
+Required variables are `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
+`NEXTAUTH_SECRET`, `KCTF_INSTANCER_TOKEN`, `DOMAIN`, and
 `INSTANCER_PUBLIC_HOST`. Keep them in `.env.prod.local`, which is excluded by
 the repository's `.env*.local` ignore rule.
 
 To bootstrap an administrator, run the seed command with `ADMIN_EMAIL`,
-`ADMIN_USERNAME`, and a 14+ character `ADMIN_INITIAL_PASSWORD` in the migration
+`ADMIN_USERNAME`, and a 10+ character `ADMIN_INITIAL_PASSWORD` in the migration
 container environment.
 
 The seed creates categories but no sample problems. Create problems from the

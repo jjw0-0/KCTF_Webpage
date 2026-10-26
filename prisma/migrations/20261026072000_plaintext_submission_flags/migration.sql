@@ -1,0 +1,2 @@
+ALTER TABLE "submissions" ADD COLUMN "flag" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "submissions" ALTER COLUMN "flag" DROP DEFAULT;

@@ -28,16 +28,13 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, usesVm: true, dynamicFlag: true, usesCompose: true, instancePort: true, instanceSlug: true, _count: { select: { solves: true } } } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, usesVm: true, usesCompose: true, instancePort: true, instanceSlug: true, _count: { select: { solves: true } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? '입력값을 확인해 주세요.' }, { status: 400 });
-  if (existing.usesVm && !parsed.data.usesVm && !parsed.data.flag) {
-    return NextResponse.json({ error: '일반 문제로 변경할 때는 플래그를 입력해 주세요.' }, { status: 400 });
-  }
-  if (parsed.data.usesVm && !parsed.data.dynamicFlag && existing.dynamicFlag && !parsed.data.flag) {
-    return NextResponse.json({ error: '고정 플래그로 변경할 때는 원본 플래그를 입력해 주세요.' }, { status: 400 });
+  if (!parsed.data.flag && !existing.flag) {
+    return NextResponse.json({ error: '플래그를 입력해 주세요.' }, { status: 400 });
   }
 
   const category = await prisma.category.findFirst({
@@ -46,7 +43,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, usesVm, dynamicFlag, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
+  const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
   const deploymentConfigChanged = existing.usesVm && usesVm
     && (existing.usesCompose !== usesCompose || existing.instancePort !== instancePort);
   if (existing.instanceSlug && (existing.usesVm && !usesVm || deploymentConfigChanged)) {
@@ -60,7 +57,6 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           ...data,
           summary: data.summary || deriveChallengeSummary(data.description),
           usesVm,
-          dynamicFlag: usesVm && dynamicFlag,
           usesCompose: usesVm && usesCompose,
           instancePort: usesVm ? instancePort : null,
           connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
@@ -103,7 +99,6 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       points: data.points,
       scoringMode: data.scoringMode,
       usesVm,
-      dynamicFlag: usesVm && dynamicFlag,
       usesCompose: usesVm && usesCompose,
       instancePort: usesVm ? instancePort : null,
       instanceSlug: usesVm && instanceSlug ? instanceSlug : null,

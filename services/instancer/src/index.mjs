@@ -35,7 +35,7 @@ const gatewayImage = process.env.INSTANCER_GATEWAY_IMAGE || 'kctf/instance-gatew
 const gatewayService = 'kctf_gateway';
 const gatewayNetwork = 'kctf_edge';
 const gatewayPort = 20_000;
-const runtimeVersion = 4;
+const runtimeVersion = 5;
 
 const deploymentsFile = path.join(dataDir, 'deployments.json');
 const instancesFile = path.join(dataDir, 'instances.json');
@@ -236,29 +236,10 @@ function validateManifest(raw, compose, sourceDir) {
     pids: Math.min(readManifestNumber(defaults.pids, 128, 16, true), maxPids),
   };
 
-  const configuredFlagTargets = Array.isArray(raw.flagTargets) && raw.flagTargets.length
-    ? raw.flagTargets
-    : [{ service: entryService, name: 'FLAG' }];
-  const flagTargets = configuredFlagTargets.map((target) => {
-    if (!isPlainObject(target) || typeof target.service !== 'string' || !compose.services[target.service]) {
-      throw new Error('each flag target must name a Compose service');
-    }
-    if (target.mode === 'file') {
-      if (typeof target.path !== 'string' || !target.path.startsWith('/') || target.path.includes('\0')) {
-        throw new Error('file flag targets require an absolute container path');
-      }
-      return { service: target.service, mode: 'file', path: target.path };
-    }
-    if (target.mode !== undefined && target.mode !== 'env') throw new Error('flag target mode must be env or file');
-    const name = typeof target.name === 'string' ? target.name : 'FLAG';
-    if (!/^[A-Z_][A-Z0-9_]{0,63}$/.test(name)) throw new Error('flag environment variable names must be uppercase identifiers');
-    return { service: target.service, mode: 'env', name };
-  });
-
   const composeFile = typeof raw.runtime.composeFile === 'string' ? raw.runtime.composeFile : 'docker-compose.yml';
   const serviceOverrides = validateServiceOverrides(raw.runtime.serviceOverrides, compose);
   safeRelativePath(sourceDir, composeFile, 'runtime.composeFile');
-  return { entryService, protocol, internalPort, resources, flagTargets, composeFile, serviceOverrides };
+  return { entryService, protocol, internalPort, resources, composeFile, serviceOverrides };
 }
 
 function composePortTarget(value) {
@@ -306,7 +287,6 @@ function prepareDockerfileDeployment(slug, hash, entryPort) {
       protocol: 'http',
       internalPort: entryPort,
       resources: { memoryMb: Math.min(256, maxMemoryMb), cpu: Math.min(0.5, maxCpu), pids: Math.min(128, maxPids) },
-      flagTargets: [{ service: 'app', mode: 'env', name: 'FLAG' }],
       composeFile: null,
       serviceOverrides: {},
     },
@@ -462,7 +442,7 @@ function prepareBuildCompose(compose, slug, hash) {
   return output;
 }
 
-function prepareRuntimeCompose(record, token, hostPort, flag, flagFile) {
+function prepareRuntimeCompose(record, token, hostPort) {
   const output = clone(record.compose);
   for (const [serviceName, service] of Object.entries(output.services)) {
     const attachedNetworks = Array.isArray(service.networks)
@@ -496,18 +476,6 @@ function prepareRuntimeCompose(record, token, hostPort, flag, flagFile) {
     };
     service.security_opt = ['no-new-privileges:true'];
     service.cap_drop = ['ALL'];
-    if (flag) {
-      const targets = record.manifest.flagTargets.filter((target) => target.service === serviceName);
-      for (const target of targets) {
-        if (target.mode === 'file') {
-          service.volumes = (service.volumes ?? []).filter((volume) => volumeTarget(volume) !== target.path);
-          service.volumes.push({ type: 'bind', source: flagFile, target: target.path, read_only: true });
-        } else {
-          service.environment = normalizeEnvironment(service.environment);
-          service.environment[target.name] = flag;
-        }
-      }
-    }
   }
 
   output.networks = isPlainObject(output.networks) ? output.networks : {};
@@ -550,11 +518,6 @@ function prepareRuntimeCompose(record, token, hostPort, flag, flagFile) {
     },
   };
   return output;
-}
-
-function volumeTarget(volume) {
-  if (typeof volume === 'string') return volume.split(':')[1];
-  return volume.target;
 }
 
 function runtimeVolume(volume, sourceDir) {
@@ -808,10 +771,8 @@ app.delete('/api/instancer/deployments/:slug', requireBearer, async (request, re
 app.post('/api/instancer/create', requireBearer, async (request, response) => {
   const slug = safeSlug(request.body?.slug);
   const userId = Number(request.body?.user_id);
-  const flag = typeof request.body?.flag === 'string' ? request.body.flag : undefined;
   if (!slug) return response.status(400).json({ error: 'unknown slug' });
   if (!Number.isInteger(userId) || userId <= 0) return response.status(400).json({ error: 'user_id must be a positive integer' });
-  if (flag !== undefined && (!flag || flag.length > 256)) return response.status(400).json({ error: 'the per-player flag is invalid' });
   const deployment = deployments.get(slug);
   if (!deployment || deployment.status !== 'READY') return response.status(409).json({ error: 'deployment is not ready' });
 
@@ -828,10 +789,8 @@ app.post('/api/instancer/create', requireBearer, async (request, response) => {
       const projectName = `kctf-i-${token}`;
       const instanceDir = path.join(dataDir, 'instances', token);
       const composeFile = path.join(instanceDir, 'compose.yml');
-      const flagFile = path.join(instanceDir, 'flag');
       await mkdir(instanceDir, { recursive: true, mode: 0o700 });
-      if (flag) await writeFile(flagFile, `${flag}\n`, { mode: 0o444 });
-      const runtimeCompose = prepareRuntimeCompose(deployment, token, hostPort, flag, flagFile);
+      const runtimeCompose = prepareRuntimeCompose(deployment, token, hostPort);
       await writeFile(composeFile, stringifyYaml(runtimeCompose), { mode: 0o600 });
       try {
         await run('docker', ['compose', '-p', projectName, '-f', composeFile, 'up', '-d', '--no-build'], {

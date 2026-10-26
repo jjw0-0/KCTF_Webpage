@@ -19,7 +19,6 @@ if [ ! -e "$env_file" ]; then
   umask 077
   postgres_password=$(openssl rand -hex 24)
   nextauth_secret=$(openssl rand -hex 48)
-  instance_flag_secret=$(openssl rand -hex 48)
   instancer_token=$(openssl rand -hex 32)
   admin_password=$(openssl rand -hex 16)
   admin_email=${ADMIN_EMAIL:-admin@$domain}
@@ -31,7 +30,6 @@ if [ ! -e "$env_file" ]; then
     "POSTGRES_PASSWORD=$postgres_password" \
     'POSTGRES_DB=kctf' \
     "NEXTAUTH_SECRET=$nextauth_secret" \
-    "INSTANCE_FLAG_SECRET=$instance_flag_secret" \
     "KCTF_INSTANCER_TOKEN=$instancer_token" \
     "INSTANCER_PUBLIC_HOST=$domain" \
     'INSTANCER_TTL_MS=3600000' \

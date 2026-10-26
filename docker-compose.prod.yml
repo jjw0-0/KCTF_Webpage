@@ -35,8 +35,6 @@ services:
       AUTH_TRUST_HOST: "true"
       INSTANCER_URL: http://instancer:7000
       INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN:-}
-      FLAG_SECRET: ${NEXTAUTH_SECRET}
-      INSTANCE_FLAG_SECRET: ${INSTANCE_FLAG_SECRET}
       PORT: 3000
       HOSTNAME: 0.0.0.0
     ports:
@@ -117,7 +115,6 @@ services:
     profiles: ["tools"]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      FLAG_SECRET: ${NEXTAUTH_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}

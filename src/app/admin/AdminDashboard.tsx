@@ -335,7 +335,6 @@ export default function AdminDashboard({
           minimumPoints: Number(challengeForm.minimumPoints),
           decaySolves: Number(challengeForm.decaySolves),
           decrementPerSolve: Number(challengeForm.decrementPerSolve),
-          dynamicFlag: current?.dynamicFlag ?? false,
           instancePort: challengeForm.usesVm ? Number(challengeForm.instancePort) : undefined,
           summary: '',
           difficulty: current?.difficulty ?? 'INTERMEDIATE',
@@ -676,7 +675,7 @@ export default function AdminDashboard({
                   <strong>플래그</strong>
                   {!editingChallengeId
                     ? <small>{challengeForm.usesVm ? 'Deploy ZIP 원본 플래그' : '필수 입력'}</small>
-                    : !editingChallenge?.flag && <small>기존 값은 해시로만 저장됨 · 변경 시 입력</small>}
+                    : !editingChallenge?.flag && <small>기존 플래그 없음 · 입력 필요</small>}
                 </span>
                 <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder="KCTF{…}" value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
               </label>
@@ -860,7 +859,7 @@ export default function AdminDashboard({
                         <span>{entry.category}</span>
                         <strong>{entry.challengeTitle}</strong>
                       </div>
-                      <code className="log-digest">{entry.flag}</code>
+                      <code className="log-submitted-flag">{entry.flag}</code>
                     </div>
                   ))
                 ) : (

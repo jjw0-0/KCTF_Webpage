@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
   }
 
   const parsed = challengeInputSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success || (!parsed.data.flag && (!parsed.data.usesVm || !parsed.data.dynamicFlag))) {
-    return NextResponse.json({ error: parsed.success ? '고정 플래그 문제의 플래그를 입력해 주세요.' : parsed.error.issues[0]?.message }, { status: 400 });
+  if (!parsed.success || !parsed.data.flag) {
+    return NextResponse.json({ error: parsed.success ? '플래그를 입력해 주세요.' : parsed.error.issues[0]?.message }, { status: 400 });
   }
 
   const category = await prisma.category.findFirst({
@@ -33,16 +33,15 @@ export async function POST(request: NextRequest) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, usesVm, dynamicFlag, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
+  const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
   try {
     let challenge = await prisma.challenge.create({
       data: {
         ...data,
         summary: data.summary || deriveChallengeSummary(data.description),
         ctfId: ACTIVE_CTF_ID,
-        flag: flag || null,
+        flag,
         usesVm,
-        dynamicFlag: usesVm && dynamicFlag,
         usesCompose: usesVm && usesCompose,
         instancePort: usesVm ? instancePort : null,
         connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
@@ -75,7 +74,6 @@ export async function POST(request: NextRequest) {
         points: challenge.points,
         scoringMode: challenge.scoringMode,
         usesVm: challenge.usesVm,
-        dynamicFlag: challenge.dynamicFlag,
         usesCompose: challenge.usesCompose,
         instancePort: challenge.instancePort,
         instanceSlug: challenge.instanceSlug,

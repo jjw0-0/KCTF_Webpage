@@ -69,7 +69,6 @@ volumes:
     const manifest = validateManifest({
       version: 1,
       runtime: { entryService: 'web', protocol: 'http', port: 8080 },
-      flagTargets: [{ service: 'web', name: 'FLAG' }],
     }, compose, root);
     assert.equal(manifest.entryService, 'web');
     assert.equal(manifest.internalPort, 8080);
@@ -104,40 +103,15 @@ services:
       version: 1,
       runtime: { entryService: 'web', protocol: 'http', port: 8080 },
     }, compose, root);
-    const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: root, slug: 'test' }, 'token', 21000, 'KCTF{test}');
+    const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: root, slug: 'test' }, 'token', 21000);
     assert.equal(runtime.services.web.ports, undefined);
     assert.equal(runtime.services.web.volumes[0], `${root}/redis.conf:/etc/redis.conf:ro`);
-    assert.equal(runtime.services.web.environment.FLAG, 'KCTF{test}');
     assert.deepEqual(runtime.services.web.cap_drop, ['ALL']);
     assert.equal(runtime.networks.default.internal, true);
     assert.equal(runtime.networks.kctf_edge.internal, undefined);
     assert.deepEqual(runtime.services.kctf_gateway.networks, ['default', 'kctf_edge']);
     assert.deepEqual(runtime.services.kctf_gateway.ports, ['0.0.0.0:21000:20000']);
     assert.deepEqual(runtime.services.kctf_gateway.cap_drop, ['ALL']);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test('replaces a challenge-provided flag mount with a per-player flag file', async () => {
-  const root = await mkdtemp(path.join(tmpdir(), 'kctf-compose-flag-'));
-  try {
-    await writeFile(path.join(root, 'flag.txt'), 'static-placeholder\n');
-    const compose = validateCompose(`
-services:
-  web:
-    image: alpine
-    container_name: unsafe-shared-name
-    volumes: ["./flag.txt:/flag:ro"]
-`, root);
-    const manifest = validateManifest({
-      version: 1,
-      runtime: { entryService: 'web', protocol: 'http', port: 8080 },
-      flagTargets: [{ service: 'web', mode: 'file', path: '/flag' }],
-    }, compose, root);
-    const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: root, slug: 'test' }, 'token', 21000, 'KCTF{test}', '/instances/token/flag');
-    assert.equal(runtime.services.web.container_name, undefined);
-    assert.deepEqual(runtime.services.web.volumes, [{ type: 'bind', source: '/instances/token/flag', target: '/flag', read_only: true }]);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -156,7 +130,7 @@ test('applies validated runtime command and environment overrides', async () => 
         serviceOverrides: { redis: { command: ['redis-server', '--port', '6379'], environment: { QEMU_GUEST_BASE: '0x800000000000' } } },
       },
     }, compose, root);
-    const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: root, slug: 'test' }, 'token', 21000, 'KCTF{test}', '/instances/token/flag');
+    const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: root, slug: 'test' }, 'token', 21000);
     assert.deepEqual(runtime.services.redis.command, ['redis-server', '--port', '6379']);
     assert.equal(runtime.services.redis.environment.QEMU_GUEST_BASE, '0x800000000000');
   } finally {
@@ -164,7 +138,7 @@ test('applies validated runtime command and environment overrides', async () => 
   }
 });
 
-test('preserves a static challenge flag when no dynamic flag is supplied', () => {
+test('preserves challenge-provided environment without injecting a flag', () => {
   const compose = validateCompose(`
 services:
   web:
@@ -225,7 +199,7 @@ networks:
     version: 1,
     runtime: { entryService: 'web', protocol: 'http', port: 8080 },
   }, compose, '/tmp/deployment');
-  const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: '/tmp/deployment', slug: 'test' }, 'token', 21000, 'KCTF{test}');
+  const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: '/tmp/deployment', slug: 'test' }, 'token', 21000);
   assert.equal(runtime.networks.frontend.internal, true);
   assert.equal(runtime.networks.backend.internal, true);
   assert.deepEqual(runtime.services.kctf_gateway.networks, ['frontend', 'kctf_edge']);

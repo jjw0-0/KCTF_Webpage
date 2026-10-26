@@ -28,7 +28,6 @@ export type AdminChallenge = {
   tags: string[];
   instanceSlug: string;
   usesVm: boolean;
-  dynamicFlag: boolean;
   usesCompose: boolean;
   instancePort?: number;
   connectionUrl: string;
@@ -114,7 +113,6 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       tags: true,
       instanceSlug: true,
       usesVm: true,
-      dynamicFlag: true,
       usesCompose: true,
       instancePort: true,
       connectionUrl: true,
@@ -150,7 +148,6 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     tags: challenge.tags,
     instanceSlug: challenge.instanceSlug ?? '',
     usesVm: challenge.usesVm,
-    dynamicFlag: challenge.dynamicFlag,
     usesCompose: challenge.usesCompose,
     instancePort: challenge.instancePort ?? undefined,
     connectionUrl: challenge.connectionUrl ?? '',

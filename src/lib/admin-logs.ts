@@ -332,7 +332,7 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
         id: true,
         challengeId: true,
         userId: true,
-        flagDigest: true,
+        flag: true,
         isCorrect: true,
         submittedAt: true,
         user: { select: { username: true, email: true } },
@@ -414,7 +414,7 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
     category: sub.challenge.category.shortName,
     points: sub.challenge.points,
     isCorrect: sub.isCorrect,
-    flag: sub.flagDigest,
+    flag: sub.flag,
   }));
 
   const synthesized: ServerLogEntry[] = [];

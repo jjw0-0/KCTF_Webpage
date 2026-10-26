@@ -21,7 +21,6 @@ export const challengeInputSchema = z.object({
   instanceSlug: z.string().trim().max(100)
     .regex(/^[a-zA-Z0-9._-]*$/, 'VM slug 형식이 올바르지 않습니다.').default(''),
   usesVm: z.boolean().default(false),
-  dynamicFlag: z.boolean().default(false),
   usesCompose: z.boolean().default(false),
   instancePort: z.number().int().min(1).max(65_535).optional(),
   connectionUrl: z.string().trim().max(2048)
@@ -37,9 +36,6 @@ export const challengeInputSchema = z.object({
 }).superRefine((value, context) => {
   if (value.usesVm && value.connectionUrl) {
     context.addIssue({ code: 'custom', path: ['connectionUrl'], message: 'VM 사용과 직접 URL은 동시에 설정할 수 없습니다.' });
-  }
-  if (!value.usesVm && value.dynamicFlag) {
-    context.addIssue({ code: 'custom', path: ['dynamicFlag'], message: '플레이어별 플래그는 VM 문제에서만 사용할 수 있습니다.' });
   }
   if (!value.usesVm && value.usesCompose) {
     context.addIssue({ code: 'custom', path: ['usesCompose'], message: 'Docker Compose는 VM 문제에서만 사용할 수 있습니다.' });

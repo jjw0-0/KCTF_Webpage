@@ -64,14 +64,14 @@ export async function deleteRemoteDeployment(slug: string) {
   if (!response.ok && response.status !== 404) throw new Error(await parseError(response, '배포를 삭제하지 못했습니다.'));
 }
 
-export async function createRemoteInstance(slug: string, userId: number, flag?: string) {
+export async function createRemoteInstance(slug: string, userId: number) {
   const response = await fetch(`${process.env.INSTANCER_URL}/api/instancer/create`, {
     method: 'POST',
     headers: {
       ...instancerHeaders(),
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ slug, user_id: userId, ...(flag ? { flag } : {}) }),
+    body: JSON.stringify({ slug, user_id: userId }),
     signal: AbortSignal.timeout(15_000),
   });
   const body = await response.json().catch(() => ({}));

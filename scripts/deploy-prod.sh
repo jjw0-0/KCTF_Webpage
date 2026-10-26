@@ -13,9 +13,6 @@ umask 077
 if ! grep -Eq '^KCTF_INSTANCER_TOKEN=.+$' "$env_file"; then
   printf '\nKCTF_INSTANCER_TOKEN=%s\n' "$(openssl rand -hex 32)" >> "$env_file"
 fi
-if ! grep -Eq '^INSTANCE_FLAG_SECRET=.+$' "$env_file"; then
-  printf 'INSTANCE_FLAG_SECRET=%s\n' "$(openssl rand -hex 48)" >> "$env_file"
-fi
 
 compose='docker compose --env-file .env.prod.local -f docker-compose.prod.yml'
 $compose --profile tools build app instancer migrate

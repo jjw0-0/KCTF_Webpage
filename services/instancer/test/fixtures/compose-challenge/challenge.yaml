@@ -5,10 +5,6 @@ runtime:
   entryService: web
   protocol: http
   port: 8080
-flagTargets:
-  - service: web
-    mode: env
-    name: FLAG
 resources:
   defaults:
     memoryMb: 128

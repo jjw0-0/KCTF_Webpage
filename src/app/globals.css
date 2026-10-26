@@ -614,7 +614,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .log-user, .log-challenge { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .log-user strong, .log-challenge strong { overflow: hidden; color: #e6efea; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .log-user small, .log-challenge span { overflow: hidden; color: #72827a; font: 10px var(--font-mono), monospace; text-overflow: ellipsis; white-space: nowrap; }
-.log-digest { overflow-wrap: anywhere; color: #b7d7c8; font: 11.5px/1.5 var(--font-mono), monospace; }
+.log-submitted-flag { overflow-wrap: anywhere; color: #b7d7c8; font: 11.5px/1.5 var(--font-mono), monospace; }
 .admin-log-empty { padding: 48px 24px; color: #6c7a73; font-size: 13px; text-align: center; }
 
 @media (max-width: 1100px) {
@@ -657,7 +657,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   .admin-server-log-head, .admin-submission-log-head { display: none; }
   .admin-server-log-row, .admin-submission-log-row { grid-template-columns: 1fr auto; gap: 8px 12px; padding: 14px 18px; }
   .admin-server-log-row code { grid-column: 1 / -1; }
-  .log-digest { grid-column: 1 / -1; justify-self: start; }
+  .log-submitted-flag { grid-column: 1 / -1; justify-self: start; }
 }
 
 /* Scoreboard and participant profile */

@@ -49,7 +49,7 @@ async function main() {
   const adminUsername = process.env.ADMIN_USERNAME?.trim();
   const adminPassword = process.env.ADMIN_INITIAL_PASSWORD;
   if (adminEmail && adminUsername && adminPassword) {
-    if (adminPassword.length < 14) throw new Error('ADMIN_INITIAL_PASSWORD must be at least 14 characters.');
+    if (adminPassword.length < 10) throw new Error('ADMIN_INITIAL_PASSWORD must be at least 10 characters.');
     const passwordHash = await bcrypt.hash(adminPassword, 12);
     await prisma.user.upsert({
       where: { email: adminEmail },
