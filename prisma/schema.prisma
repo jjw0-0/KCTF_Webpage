@@ -170,7 +170,8 @@ model Challenge {
   decrementPerSolve Int              @default(10)
   difficulty    ChallengeDifficulty @default(INTERMEDIATE)
   tags          String[]            @default([])
-  flagHash      String
+  flagHash      String?
+  flag          String?
   instanceSlug  String?             @unique
   usesVm        Boolean             @default(false)
   dynamicFlag   Boolean             @default(false)

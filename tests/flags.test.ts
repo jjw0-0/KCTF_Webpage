@@ -1,11 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveInstanceFlag, digestFlag, matchesFlag, matchesInstanceFlag } from '../src/lib/flags.ts';
+import { deriveInstanceFlag, matchesInstanceFlag, matchesPlainFlag } from '../src/lib/flags.ts';
 
 test('flag matching trims input and rejects different values', () => {
-  const digest = digestFlag('KCTF{correct}', 'test-secret');
-  assert.equal(matchesFlag(' KCTF{correct}\n', digest, 'test-secret'), true);
-  assert.equal(matchesFlag('KCTF{wrong}', digest, 'test-secret'), false);
+  assert.equal(matchesPlainFlag(' KCTF{correct}\n', 'KCTF{correct}'), true);
+  assert.equal(matchesPlainFlag('KCTF{wrong}', 'KCTF{correct}'), false);
 });
 
 test('instance flags are stable per challenge and user', () => {

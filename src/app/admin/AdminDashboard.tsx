@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import type { AdminLogsPayload } from '@/lib/admin-logs';
 import { AdminChallenge } from '@/lib/challenges';
 import { Category } from '@/lib/platform-data';
@@ -68,6 +68,14 @@ const statusOptions: { value: CtfSchedule['status']; label: string }[] = [
   { value: 'ENDED', label: '종료' },
 ];
 
+const deploymentStatusCopy: Record<AdminChallenge['deploymentStatus'], { label: string; tone: string }> = {
+  NONE: { label: '빌드 전', tone: 'is-idle' },
+  QUEUED: { label: '빌드 대기', tone: 'is-pending' },
+  BUILDING: { label: '빌드 중', tone: 'is-pending' },
+  READY: { label: '빌드 성공', tone: 'is-success' },
+  FAILED: { label: '빌드 실패', tone: 'is-failed' },
+};
+
 export default function AdminDashboard({
   initialCategories,
   initialChallenges,
@@ -99,6 +107,7 @@ export default function AdminDashboard({
   const [logSearch, setLogSearch] = useState('');
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const { confirm, confirmation } = useConfirmDialog();
+  const challengeEditorRef = useRef<HTMLElement>(null);
 
   const setNotice = (message: string, tone: 'neutral' | 'error' = 'neutral') => {
     setNoticeMessage(message);
@@ -109,6 +118,7 @@ export default function AdminDashboard({
     category.slug,
     challenges.filter((challenge) => challenge.categoryId === category.id).length,
   ])), [categories, challenges]);
+  const editingChallenge = challenges.find((challenge) => challenge.id === editingChallengeId);
 
   useEffect(() => {
     const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
@@ -240,7 +250,7 @@ export default function AdminDashboard({
       minimumPoints: String(challenge.minimumPoints),
       decaySolves: String(challenge.decaySolves),
       decrementPerSolve: String(challenge.decrementPerSolve),
-      flag: '',
+      flag: challenge.flag,
       usesVm: challenge.usesVm,
       usesCompose: challenge.usesCompose,
       instancePort: challenge.instancePort ? String(challenge.instancePort) : '',
@@ -249,6 +259,12 @@ export default function AdminDashboard({
     setChallengeFile(null);
     setDeploymentFile(null);
     setNotice('');
+    window.requestAnimationFrame(() => {
+      challengeEditorRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
   };
 
   const resetChallengeForm = () => {
@@ -307,7 +323,7 @@ export default function AdminDashboard({
     event.preventDefault();
     setIsSaving(true);
     try {
-      const current = challenges.find((challenge) => challenge.id === editingChallengeId);
+      const current = editingChallenge;
       const response = await fetch(editingChallengeId
         ? `/api/admin/challenges/${encodeURIComponent(editingChallengeId)}`
         : '/api/admin/challenges', {
@@ -355,38 +371,6 @@ export default function AdminDashboard({
       resetChallengeForm();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : '문제를 저장하지 못했습니다.', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const removeChallengeFile = async (challenge: AdminChallenge) => {
-    if (!(await confirm({ title: '첨부파일 삭제', description: `“${challenge.title}”에서 현재 첨부파일을 제거합니다.`, confirmLabel: '파일 삭제', danger: true }))) return;
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/admin/challenges/${encodeURIComponent(challenge.id)}/file`, { method: 'DELETE' });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? '첨부파일을 삭제하지 못했습니다.');
-      setChallenges(payload.challenges);
-      setNotice('첨부파일을 삭제했습니다.');
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : '첨부파일을 삭제하지 못했습니다.', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const removeDeployment = async (challenge: AdminChallenge) => {
-    if (!(await confirm({ title: '배포 삭제', description: `“${challenge.title}”의 빌드와 실행 중인 인스턴스를 제거합니다.`, confirmLabel: '배포 삭제', danger: true }))) return;
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/admin/challenges/${encodeURIComponent(challenge.id)}/deployment`, { method: 'DELETE' });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? '배포를 삭제하지 못했습니다.');
-      setChallenges(payload.challenges);
-      setNotice('배포와 실행 중인 인스턴스를 삭제했습니다.');
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : '배포를 삭제하지 못했습니다.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -569,7 +553,7 @@ export default function AdminDashboard({
         )}
 
         {activeNav === 'challenges' && (
-          <section className="admin-panel challenge-admin-panel">
+          <section ref={challengeEditorRef} className="admin-panel challenge-admin-panel">
             <div className="admin-panel-heading">
               <div><h3>{editingChallengeId ? '문제 수정' : '새 문제'}</h3></div>
               {editingChallengeId && <button type="button" className="button button-ghost" onClick={resetChallengeForm}>수정 취소</button>}
@@ -640,48 +624,61 @@ export default function AdminDashboard({
                 </div>
               </fieldset>
 
-              <label className="admin-file-field">
-                <span className="field-label-row">
-                  <strong>풀이자 제공 ZIP</strong>
-                  <small>문제 모달에 표시 · 선택 사항 · 최대 10MB</small>
-                </span>
-                <span className="file-picker">
-                  <input name="challengeFile" type="file" accept=".zip,application/zip" onChange={(event) => setChallengeFile(event.target.files?.[0] ?? null)} />
-                  <span>{challengeFile?.name || (editingChallengeId && challenges.find((challenge) => challenge.id === editingChallengeId)?.attachmentName) || '파일 선택'}</span>
-                  <em>찾아보기</em>
-                </span>
-              </label>
+              <div className={`challenge-file-grid wide${challengeForm.usesVm ? '' : ' is-single'}`}>
+                <label className="admin-file-field">
+                  <span className="field-label-row">
+                    <strong>Public ZIP</strong>
+                    <small>선택 사항 · 최대 10MB</small>
+                  </span>
+                  <span className="file-picker">
+                    <input name="challengeFile" type="file" accept=".zip,application/zip" onChange={(event) => setChallengeFile(event.target.files?.[0] ?? null)} />
+                    <span>{challengeFile?.name || editingChallenge?.attachmentName || '파일 선택'}</span>
+                    <em>찾아보기</em>
+                  </span>
+                </label>
 
-              {challengeForm.usesVm && (
-                <>
+                {challengeForm.usesVm && (
                   <label className="admin-file-field deployment-file-field">
                     <span className="field-label-row">
-                      <strong>VM 배포 ZIP</strong>
-                      <small>플레이어에게 비공개 · 최대 50MB</small>
+                      <strong>Deploy ZIP</strong>
+                      <small>최대 50MB</small>
                     </span>
                     <span className="file-picker">
                       <input name="deploymentFile" type="file" accept=".zip,application/zip" onChange={(event) => setDeploymentFile(event.target.files?.[0] ?? null)} />
-                      <span>{deploymentFile?.name || (editingChallengeId && challenges.find((challenge) => challenge.id === editingChallengeId)?.deploymentStatus !== 'NONE' ? `현재 상태: ${challenges.find((challenge) => challenge.id === editingChallengeId)?.deploymentStatus}` : 'ZIP 파일 선택')}</span>
+                      <span className={!deploymentFile && editingChallenge ? `deployment-file-status ${deploymentStatusCopy[editingChallenge.deploymentStatus].tone}` : undefined}>
+                        {deploymentFile?.name || (editingChallenge && editingChallenge.deploymentStatus !== 'NONE' ? deploymentStatusCopy[editingChallenge.deploymentStatus].label : 'ZIP 파일 선택')}
+                      </span>
                       <em>찾아보기</em>
                     </span>
+                    {!deploymentFile && editingChallenge?.deploymentStatus === 'FAILED' && editingChallenge.deploymentError && <small className="deployment-field-error">{editingChallenge.deploymentError}</small>}
                   </label>
-                  <label className={challengeForm.usesCompose ? 'vm-choice is-checked' : 'vm-choice'}>
-                    <input type="checkbox" checked={challengeForm.usesCompose} onChange={(event) => setChallengeForm({ ...challengeForm, usesCompose: event.target.checked })} />
-                    <span><strong>Docker Compose 사용</strong></span>
-                  </label>
+                )}
+              </div>
+
+              {challengeForm.usesVm && (
+                <div className="vm-runtime-grid wide">
+                  <div className="vm-runtime-option">
+                    <span className="field-label-row"><strong>빌드 방식</strong></span>
+                    <label className={challengeForm.usesCompose ? 'vm-choice is-checked' : 'vm-choice'}>
+                      <input type="checkbox" checked={challengeForm.usesCompose} onChange={(event) => setChallengeForm({ ...challengeForm, usesCompose: event.target.checked })} />
+                      <span><strong>Docker Compose 사용</strong></span>
+                    </label>
+                  </div>
                   <label>
                     <span className="field-label-row"><strong>연결 포트</strong><small>외부에 연결할 컨테이너 내부 포트</small></span>
                     <input name="instancePort" required type="number" min="1" max="65535" inputMode="numeric" placeholder="10008" value={challengeForm.instancePort} onChange={(event) => setChallengeForm({ ...challengeForm, instancePort: event.target.value })} />
                   </label>
-                </>
+                </div>
               )}
 
-              <label>
+              <label className="wide">
                 <span className="field-label-row">
                   <strong>플래그</strong>
-                  {!editingChallengeId && <small>{challengeForm.usesVm ? '배포 ZIP 원본 플래그' : '필수 입력'}</small>}
+                  {!editingChallengeId
+                    ? <small>{challengeForm.usesVm ? 'Deploy ZIP 원본 플래그' : '필수 입력'}</small>
+                    : !editingChallenge?.flag && <small>기존 값은 해시로만 저장됨 · 변경 시 입력</small>}
                 </span>
-                <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder={editingChallengeId ? '변경할 때만 새 플래그 입력…' : 'KCTF{…}'} value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
+                <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder="KCTF{…}" value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
               </label>
 
               <label className="wide">
@@ -698,8 +695,21 @@ export default function AdminDashboard({
             <div className="challenge-admin-table">
               {challenges.map((challenge) => (
                 <article key={challenge.id}>
-                  <div><span>{challenge.category}</span><strong>{challenge.title}</strong><small>{challenge.currentPoints} / {challenge.points} PTS · {challenge.solves} SOLVES · {challenge.scoringMode}{challenge.attachmentName ? ` · PLAYER ${challenge.attachmentName}` : ''}{challenge.usesVm ? ` · VM ${challenge.usesCompose ? 'COMPOSE' : 'DOCKERFILE'} ${challenge.deploymentStatus}` : ''}</small>{challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}</div>
-                  <div><button type="button" onClick={() => editChallenge(challenge)}>수정</button>{challenge.attachmentName && <button type="button" disabled={isSaving} onClick={() => void removeChallengeFile(challenge)}>풀이 ZIP 삭제</button>}{challenge.deploymentStatus !== 'NONE' && <button type="button" disabled={isSaving} onClick={() => void removeDeployment(challenge)}>배포 삭제</button>}<button type="button" className="danger" disabled={isSaving} onClick={() => void deleteChallenge(challenge)}>삭제</button></div>
+                  <div className="challenge-list-copy">
+                    <span>{challenge.category}</span>
+                    <div className="challenge-list-title-line">
+                      <strong>{challenge.title}</strong>
+                      <div className="challenge-list-meta">
+                        <small>{challenge.currentPoints} / {challenge.points} PTS</small>
+                        <small>{challenge.solves} SOLVES</small>
+                        <small>{challenge.scoringMode}</small>
+                        {challenge.attachmentName && <small>PUBLIC {challenge.attachmentName}</small>}
+                        {challenge.usesVm && <small className={`deployment-status ${deploymentStatusCopy[challenge.deploymentStatus].tone}`}>{challenge.usesCompose ? 'COMPOSE' : 'DOCKERFILE'} · {deploymentStatusCopy[challenge.deploymentStatus].label}</small>}
+                      </div>
+                    </div>
+                    {challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}
+                  </div>
+                  <div className="challenge-list-actions"><button type="button" onClick={() => editChallenge(challenge)}>수정</button><button type="button" className="danger" disabled={isSaving} onClick={() => void deleteChallenge(challenge)}>삭제</button></div>
                 </article>
               ))}
             </div>

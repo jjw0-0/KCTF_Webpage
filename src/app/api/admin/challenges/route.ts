@@ -1,12 +1,10 @@
 import { revalidatePath } from 'next/cache';
-import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdminUser } from '@/lib/admin-auth';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { challengeInputSchema, deriveChallengeSummary } from '@/lib/challenge-input';
 import { getAdminChallenges } from '@/lib/challenges';
-import { digestFlag } from '@/lib/flags';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
         ...data,
         summary: data.summary || deriveChallengeSummary(data.description),
         ctfId: ACTIVE_CTF_ID,
-        flagHash: digestFlag(flag || randomBytes(32).toString('base64url')),
+        flag: flag || null,
         usesVm,
         dynamicFlag: usesVm && dynamicFlag,
         usesCompose: usesVm && usesCompose,

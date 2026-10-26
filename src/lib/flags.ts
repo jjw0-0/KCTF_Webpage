@@ -5,9 +5,9 @@ export function digestFlag(flag: string, secret = process.env.FLAG_SECRET): stri
   return createHmac('sha256', secret).update(flag.trim()).digest('hex');
 }
 
-export function matchesFlag(flag: string, expectedDigest: string, secret = process.env.FLAG_SECRET): boolean {
-  const actual = Buffer.from(digestFlag(flag, secret), 'hex');
-  const expected = Buffer.from(expectedDigest, 'hex');
+export function matchesPlainFlag(flag: string, expectedFlag: string): boolean {
+  const actual = Buffer.from(flag.trim());
+  const expected = Buffer.from(expectedFlag);
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 

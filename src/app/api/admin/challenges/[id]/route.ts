@@ -6,7 +6,6 @@ import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { challengeInputSchema, deriveChallengeSummary } from '@/lib/challenge-input';
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
 import { getAdminChallenges } from '@/lib/challenges';
-import { digestFlag } from '@/lib/flags';
 import { deleteRemoteDeployment, destroyRemoteInstance } from '@/lib/instancer';
 import { prisma } from '@/lib/prisma';
 
@@ -71,7 +70,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
             ? { deploymentStatus: 'NONE' as const, deploymentError: null, deploymentUpdatedAt: null }
             : {}),
           solveCount: existing._count.solves,
-          ...(flag ? { flagHash: digestFlag(flag) } : {}),
+          ...(flag ? { flag } : {}),
         },
         select: { points: true, scoringMode: true, minimumPoints: true, decaySolves: true, decrementPerSolve: true },
       });

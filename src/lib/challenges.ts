@@ -23,6 +23,7 @@ export type AdminChallenge = {
   minimumPoints: number;
   decaySolves: number;
   decrementPerSolve: number;
+  flag: string;
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   tags: string[];
   instanceSlug: string;
@@ -108,6 +109,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       minimumPoints: true,
       decaySolves: true,
       decrementPerSolve: true,
+      flag: true,
       difficulty: true,
       tags: true,
       instanceSlug: true,
@@ -143,6 +145,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     minimumPoints: challenge.minimumPoints,
     decaySolves: challenge.decaySolves,
     decrementPerSolve: challenge.decrementPerSolve,
+    flag: challenge.flag ?? '',
     difficulty: challenge.difficulty,
     tags: challenge.tags,
     instanceSlug: challenge.instanceSlug ?? '',

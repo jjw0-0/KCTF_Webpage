@@ -5,7 +5,7 @@ import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getCtfAccess } from '@/lib/ctf-access';
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
-import { digestFlag, matchesFlag, matchesInstanceFlag } from '@/lib/flags';
+import { digestFlag, matchesInstanceFlag, matchesPlainFlag } from '@/lib/flags';
 import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       minimumPoints: true,
       decaySolves: true,
       decrementPerSolve: true,
-      flagHash: true,
+      flag: true,
       usesVm: true,
       dynamicFlag: true,
       solveCount: true,
@@ -111,7 +111,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const submittedFlag = parsed.data.flag.trim();
   const correct = challenge.usesVm && challenge.dynamicFlag
     ? matchesInstanceFlag(submittedFlag, challenge.id, user.id)
-    : matchesFlag(submittedFlag, challenge.flagHash);
+    : challenge.flag
+      ? matchesPlainFlag(submittedFlag, challenge.flag)
+      : false;
   if (!correct) {
     const sub = await prisma.submission.create({
       data: {

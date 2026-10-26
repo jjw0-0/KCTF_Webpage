@@ -119,8 +119,9 @@ To bootstrap an administrator, run the seed command with `ADMIN_EMAIL`,
 container environment.
 
 The seed creates categories but no sample problems. Create problems from the
-administrator's **Challenges** screen. Static flags are stored as keyed digests
-and are never returned by the API.
+administrator's **Challenges** screen. Static flags are stored as plain text so
+administrators can review and edit the existing value. Existing challenges must
+have their flags entered again once after upgrading from digest-only storage.
 
 ## Challenge instances
 
