@@ -6,7 +6,16 @@ import test from 'node:test';
 
 process.env.INSTANCER_TOKEN = 'test-token';
 process.env.INSTANCER_DATA_DIR = await mkdtemp(path.join(tmpdir(), 'kctf-instancer-state-'));
-const { inferManifest, prepareRuntimeCompose, validateCompose, validateManifest } = await import('../src/index.mjs');
+const { inferManifest, prepareDockerfileDeployment, prepareRuntimeCompose, validateCompose, validateManifest } = await import('../src/index.mjs');
+
+test('prepares a Dockerfile deployment without a Compose build definition', () => {
+  const deployment = prepareDockerfileDeployment('simple-web', 'a'.repeat(64), 8080);
+  assert.equal(deployment.image, `kctf/simple-web/app:${'a'.repeat(12)}`);
+  assert.equal(deployment.compose.services.app.build, undefined);
+  assert.equal(deployment.compose.services.app.image, deployment.image);
+  assert.equal(deployment.manifest.entryService, 'app');
+  assert.equal(deployment.manifest.internalPort, 8080);
+});
 
 test('infers the entry service from the single administrator-supplied port', () => {
   const compose = validateCompose(`

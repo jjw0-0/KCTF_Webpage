@@ -22,7 +22,7 @@ type ChallengeForm = {
   decrementPerSolve: string;
   flag: string;
   usesVm: boolean;
-  dynamicFlag: boolean;
+  usesCompose: boolean;
   instancePort: string;
   connectionUrl: string;
 };
@@ -47,7 +47,7 @@ function emptyChallenge(categoryId = ''): ChallengeForm {
     decrementPerSolve: '10',
     flag: '',
     usesVm: false,
-    dynamicFlag: false,
+    usesCompose: false,
     instancePort: '',
     connectionUrl: '',
   };
@@ -242,7 +242,7 @@ export default function AdminDashboard({
       decrementPerSolve: String(challenge.decrementPerSolve),
       flag: '',
       usesVm: challenge.usesVm,
-      dynamicFlag: challenge.dynamicFlag,
+      usesCompose: challenge.usesCompose,
       instancePort: challenge.instancePort ? String(challenge.instancePort) : '',
       connectionUrl: challenge.connectionUrl,
     });
@@ -319,6 +319,7 @@ export default function AdminDashboard({
           minimumPoints: Number(challengeForm.minimumPoints),
           decaySolves: Number(challengeForm.decaySolves),
           decrementPerSolve: Number(challengeForm.decrementPerSolve),
+          dynamicFlag: current?.dynamicFlag ?? false,
           instancePort: challengeForm.usesVm ? Number(challengeForm.instancePort) : undefined,
           summary: '',
           difficulty: current?.difficulty ?? 'INTERMEDIATE',
@@ -626,7 +627,7 @@ export default function AdminDashboard({
                   <div className="access-option-col">
                     <span className="access-sub-label">인스턴스 연동</span>
                     <label className={challengeForm.usesVm ? 'vm-choice is-checked' : 'vm-choice'}>
-                      <input type="checkbox" checked={challengeForm.usesVm} onChange={(event) => setChallengeForm({ ...challengeForm, usesVm: event.target.checked, dynamicFlag: event.target.checked ? challengeForm.dynamicFlag : false, connectionUrl: event.target.checked ? '' : challengeForm.connectionUrl })} />
+                      <input type="checkbox" checked={challengeForm.usesVm} onChange={(event) => setChallengeForm({ ...challengeForm, usesVm: event.target.checked, usesCompose: event.target.checked ? challengeForm.usesCompose : false, connectionUrl: event.target.checked ? '' : challengeForm.connectionUrl })} />
                       <span>
                         <strong>VM 사용</strong>
                       </span>
@@ -656,39 +657,32 @@ export default function AdminDashboard({
                   <label className="admin-file-field deployment-file-field">
                     <span className="field-label-row">
                       <strong>VM 배포 ZIP</strong>
-                      <small>Docker Compose · 플레이어에게 비공개 · 최대 50MB</small>
+                      <small>플레이어에게 비공개 · 최대 50MB</small>
                     </span>
                     <span className="file-picker">
                       <input name="deploymentFile" type="file" accept=".zip,application/zip" onChange={(event) => setDeploymentFile(event.target.files?.[0] ?? null)} />
-                      <span>{deploymentFile?.name || (editingChallengeId && challenges.find((challenge) => challenge.id === editingChallengeId)?.deploymentStatus !== 'NONE' ? `현재 상태: ${challenges.find((challenge) => challenge.id === editingChallengeId)?.deploymentStatus}` : 'deployment.zip 선택')}</span>
+                      <span>{deploymentFile?.name || (editingChallengeId && challenges.find((challenge) => challenge.id === editingChallengeId)?.deploymentStatus !== 'NONE' ? `현재 상태: ${challenges.find((challenge) => challenge.id === editingChallengeId)?.deploymentStatus}` : 'ZIP 파일 선택')}</span>
                       <em>찾아보기</em>
                     </span>
                   </label>
-                  <label className={challengeForm.dynamicFlag ? 'vm-choice is-checked' : 'vm-choice'}>
-                    <input type="checkbox" checked={challengeForm.dynamicFlag} onChange={(event) => setChallengeForm({ ...challengeForm, dynamicFlag: event.target.checked })} />
-                    <span><strong>플레이어별 동적 플래그</strong></span>
+                  <label className={challengeForm.usesCompose ? 'vm-choice is-checked' : 'vm-choice'}>
+                    <input type="checkbox" checked={challengeForm.usesCompose} onChange={(event) => setChallengeForm({ ...challengeForm, usesCompose: event.target.checked })} />
+                    <span><strong>Docker Compose 사용</strong></span>
                   </label>
                   <label>
-                    <span className="field-label-row"><strong>연결 포트</strong><small>Compose 서비스 내부 포트</small></span>
+                    <span className="field-label-row"><strong>연결 포트</strong><small>외부에 연결할 컨테이너 내부 포트</small></span>
                     <input name="instancePort" required type="number" min="1" max="65535" inputMode="numeric" placeholder="10008" value={challengeForm.instancePort} onChange={(event) => setChallengeForm({ ...challengeForm, instancePort: event.target.value })} />
                   </label>
                 </>
               )}
 
-              {challengeForm.usesVm && challengeForm.dynamicFlag ? (
-                <div className="form-field instance-flag-note">
-                  <span className="field-label-row"><strong>플래그</strong></span>
-                  <small>플레이어별 플래그를 생성해 배포 서비스의 <code>FLAG</code> 환경변수로 주입합니다.</small>
-                </div>
-              ) : (
-                <label>
-                  <span className="field-label-row">
-                    <strong>플래그</strong>
-                    {!editingChallengeId && <small>{challengeForm.usesVm ? '배포 ZIP 원본 플래그' : '필수 입력'}</small>}
-                  </span>
-                  <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder={editingChallengeId ? '변경할 때만 새 플래그 입력…' : 'KCTF{…}'} value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
-                </label>
-              )}
+              <label>
+                <span className="field-label-row">
+                  <strong>플래그</strong>
+                  {!editingChallengeId && <small>{challengeForm.usesVm ? '배포 ZIP 원본 플래그' : '필수 입력'}</small>}
+                </span>
+                <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder={editingChallengeId ? '변경할 때만 새 플래그 입력…' : 'KCTF{…}'} value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
+              </label>
 
               <label className="wide">
                 <span className="field-label-row">
@@ -704,7 +698,7 @@ export default function AdminDashboard({
             <div className="challenge-admin-table">
               {challenges.map((challenge) => (
                 <article key={challenge.id}>
-                  <div><span>{challenge.category}</span><strong>{challenge.title}</strong><small>{challenge.currentPoints} / {challenge.points} PTS · {challenge.solves} SOLVES · {challenge.scoringMode}{challenge.attachmentName ? ` · PLAYER ${challenge.attachmentName}` : ''}{challenge.usesVm ? ` · VM ${challenge.deploymentStatus}` : ''}</small>{challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}</div>
+                  <div><span>{challenge.category}</span><strong>{challenge.title}</strong><small>{challenge.currentPoints} / {challenge.points} PTS · {challenge.solves} SOLVES · {challenge.scoringMode}{challenge.attachmentName ? ` · PLAYER ${challenge.attachmentName}` : ''}{challenge.usesVm ? ` · VM ${challenge.usesCompose ? 'COMPOSE' : 'DOCKERFILE'} ${challenge.deploymentStatus}` : ''}</small>{challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}</div>
                   <div><button type="button" onClick={() => editChallenge(challenge)}>수정</button>{challenge.attachmentName && <button type="button" disabled={isSaving} onClick={() => void removeChallengeFile(challenge)}>풀이 ZIP 삭제</button>}{challenge.deploymentStatus !== 'NONE' && <button type="button" disabled={isSaving} onClick={() => void removeDeployment(challenge)}>배포 삭제</button>}<button type="button" className="danger" disabled={isSaving} onClick={() => void deleteChallenge(challenge)}>삭제</button></div>
                 </article>
               ))}

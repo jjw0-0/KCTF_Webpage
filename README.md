@@ -122,7 +122,7 @@ The seed creates categories but no sample problems. Create problems from the
 administrator's **Challenges** screen. Static flags are stored as keyed digests
 and are never returned by the API.
 
-## Compose challenge instances
+## Challenge instances
 
 The administrator can attach two separate ZIP files to a problem:
 
@@ -130,11 +130,18 @@ The administrator can attach two separate ZIP files to a problem:
 - **VM 배포 ZIP**: shown only when **VM 사용** is enabled; kept private and built
   by the instancer.
 
-The deployment ZIP only needs the existing `docker-compose.yml` and its build
-files. In the administrator form, enter the problem name, flag, and the one
-internal TCP port participants should reach. The instancer finds the single
-Compose service that declares that port and generates its private runtime
-manifest automatically; challenge authors do not write `challenge.yaml`.
+The deployment archive may use any `.zip` filename. In the administrator form,
+enter the problem name, flag, and the one internal TCP port participants should
+reach, then choose the build mode:
+
+- Leave **Docker Compose 사용** unchecked for a root-level `Dockerfile`. The
+  instancer calls `docker build` directly and does not create a Compose file to
+  build it.
+- Enable **Docker Compose 사용** when the archive contains an existing
+  root-level `docker-compose.yml`. The instancer finds the single service that
+  declares the entered port.
+
+Challenge authors do not write `challenge.yaml` in either mode.
 
 ```yaml
 # docker-compose.yml
@@ -142,6 +149,7 @@ services:
   web:
     build: ./web
     depends_on: [db]
+    expose: ["8080"]
   db:
     image: postgres:16-alpine
     volumes: [data:/var/lib/postgresql/data]
@@ -149,12 +157,10 @@ volumes:
   data: {}
 ```
 
-VM problems use the flag entered in the administrator form by default, so an
-existing Compose bundle and its original flag file can run unchanged. Legacy
+VM problems use the flag entered in the administrator form, so an existing
+deployment bundle and its original flag file can run unchanged. Legacy
 amd64 Redis 5.0.7 images receive an ARM64 runtime compatibility adjustment
-automatically without changing the uploaded source. Enable
-**플레이어별 동적 플래그** only when each instance should receive a generated
-flag through the entry service's `FLAG` environment variable. Compose may use
+automatically without changing the uploaded source. Compose mode may use
 multiple services, images, build contexts, networks, named
 volumes, and project-relative read-only bind mounts. Declared published ports
 are ignored because the instancer exposes only the manifest entry port. Absolute

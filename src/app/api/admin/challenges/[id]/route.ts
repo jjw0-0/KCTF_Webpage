@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, usesVm: true, dynamicFlag: true, instanceSlug: true, _count: { select: { solves: true } } } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, usesVm: true, dynamicFlag: true, usesCompose: true, instancePort: true, instanceSlug: true, _count: { select: { solves: true } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
@@ -47,8 +47,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   });
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
-  const { flag, visible, instanceSlug, usesVm, dynamicFlag, instancePort, connectionUrl, ...data } = parsed.data;
-  if (existing.usesVm && !usesVm && existing.instanceSlug) {
+  const { flag, visible, instanceSlug, usesVm, dynamicFlag, usesCompose, instancePort, connectionUrl, ...data } = parsed.data;
+  const deploymentConfigChanged = existing.usesVm && usesVm
+    && (existing.usesCompose !== usesCompose || existing.instancePort !== instancePort);
+  if (existing.instanceSlug && (existing.usesVm && !usesVm || deploymentConfigChanged)) {
     await deleteRemoteDeployment(existing.instanceSlug);
   }
   try {
@@ -60,11 +62,14 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
           summary: data.summary || deriveChallengeSummary(data.description),
           usesVm,
           dynamicFlag: usesVm && dynamicFlag,
+          usesCompose: usesVm && usesCompose,
           instancePort: usesVm ? instancePort : null,
           connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,
           instanceSlug: usesVm ? (instanceSlug || existing.instanceSlug || id) : null,
           isVisible: visible,
-          ...(!usesVm ? { deploymentStatus: 'NONE' as const, deploymentError: null, deploymentUpdatedAt: null } : {}),
+          ...(!usesVm || deploymentConfigChanged
+            ? { deploymentStatus: 'NONE' as const, deploymentError: null, deploymentUpdatedAt: null }
+            : {}),
           solveCount: existing._count.solves,
           ...(flag ? { flagHash: digestFlag(flag) } : {}),
         },
@@ -100,6 +105,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       scoringMode: data.scoringMode,
       usesVm,
       dynamicFlag: usesVm && dynamicFlag,
+      usesCompose: usesVm && usesCompose,
       instancePort: usesVm ? instancePort : null,
       instanceSlug: usesVm && instanceSlug ? instanceSlug : null,
       connectionUrl: usesVm || !connectionUrl ? null : connectionUrl,

@@ -21,7 +21,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 async function challengeForDeployment(id: string) {
   return prisma.challenge.findFirst({
     where: { id, ctfId: ACTIVE_CTF_ID },
-    select: { id: true, title: true, usesVm: true, instanceSlug: true, instancePort: true },
+    select: { id: true, title: true, usesVm: true, usesCompose: true, instanceSlug: true, instancePort: true },
   });
 }
 
@@ -63,7 +63,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const slug = challenge.instanceSlug ?? challenge.id;
   try {
-    const deployment = await uploadRemoteDeployment(slug, new File([bytes], file.name, { type: 'application/zip' }), challenge.instancePort);
+    const deployment = await uploadRemoteDeployment(
+      slug,
+      new File([bytes], file.name, { type: 'application/zip' }),
+      challenge.instancePort,
+      challenge.usesCompose,
+    );
     await prisma.challenge.update({
       where: { id: challenge.id },
       data: {
@@ -81,8 +86,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       actorId: admin.id,
       request,
       statusCode: 202,
-      message: `관리자 Compose 배포 ZIP 등록: ${formatActor(admin)} → [${challenge.title}]`,
-      params: { challengeId: challenge.id, instanceSlug: slug, fileName: file.name, fileSize: file.size },
+      message: `관리자 배포 ZIP 등록: ${formatActor(admin)} → [${challenge.title}]`,
+      params: { challengeId: challenge.id, instanceSlug: slug, mode: deployment.mode, fileName: file.name, fileSize: file.size },
     });
     revalidatePath('/ctf');
     revalidatePath('/admin');
@@ -117,7 +122,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     actorId: admin.id,
     request,
     statusCode: 200,
-    message: `관리자 Compose 배포 삭제: ${formatActor(admin)} → [${challenge.title}]`,
+    message: `관리자 배포 삭제: ${formatActor(admin)} → [${challenge.title}]`,
     params: { challengeId: challenge.id, instanceSlug: slug },
   });
   revalidatePath('/ctf');

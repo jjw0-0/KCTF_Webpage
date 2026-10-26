@@ -35,7 +35,7 @@ const gatewayImage = process.env.INSTANCER_GATEWAY_IMAGE || 'kctf/instance-gatew
 const gatewayService = 'kctf_gateway';
 const gatewayNetwork = 'kctf_edge';
 const gatewayPort = 20_000;
-const runtimeVersion = 3;
+const runtimeVersion = 4;
 
 const deploymentsFile = path.join(dataDir, 'deployments.json');
 const instancesFile = path.join(dataDir, 'instances.json');
@@ -124,6 +124,7 @@ function deploymentResponse(record) {
   if (!record) return null;
   return {
     slug: record.slug,
+    mode: record.mode || 'compose',
     status: record.status,
     sourceHash: record.sourceHash,
     error: record.error || null,
@@ -290,6 +291,26 @@ function inferManifest(compose, sourceDir, entryPort) {
       port: entryPort,
     },
   }, compose, sourceDir);
+}
+
+function prepareDockerfileDeployment(slug, hash, entryPort) {
+  if (!Number.isInteger(entryPort) || entryPort < 1 || entryPort > 65_535) {
+    throw new Error('entryPort must be a valid TCP port');
+  }
+  const image = `kctf/${slug}/app:${hash.slice(0, 12)}`;
+  return {
+    image,
+    compose: { services: { app: { image } } },
+    manifest: {
+      entryService: 'app',
+      protocol: 'http',
+      internalPort: entryPort,
+      resources: { memoryMb: Math.min(256, maxMemoryMb), cpu: Math.min(0.5, maxCpu), pids: Math.min(128, maxPids) },
+      flagTargets: [{ service: 'app', mode: 'env', name: 'FLAG' }],
+      composeFile: null,
+      serviceOverrides: {},
+    },
+  };
 }
 
 async function automaticCompatibilityOverrides(compose, sourceDir) {
@@ -594,14 +615,21 @@ async function buildDeployment(slug) {
   record.updatedAt = new Date().toISOString();
   await saveState(deploymentsFile, deployments);
   try {
-    const output = await run('docker', ['compose', '-f', record.buildCompose, 'build', '--pull'], {
-      cwd: record.sourceDir,
-      timeoutMs: buildTimeoutMs,
-    });
-    await run('docker', ['compose', '-f', record.buildCompose, 'pull', '--ignore-buildable'], {
-      cwd: record.sourceDir,
-      timeoutMs: buildTimeoutMs,
-    });
+    const output = (record.mode || 'compose') === 'dockerfile'
+      ? await run('docker', ['build', '--pull', '-t', record.image, '.'], {
+          cwd: record.sourceDir,
+          timeoutMs: buildTimeoutMs,
+        })
+      : await run('docker', ['compose', '-f', record.buildCompose, 'build', '--pull'], {
+          cwd: record.sourceDir,
+          timeoutMs: buildTimeoutMs,
+        });
+    if ((record.mode || 'compose') === 'compose') {
+      await run('docker', ['compose', '-f', record.buildCompose, 'pull', '--ignore-buildable'], {
+        cwd: record.sourceDir,
+        timeoutMs: buildTimeoutMs,
+      });
+    }
     record.status = 'READY';
     record.log = output.slice(-100_000);
   } catch (error) {
@@ -676,6 +704,10 @@ async function destroyInstance(instance) {
 }
 
 async function removeBuiltImages(record) {
+  if ((record.mode || 'compose') === 'dockerfile') {
+    await run('docker', ['image', 'rm', record.image], { timeoutMs: 60_000 }).catch(() => undefined);
+    return;
+  }
   const prefix = `kctf/${record.slug}/`;
   const images = [...new Set(Object.values(record.compose.services)
     .map((service) => service.image)
@@ -697,34 +729,47 @@ app.post('/api/instancer/deployments/:slug', requireBearer, upload.single('bundl
   }
   const sourceHash = createHash('sha256').update(request.file.buffer).digest('hex');
   const entryPort = Number(request.body?.entryPort);
+  const mode = request.body?.mode;
+  if (!['compose', 'dockerfile'].includes(mode)) return response.status(400).json({ error: 'deployment mode must be compose or dockerfile' });
   const paths = deploymentPaths(slug, sourceHash);
   try {
     await extractArchive(request.file.buffer, paths.source);
-    const manifestPath = path.join(paths.source, 'challenge.yaml');
-    const manifestRaw = await readFile(manifestPath, 'utf8').then(parseYaml).catch((error) => {
-      if (error?.code === 'ENOENT') return null;
-      throw error;
-    });
-    const composeFilename = manifestRaw?.runtime?.composeFile || 'docker-compose.yml';
-    const composePath = safeRelativePath(paths.source, composeFilename, 'runtime.composeFile');
-    const composeRaw = await readFile(composePath, 'utf8');
-    const compose = validateCompose(composeRaw, paths.source);
-    const manifest = manifestRaw
-      ? validateManifest(manifestRaw, compose, paths.source)
-      : inferManifest(compose, paths.source, entryPort);
-    manifest.serviceOverrides = {
-      ...await automaticCompatibilityOverrides(compose, paths.source),
-      ...manifest.serviceOverrides,
-    };
-    const buildCompose = prepareBuildCompose(compose, slug, sourceHash);
-    await writeFile(paths.buildCompose, stringifyYaml(buildCompose), { mode: 0o600 });
+    let compose;
+    let manifest;
+    let buildCompose = null;
+    let image = null;
+    if (mode === 'compose') {
+      const manifestPath = path.join(paths.source, 'challenge.yaml');
+      const manifestRaw = await readFile(manifestPath, 'utf8').then(parseYaml).catch((error) => {
+        if (error?.code === 'ENOENT') return null;
+        throw error;
+      });
+      const composeFilename = manifestRaw?.runtime?.composeFile || 'docker-compose.yml';
+      const composePath = safeRelativePath(paths.source, composeFilename, 'runtime.composeFile');
+      const composeRaw = await readFile(composePath, 'utf8');
+      compose = validateCompose(composeRaw, paths.source);
+      manifest = manifestRaw
+        ? validateManifest(manifestRaw, compose, paths.source)
+        : inferManifest(compose, paths.source, entryPort);
+      manifest.serviceOverrides = {
+        ...await automaticCompatibilityOverrides(compose, paths.source),
+        ...manifest.serviceOverrides,
+      };
+      buildCompose = prepareBuildCompose(compose, slug, sourceHash);
+      await writeFile(paths.buildCompose, stringifyYaml(buildCompose), { mode: 0o600 });
+    } else {
+      await readFile(path.join(paths.source, 'Dockerfile'), 'utf8');
+      ({ compose, manifest, image } = prepareDockerfileDeployment(slug, sourceHash, entryPort));
+    }
     const record = {
       slug,
+      mode,
       status: 'QUEUED',
       sourceHash,
       sourceDir: paths.source,
-      buildCompose: paths.buildCompose,
-      compose: buildCompose,
+      buildCompose: mode === 'compose' ? paths.buildCompose : null,
+      image,
+      compose: mode === 'compose' ? buildCompose : compose,
       manifest,
       log: '',
       error: null,
@@ -845,7 +890,7 @@ app.use((error, _request, response, _next) => {
   response.status(500).json({ error: 'internal instancer error' });
 });
 
-export { inferManifest, prepareRuntimeCompose, validateCompose, validateManifest };
+export { inferManifest, prepareDockerfileDeployment, prepareRuntimeCompose, validateCompose, validateManifest };
 
 if (path.resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {
   if (installAmd64Emulation && process.arch === 'arm64') {
