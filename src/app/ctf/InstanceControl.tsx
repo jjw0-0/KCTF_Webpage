@@ -71,6 +71,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
   return (
     <section className="instance-control" aria-label="Challenge Instance">
       <div>
+        <span>INSTANCE</span>
         <small>{isCurrent ? `~ ${new Date(instance.expiresAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '1 HOUR TTL'}</small>
       </div>
       {requiresLogin ? (
@@ -79,7 +80,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
         <div className="instance-actions">
           {tcpCommand
             ? <code className="instance-command">{tcpCommand}</code>
-            : <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기 ↗</a>}
+            : <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기</a>}
           <button type="button" onClick={() => void destroy()} disabled={loading}>종료</button>
         </div>
       ) : (

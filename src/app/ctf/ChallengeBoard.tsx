@@ -273,87 +273,91 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
           >
             <span className="card-beam dialog-beam" aria-hidden="true" />
             <header className="dialog-header">
-              <div className="dialog-header-actions">
-                <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
-                <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
-                  <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
-                </button>
-              </div>
               <div className="dialog-hero">
-                <div>
+                <div className="dialog-title-group">
                   <h2 id="challenge-dialog-title">{selected.title}</h2>
                   <p className="dialog-author"><span>Author</span> {selected.author || '-'}</p>
+                </div>
+                <div className="dialog-header-actions">
+                  <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
+                  <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
+                    <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
+                  </button>
                 </div>
               </div>
             </header>
             <div className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
               <ChallengeDescription content={selected.description || selected.summary} />
             </div>
-            {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
-              <div className="dialog-resources">
-                {selectedFileUrl && (
-                  <a className="challenge-file" href={selectedFileUrl} target="_blank" rel="noopener noreferrer" download>
-                    <span className="file-icon" aria-hidden="true">↓</span><span>{selected.attachmentName || '문제 파일'}<small>첨부파일 다운로드</small></span><span aria-hidden="true">↗</span>
-                  </a>
-                )}
-                {!selected.usesVm && selectedConnectionUrl && (
-                  <a className="challenge-file challenge-access-link" href={selectedConnectionUrl} target="_blank" rel="noopener noreferrer">
-                    <span className="file-icon" aria-hidden="true">↗</span><span>URL<small>{selected.connectionUrl}</small></span><span aria-hidden="true">→</span>
-                  </a>
-                )}
-                {!selected.usesVm && selectedTcpCommand && (
-                  <div className="challenge-file challenge-access-command">
-                    <span className="file-icon is-terminal" aria-hidden="true">NC</span>
-                    <span>NC<small><code>{selectedTcpCommand}</code></small></span>
-                  </div>
-                )}
-                {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
-                  ? <InstanceControl key={selected.id} challengeId={selected.id} connectionType={selected.connectionType ?? 'HTTP'} enabled />
-                  : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
-              </div>
-            )}
-            <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
-              <div className="flag-form-head">
-                <label htmlFor="flag-input">플래그 제출</label>
-                {isAuthenticated && submission.message && (
-                  <span className={`flag-status-badge is-${submission.state}`} role="status">
-                    <svg viewBox="0 0 16 16" aria-hidden="true">
-                      {submission.state === 'correct'
-                        ? <path d="m3 8.2 3.1 3.1L13 4.5" />
-                        : submission.state === 'duplicate'
-                          ? <><path d="M8 2.1 14 13H2L8 2.1Z" /><path d="M8 5.7v3.5M8 11.4v.1" /></>
-                          : <path d="m4 4 8 8m0-8-8 8" />}
-                    </svg>
-                    {submission.message}
-                  </span>
-                )}
-              </div>
-              <div className={`flag-input-box is-${submission.state}`}>
-                <input
-                  id="flag-input"
-                  name="flag"
-                  required
-                  maxLength={256}
-                  value={flag}
-                  onChange={(event) => {
-                    setFlag(event.target.value);
-                    if (submission.state !== 'idle') setSubmission({ state: 'idle' });
-                  }}
-                  placeholder={isAuthenticated ? 'KCTF{…}' : '로그인 후 제출할 수 있습니다'}
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  disabled={!isAuthenticated}
-                  aria-invalid={submission.state === 'wrong' || submission.state === 'error'}
-                />
-                <button type="submit" disabled={!isAuthenticated || !flag.trim() || submission.state === 'submitting'}>{submission.state === 'submitting' ? '확인 중…' : isAuthenticated ? '제출 →' : '로그인 필요'}</button>
-              </div>
-              {!isAuthenticated && selected && (
-                <p className="submission-message error" role="status">
-                  플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/ctf?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
-                </p>
+            <footer className="dialog-dock">
+              {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
+                <div className="dialog-resources">
+                  {selectedFileUrl && (
+                    <a className="challenge-file" href={selectedFileUrl} target="_blank" rel="noopener noreferrer" download>
+                      <span className="file-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path d="M9 2v9m0 0 3.5-3.5M9 11 5.5 7.5M3 15h12" /></svg></span>
+                      <span>{selected.attachmentName || '문제 파일'}<small>첨부파일 다운로드</small></span>
+                    </a>
+                  )}
+                  {!selected.usesVm && selectedConnectionUrl && (
+                    <a className="challenge-file challenge-access-link" href={selectedConnectionUrl} target="_blank" rel="noopener noreferrer">
+                      <span className="file-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path d="m5 13 8-8M7 5h6v6" /></svg></span>
+                      <span>URL<small>{selected.connectionUrl}</small></span>
+                    </a>
+                  )}
+                  {!selected.usesVm && selectedTcpCommand && (
+                    <div className="challenge-file challenge-access-command">
+                      <span className="file-icon is-terminal" aria-hidden="true">NC</span>
+                      <span>NC<small><code>{selectedTcpCommand}</code></small></span>
+                    </div>
+                  )}
+                  {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
+                    ? <InstanceControl key={selected.id} challengeId={selected.id} connectionType={selected.connectionType ?? 'HTTP'} enabled />
+                    : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
+                </div>
               )}
-            </form>
+              <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
+                <div className="flag-form-head">
+                  <label htmlFor="flag-input">플래그 제출</label>
+                  {isAuthenticated && submission.message && (
+                    <span className={`flag-status-badge is-${submission.state}`} role="status">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        {submission.state === 'correct'
+                          ? <path d="m3 8.2 3.1 3.1L13 4.5" />
+                          : submission.state === 'duplicate'
+                            ? <><path d="M8 2.1 14 13H2L8 2.1Z" /><path d="M8 5.7v3.5M8 11.4v.1" /></>
+                            : <path d="m4 4 8 8m0-8-8 8" />}
+                      </svg>
+                      {submission.message}
+                    </span>
+                  )}
+                </div>
+                <div className={`flag-input-box is-${submission.state}`}>
+                  <input
+                    id="flag-input"
+                    name="flag"
+                    required
+                    maxLength={256}
+                    value={flag}
+                    onChange={(event) => {
+                      setFlag(event.target.value);
+                      if (submission.state !== 'idle') setSubmission({ state: 'idle' });
+                    }}
+                    placeholder={isAuthenticated ? 'KCTF{…}' : '로그인 후 제출할 수 있습니다'}
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    disabled={!isAuthenticated}
+                    aria-invalid={submission.state === 'wrong' || submission.state === 'error'}
+                  />
+                  <button type="submit" disabled={!isAuthenticated || !flag.trim() || submission.state === 'submitting'}>{submission.state === 'submitting' ? '확인 중…' : isAuthenticated ? '제출' : '로그인 필요'}</button>
+                </div>
+                {!isAuthenticated && selected && (
+                  <p className="submission-message error" role="status">
+                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/ctf?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
+                  </p>
+                )}
+              </form>
+            </footer>
           </section>
         </div>
       )}

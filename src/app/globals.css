@@ -808,25 +808,30 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 
 /* A fixed header and flag dock keep long descriptions usable. */
-.challenge-dialog-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 28px; background: rgba(0,3,2,.9); animation: backdrop-in .34s ease-out both; }
-.challenge-dialog { position: relative; isolation: isolate; display: flex; flex-direction: column; width: min(100%, 620px); min-height: min(680px, calc(100dvh - 56px)); max-height: min(820px, calc(100dvh - 48px)); overflow: hidden; border: 1px solid color-mix(in srgb, var(--category-accent) 40%, #20312b); border-radius: 12px; background: #090e0d; box-shadow: 0 40px 140px #000c, 0 0 40px #28d89a0b, inset 0 0 0 5px #ffffff02; animation: dialog-in .28s var(--ease-out) both; }
+.challenge-dialog-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,3,2,.9); animation: backdrop-in .34s ease-out both; }
+.challenge-dialog { position: relative; isolation: isolate; display: flex; flex-direction: column; width: min(100%, 700px); min-height: min(540px, calc(100dvh - 48px)); max-height: min(800px, calc(100dvh - 48px)); overflow: hidden; border: 1px solid color-mix(in srgb, var(--category-accent) 40%, #20312b); border-radius: 10px; background: #090e0d; box-shadow: 0 40px 140px #000c, 0 0 40px #28d89a0b, inset 0 0 0 5px #ffffff02; animation: dialog-in .28s var(--ease-out) both; }
 .challenge-dialog-backdrop:has(.is-shared-transition), .challenge-dialog.is-shared-transition, .challenge-dialog.is-shared-transition::before { animation: none; }
 .challenge-dialog::before { position: absolute; top: 0; left: 0; right: 0; z-index: 3; height: 2px; background: linear-gradient(90deg, transparent, #aaffeb, var(--category-accent), transparent); content: ""; transform-origin: left; animation: panel-power-on .6s ease-out both; pointer-events: none; }
-.dialog-header { position: relative; flex-shrink: 0; border-bottom: 1px solid #aaffda20; padding: 68px 40px 28px; background: linear-gradient(110deg, #1c39332b, transparent 70%), repeating-linear-gradient(90deg, transparent 0 11px, #aaffda05 11px 12px); }
-.dialog-header::after { position: absolute; bottom: -2px; left: 40px; width: 52px; height: 3px; content: ""; background: var(--category-accent); box-shadow: 0 0 14px #4de0a744; }
-.dialog-header-actions { position: absolute; top: 14px; right: 16px; z-index: 2; display: flex; align-items: center; gap: 10px; }
-.dialog-close { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #aaffda20; border-radius: 5px; background: #ffffff04; color: #a7bcb3; font-size: 24px; transition: background .2s, color .2s; }
+.dialog-header { position: relative; flex-shrink: 0; border-bottom: 1px solid #aaffda20; padding: 30px 32px 24px; background: linear-gradient(110deg, #1c39332b, transparent 70%), repeating-linear-gradient(90deg, transparent 0 11px, #aaffda05 11px 12px); }
+.dialog-header::after { position: absolute; bottom: -2px; left: 32px; width: 44px; height: 3px; content: ""; background: var(--category-accent); box-shadow: 0 0 14px #4de0a744; }
+.dialog-header-actions { display: flex; align-items: flex-start; justify-content: flex-end; gap: 8px; }
+.dialog-close { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border: 1px solid #aaffda20; border-radius: 5px; background: #ffffff04; color: #a7bcb3; font-size: 24px; transition: border-color .2s, background .2s, color .2s; }
 .dialog-close svg { width: 17px; height: 17px; fill: none; stroke: currentcolor; stroke-width: 1.5; stroke-linecap: square; }
-.dialog-close:hover { background: #4de0a718; color: white; }
-.dialog-hero { min-width: 0; }
-.challenge-dialog h2 { margin: 0; color: #effaf5; font-size: clamp(26px, 4vw, 38px); font-weight: 600; line-height: 1.18; letter-spacing: -.045em; overflow-wrap: anywhere; }
-.dialog-author { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 0; color: #d2ded8; font-size: 12px; }
+.dialog-close:hover { border-color: #4de0a75c; background: #4de0a710; color: white; }
+.dialog-hero { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 24px; }
+.dialog-title-group { min-width: 0; padding-top: 2px; }
+.challenge-dialog h2 { margin: 0; color: #effaf5; font-size: clamp(28px, 3.2vw, 38px); font-weight: 600; line-height: 1.15; letter-spacing: -.035em; overflow-wrap: anywhere; text-wrap: balance; }
+.dialog-author { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; color: #d2ded8; font-size: 12px; }
 .dialog-author span { color: #7e968a; }
-.dialog-value { display: flex; min-height: 40px; align-items: baseline; gap: 6px; padding: 0 8px; }
-.dialog-value strong { color: #8cf5ce; font: 500 20px/1 var(--font-mono), monospace; letter-spacing: -.04em; }
-.dialog-value span { color: #81968c; font: 8px var(--font-mono), monospace; letter-spacing: .12em; }
-.dialog-body { flex: 1; display: flex; flex-direction: column; gap: 22px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 36px 40px 40px; scrollbar-width: none; }
+.dialog-value { display: flex; min-height: 44px; align-items: center; gap: 5px; padding: 0 6px; }
+.dialog-value strong { color: #8cf5ce; font: 500 21px/1 var(--font-mono), monospace; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.dialog-value span { color: #81968c; font: 8px var(--font-mono), monospace; letter-spacing: .1em; }
+.dialog-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 28px 32px 32px; scrollbar-color: #355f4c #07100c; scrollbar-width: thin; }
+.dialog-body::-webkit-scrollbar { width: 8px; }
+.dialog-body::-webkit-scrollbar-track { background: #07100c; }
+.dialog-body::-webkit-scrollbar-thumb { border: 2px solid #07100c; border-radius: 6px; background: #355f4c; }
 .dialog-body:focus-visible { outline: 1px solid #4de0a7; outline-offset: -4px; }
+.dialog-body .challenge-description { flex: none; }
 .challenge-description { flex: 1; color: #b9c8c0; font-size: 14px; line-height: 1.85; overflow-wrap: anywhere; }
 .challenge-description > :first-child { margin-top: 0; }
 .challenge-description > :last-child { margin-bottom: 0; }
@@ -853,15 +858,16 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .description-preview { border: 1px solid #aaffda20; border-radius: 6px; padding: 16px; }
 .description-preview summary { cursor: pointer; color: #9cceb8; font-size: 12px; }
 .description-preview .challenge-description { margin-top: 20px; }
-.dialog-resources { display: flex; flex-shrink: 0; flex-direction: column; gap: 8px; border-top: 1px solid #aaffda18; padding: 12px 40px; background: #09110d; }
-.challenge-file { display: flex; min-height: 48px; align-items: center; gap: 12px; border: 1px solid #aaffda23; border-radius: 6px; padding: 8px 14px; background: #ffffff03; color: #d7e7dd; font-size: 12px; transition: border-color .2s, background .2s; }
+.dialog-dock { display: flex; flex-shrink: 0; flex-direction: column; gap: 14px; border-top: 1px solid #aaffda20; padding: 14px 24px 18px; background: #0a1410; }
+.dialog-resources { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+.challenge-file { display: flex; min-height: 50px; align-items: center; gap: 11px; border: 1px solid #aaffda20; border-radius: 5px; padding: 8px 12px; background: rgba(255,255,255,.018); color: #d7e7dd; font-size: 12px; transition: border-color .2s, background .2s; }
 a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 .challenge-file > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.challenge-file > :last-child { margin-left: auto; color: #81bba2; }
 .challenge-file small { display: block; margin-top: 1px; color: #80968b; font-size: 10px; }
 .challenge-access-link small { max-width: min(56vw, 440px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .challenge-access-command code { color: #9adfbe; font: 11px var(--font-mono), monospace; user-select: all; }
-.file-icon { display: grid; place-items: center; width: 29px; height: 30px; border: 1px solid #4de0a738; border-radius: 4px; background: #4de0a709; color: #7ae3b5; font-size: 18px; }
+.file-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid #4de0a72e; border-radius: 4px; background: #4de0a707; color: #7ae3b5; }
+.file-icon svg { width: 16px; height: 16px; fill: none; stroke: currentcolor; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
 .file-icon.is-terminal { font: 600 9px var(--font-mono), monospace; letter-spacing: .04em; }
 .instance-control { display: flex; min-height: 52px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #aaffda23; border-radius: 6px; padding: 9px 14px; background: #ffffff03; }
 .instance-control > div:first-child { display: flex; flex-direction: column; gap: 4px; }
@@ -876,8 +882,9 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 .instance-control.vm-pending { display: block; }
 .instance-control.vm-pending strong { color: #a8b7af; font-size: 12px; font-weight: 600; }
 .instance-control.vm-pending p { margin-top: 5px; color: #718078; }
-.flag-form { flex-shrink: 0; margin: 0; border-top: 1px solid #aaffda20; padding: 18px 40px 22px; background: #0c1511; }
-.flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+.flag-form { margin: 0; }
+.dialog-resources + .flag-form { border-top: 1px solid #aaffda14; padding-top: 14px; }
+.flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .flag-form label { display: block; margin: 0; font-size: 11px; letter-spacing: .05em; color: #9bb1a4; }
 .flag-status-badge { display: inline-flex; align-items: center; gap: 7px; color: #92a39a; font: 500 11px var(--font-mono), monospace; }
 .flag-status-badge svg { width: 14px; height: 14px; fill: none; stroke: currentcolor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
@@ -891,8 +898,8 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 .flag-form .flag-input-box.is-duplicate button { border-left-color: rgba(245, 184, 65, .45); }
 .flag-form .flag-input-box.is-wrong, .flag-form .flag-input-box.is-error, .flag-form .flag-input-box.is-wrong:focus-within, .flag-form .flag-input-box.is-error:focus-within { border-color: #9e4f54; background: rgba(52, 24, 27, .3); box-shadow: none; }
 .flag-form .flag-input-box.is-wrong button, .flag-form .flag-input-box.is-error button { border-left-color: rgba(255, 92, 100, .45); }
-.flag-form input { min-width: 0; flex: 1; border: 0; outline: none; padding: 14px 16px; background: transparent; color: white; font: 13px var(--font-mono), monospace; }
-.flag-form button { min-width: 96px; padding: 0 18px; border-left: 1px solid #4de0a740; background: #4de0a7; color: #03100b; font-size: 12px; font-weight: 600; transition: background .15s ease, border-color .18s ease; }
+.flag-form input { min-width: 0; flex: 1; border: 0; outline: none; padding: 12px 14px; background: transparent; color: white; font: 13px var(--font-mono), monospace; }
+.flag-form button { min-width: 88px; padding: 0 16px; border-left: 1px solid #4de0a740; background: #4de0a7; color: #03100b; font-size: 12px; font-weight: 600; transition: background .15s ease, border-color .18s ease; }
 .flag-form button:hover:not(:disabled) { background: #94f9cf; }
 .flag-form button:disabled { cursor: default; background: #234c38; color: #b4ccbe; }
 .submission-message { margin: 10px 0 0; border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px; background: rgba(77,224,167,.04); font-size: 12px; }
@@ -1051,14 +1058,21 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .stacked-card strong { font-size: 23px; }
   .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface { transform: translateY(-8px) rotate(0deg) scale(1.015); }
   .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: 1; transform: none; }
-  .challenge-dialog-backdrop { padding: 12px; }
-  .challenge-dialog { max-height: calc(100dvh - 24px); border-radius: 10px; }
-  .dialog-header { padding: 62px 20px 22px; }
-  .dialog-hero { gap: 14px; }
-  .dialog-value { padding-inline: 4px; }
-  .dialog-body { padding: 24px 20px; }
-  .dialog-resources { padding: 10px 20px; }
-  .flag-form { padding: 14px 20px max(16px, env(safe-area-inset-bottom)); }
+  .challenge-dialog-backdrop { padding: 10px; }
+  .challenge-dialog { min-height: min(500px, calc(100dvh - 20px)); max-height: calc(100dvh - 20px); border-radius: 8px; }
+  .dialog-header { padding: 22px 18px 18px; }
+  .dialog-header::after { left: 18px; width: 36px; }
+  .dialog-hero { gap: 12px; }
+  .challenge-dialog h2 { font-size: clamp(25px, 8vw, 32px); }
+  .dialog-author { margin-top: 10px; }
+  .dialog-header-actions { gap: 5px; }
+  .dialog-value { min-height: 40px; padding-inline: 2px; }
+  .dialog-value strong { font-size: 18px; }
+  .dialog-close { width: 40px; height: 40px; }
+  .dialog-body { padding: 22px 18px 24px; }
+  .dialog-dock { gap: 12px; padding: 12px 14px max(14px, env(safe-area-inset-bottom)); }
+  .dialog-resources { grid-template-columns: 1fr; }
+  .dialog-resources + .flag-form { padding-top: 12px; }
   .flag-form input { font-size: 16px; padding: 12px; }
   .flag-form button { min-width: 76px; padding-inline: 12px; }
 }
