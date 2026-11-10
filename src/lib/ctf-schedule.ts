@@ -10,6 +10,7 @@ const localDateTime = z.string()
   .refine((value) => !Number.isNaN(parseKoreanLocalDateTime(value).getTime()), '유효한 날짜와 시간을 입력해 주세요.');
 
 export const ctfScheduleInputSchema = z.object({
+  mode: z.enum(['INDIVIDUAL', 'TEAM']).default('INDIVIDUAL'),
   status: z.enum(CTF_STATUS_VALUES),
   startTime: localDateTime,
   endTime: localDateTime,
@@ -20,6 +21,7 @@ export const ctfScheduleInputSchema = z.object({
 });
 
 export type CtfSchedule = {
+  mode: 'INDIVIDUAL' | 'TEAM';
   status: typeof CTF_STATUS_VALUES[number];
   startTime: string;
   endTime: string;
@@ -51,11 +53,12 @@ export function formatEventDate(date: Date) {
 export async function getCtfSchedule(): Promise<CtfSchedule> {
   const ctf = await prisma.cTF.findUnique({
     where: { id: ACTIVE_CTF_ID },
-    select: { status: true, startTime: true, endTime: true },
+    select: { mode: true, status: true, startTime: true, endTime: true },
   });
   const start = ctf?.startTime ?? new Date('2026-12-10T01:00:00.000Z');
   const end = ctf?.endTime ?? new Date('2026-12-13T13:00:00.000Z');
   return {
+    mode: ctf?.mode ?? 'INDIVIDUAL',
     status: ctf?.status ?? 'SCHEDULED',
     startTime: toKoreanLocalDateTime(start),
     endTime: toKoreanLocalDateTime(end),

@@ -1,4 +1,4 @@
-# KCTF Platform
+# K.knock CTF Platform
 
 KCTF 플랫폼으로, 공정하고 효율적인 대회 운영을 지원합니다.
 
@@ -51,6 +51,8 @@ npm run dev
 │   │   ├── ctf/             # Participant challenge board
 │   │   ├── admin/           # Admin dashboard
 │   │   ├── profile/         # Participant profile
+│   │   ├── users/           # Public user profiles
+│   │   ├── teams/           # Public team profiles
 │   │   ├── scoreboard/      # Individual rankings
 │   │   └── api/             # API routes
 │   ├── lib/                 # Libraries and utilities
@@ -60,6 +62,7 @@ npm run dev
 │   └── migrations/          # Database migrations
 ├── docker-compose.yml       # Docker Compose configuration
 ├── docker-compose.prod.yml  # Production stack
+├── config/instancer.env     # Public instance port range
 ├── Dockerfile               # Next.js Docker image
 └── nginx/
     └── conf.d/              # Nginx configuration (서버에 복사하여 사용)
@@ -84,7 +87,7 @@ CI/CD는 추후 추가 예정입니다.
 ## Production deployment
 
 A new server can be initialized with one command. Point DNS at the server first,
-then allow inbound TCP 80, 443, and 10000-19999 (plus UDP 443):
+then allow inbound TCP 80, 443, and the configured instance range (default: 10021-10030; plus UDP 443):
 
 ```bash
 git clone git@github.com:jjw0-0/KCTF_Webpage.git
@@ -110,9 +113,11 @@ The app listens on host loopback port `3020` in this mode:
 ```
 
 Required variables are `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
-`NEXTAUTH_SECRET`, `KCTF_INSTANCER_TOKEN`, `DOMAIN`, and
-`INSTANCER_PUBLIC_HOST`. Keep them in `.env.prod.local`, which is excluded by
-the repository's `.env*.local` ignore rule.
+`NEXTAUTH_SECRET`, `DYNAMIC_FLAG_SECRET`, `KCTF_INSTANCER_TOKEN`, `DOMAIN`, and
+`INSTANCER_PUBLIC_HOST`. Set `DISCORD_SOLVE_WEBHOOK_URL` to a Discord webhook
+URL to announce every solve and mark the first solve as First Blood. Keep these
+values in `.env.prod.local`, which is excluded by the repository's
+`.env*.local` ignore rule.
 
 To bootstrap an administrator, run the seed command with `ADMIN_EMAIL`,
 `ADMIN_USERNAME`, and a 10+ character `ADMIN_INITIAL_PASSWORD` in the migration
@@ -174,13 +179,52 @@ a small read-only gateway container accepts the public port and forwards only
 to the selected entry service, so compromised challenge containers cannot use
 the gateway for general Internet, host, or cross-instance access.
 
-Each player may run one instance across the entire platform. Starting another
-problem replaces their current instance; any number of different players may
-run the same problem. Instances expire after `INSTANCER_TTL_MS` and there is no
-platform-wide instance count limit. Capacity is therefore bounded only by the
-host, so production operators should monitor Docker and choose conservative
-per-instance limits. Build metadata and uploaded deployment sources live in
-`/var/lib/kctf-instancer` on the Docker host.
+In individual mode each user may run one instance across the entire platform.
+In team mode all members share one team-owned instance. Starting another
+problem replaces that owner's current instance. Instances expire after
+`INSTANCER_TTL_MS` and there is no platform-wide instance count limit. Capacity
+is therefore bounded only by the host, so production operators should monitor
+Docker and choose conservative per-instance limits. Build metadata and uploaded
+deployment sources live in `/var/lib/kctf-instancer` on the Docker host.
+
+## Network and reverse proxy
+
+`DOMAIN` and `INSTANCER_PUBLIC_HOST` are configuration values, not hard-coded service names. The intended K.knock deployment uses `ctf.kknock.org`, while another operator can use any hostname that resolves to the Docker host.
+
+The instance range lives in `config/instancer.env`. Change `INSTANCER_PORT_MIN` and `INSTANCER_PORT_MAX` there, then redeploy the instancer and open the same range in the host firewall. A DNS-only A/AAAA record pointing `ctf.kknock.org` to the same public IP as `kknock.org` reaches the same open host ports; ordinary L3/L4 firewall rules apply to the destination IP and port, not the hostname. Confirm with the network administrator only when the university uses hostname-aware policy, an HTTP proxy, or a separate NAT mapping. Cloudflare's normal proxy cannot carry this arbitrary port range.
+
+Only one reverse proxy is needed. The bundled Compose profile uses `nginx/Caddyfile.portable`; a host-installed Caddy can adapt `nginx/Caddyfile.kctf`; `nginx/conf.d/default.conf` and `nginx/access-log.nginx.conf` are alternatives for an Nginx host. These files are examples and are not loaded together. Set `KCTF_ACCESS_LOG_DIR` to the host directory mounted at `/var/log/kctf`.
+
+Instance problems are isolated per individual or team. The instancer places a bearer token in each issued HTTP URL; the gateway exchanges it for an HttpOnly cookie, rejects requests without it, and records request metadata for the admin problem-server log. TCP instances require the token preamble shown by the challenge UI. Administrator-managed shared URLs do not use this gateway and remain public to participants.
+
+## Administration
+
+- CTF management: schedule, mode, and event status
+- User management: Participant, Admin, and Ghost roles plus user/team deletion
+- Category and challenge management: visibility, scoring, files, deployment, and connection mode
+- Logs: platform HTTP access, plaintext flag submissions, and per-instance problem-server access
+
+Ghost accounts may solve and validate challenges but do not create score, solve-count, First Blood, or scoreboard records. Unauthorized admin pages and missing pages both render the same 404 response.
+
+## Users, teams, and dynamic flags
+
+Registration issues a personal token and shows it once. The active event's
+individual/team mode decides which owner receives solves, scores, instances,
+and dynamic flags. A user can belong to only one team in the active event.
+
+Enable **Dynamic flag** on a challenge to derive a stable flag from the owner
+token and `DYNAMIC_FLAG_SECRET`. Instance challenges receive it in the entry
+service as both `FLAG` and `KCTF_FLAG`; the challenge image must read one of
+these variables. Tokens are stored as SHA-256 hashes plus short audit prefixes;
+submission and instance audit rows keep the owner, token prefix, and request IP.
+The user management page is intentionally limited to a user list, a team list,
+role changes, and deletion. Team provisioning is outside this screen.
+
+Operational limits: Discord webhook creation and channel permissions are
+external to this repository. IP attribution is reliable only when the app's
+origin is private and its client-IP headers come from a trusted reverse proxy;
+do not expose the Next.js port directly. Self-service team invites are not
+implemented.
 
 ## Challenge content
 

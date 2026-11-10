@@ -45,6 +45,7 @@ prisma/*.db-journal
 # docker volumes
 /postgres-data
 /files
+/data
 
 # AI related files
 .vooster/

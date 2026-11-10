@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import PageLayout from '@/components/PageLayout';
 import { auth } from '@/auth';
 import { getCurrentAdminUser } from '@/lib/admin-auth';
@@ -12,6 +12,7 @@ import {
 import { getCategories } from '@/lib/categories';
 import { getAdminChallenges } from '@/lib/challenges';
 import { getCtfSchedule } from '@/lib/ctf-schedule';
+import { getAdminUsers } from '@/lib/admin-users';
 import AdminDashboard from './AdminDashboard';
 
 export const dynamic = 'force-dynamic';
@@ -30,15 +31,15 @@ export default async function AdminPage() {
       userAgent: meta.userAgent,
       method: 'GET',
       path: '/admin',
-      statusCode: 307,
-      message: '비로그인 사용자의 관리자 페이지(/admin) 접근 시도 차단 → /login 리다이렉트',
+      statusCode: 404,
+      message: '비로그인 사용자의 관리자 페이지(/admin) 접근 시도 차단',
       params: {
         targetPath: '/admin',
-        redirectedTo: '/login?callbackUrl=/admin',
+        renderedAs: 'not-found',
         ...(meta.referer ? { referer: meta.referer } : {}),
       },
     });
-    redirect('/login?callbackUrl=/admin');
+    notFound();
   }
 
   const actor = formatActor({
@@ -58,11 +59,11 @@ export default async function AdminPage() {
       userAgent: meta.userAgent,
       method: 'GET',
       path: '/admin',
-      statusCode: 403,
+      statusCode: 404,
       message: `권한 없는 사용자의 관리자 페이지(/admin) 무단 접근 시도 차단: ${actor}`,
       params: {
         targetPath: '/admin',
-        redirectedTo: '/access-denied',
+        renderedAs: 'not-found',
         user: {
           id: session.user.id,
           username: session.user.username,
@@ -72,14 +73,15 @@ export default async function AdminPage() {
         ...(meta.referer ? { referer: meta.referer } : {}),
       },
     });
-    redirect('/access-denied');
+    notFound();
   }
 
-  const [categories, challenges, schedule, logs] = await Promise.all([
+  const [categories, challenges, schedule, logs, users] = await Promise.all([
     getCategories(),
     getAdminChallenges(),
     getCtfSchedule(),
     getAdminLogs(),
+    getAdminUsers(),
   ]);
 
   return (
@@ -89,6 +91,8 @@ export default async function AdminPage() {
         initialChallenges={challenges}
         initialSchedule={schedule}
         initialLogs={logs}
+        initialUsers={users}
+        currentAdminId={adminUser.id}
       />
     </PageLayout>
   );

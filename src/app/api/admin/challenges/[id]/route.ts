@@ -20,20 +20,20 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       action: 'ADMIN_CHALLENGE_UPDATE_DENIED',
       actor: 'unauthorized',
       request,
-      statusCode: 403,
+      statusCode: 404,
       message: '권한 없는 사용자의 문제 수정 시도 차단',
     });
-    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+    return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   }
 
   const { id } = await params;
   const [existing, parsed] = await Promise.all([
-    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, usesVm: true, usesCompose: true, instancePort: true, connectionType: true, instanceSlug: true, _count: { select: { solves: { where: { user: { role: 'USER' } } } } } } }),
+    prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true, flag: true, dynamicFlag: true, usesVm: true, usesCompose: true, instancePort: true, connectionType: true, instanceSlug: true, _count: { select: { solves: { where: { user: { role: 'USER' } } } } } } }),
     request.json().catch(() => null).then((body) => challengeInputSchema.safeParse(body)),
   ]);
   if (!existing) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? '입력값을 확인해 주세요.' }, { status: 400 });
-  if (!parsed.data.flag && !existing.flag) {
+  if (!parsed.data.dynamicFlag && !parsed.data.flag && !existing.flag) {
     return NextResponse.json({ error: '플래그를 입력해 주세요.' }, { status: 400 });
   }
 
@@ -44,6 +44,11 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   if (!category) return NextResponse.json({ error: '카테고리를 찾을 수 없습니다.' }, { status: 400 });
 
   const { flag, visible, instanceSlug, usesVm, usesCompose, instancePort, connectionType, connectionUrl, ...data } = parsed.data;
+  if (existing.dynamicFlag !== parsed.data.dynamicFlag) {
+    const instances = await prisma.challengeInstance.findMany({ where: { challengeId: id }, select: { token: true } });
+    await Promise.all(instances.map((instance) => destroyRemoteInstance(instance.token)));
+    await prisma.challengeInstance.deleteMany({ where: { challengeId: id } });
+  }
   const deploymentConfigChanged = existing.usesVm && usesVm
     && (existing.usesCompose !== usesCompose || existing.instancePort !== instancePort || existing.connectionType !== connectionType);
   if (existing.instanceSlug && (existing.usesVm && !usesVm || deploymentConfigChanged)) {
@@ -124,10 +129,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       action: 'ADMIN_CHALLENGE_DELETE_DENIED',
       actor: 'unauthorized',
       request,
-      statusCode: 403,
+      statusCode: 404,
       message: '권한 없는 사용자의 문제 삭제 시도 차단',
     });
-    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+    return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   }
 
   const { id } = await params;

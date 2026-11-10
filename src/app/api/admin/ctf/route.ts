@@ -4,6 +4,7 @@ import { getCurrentAdminUser } from '@/lib/admin-auth';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { ctfScheduleInputSchema, getCtfSchedule, parseKoreanLocalDateTime } from '@/lib/ctf-schedule';
+import { removeAllOwnerInstances } from '@/lib/owner-instance';
 import { prisma } from '@/lib/prisma';
 
 export async function PUT(request: NextRequest) {
@@ -15,10 +16,10 @@ export async function PUT(request: NextRequest) {
       action: 'ADMIN_SCHEDULE_DENIED',
       actor: 'unauthorized',
       request,
-      statusCode: 403,
+      statusCode: 404,
       message: '권한 없는 사용자의 대회 일정 수정 시도 차단',
     });
-    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+    return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   }
 
   const parsed = ctfScheduleInputSchema.safeParse(await request.json().catch(() => null));
@@ -26,16 +27,19 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? '일정을 확인해 주세요.' }, { status: 400 });
   }
 
-  const updated = await prisma.cTF.updateMany({
+  const current = await prisma.cTF.findUnique({ where: { id: ACTIVE_CTF_ID }, select: { mode: true } });
+  if (!current) return NextResponse.json({ error: '대회를 찾을 수 없습니다.' }, { status: 404 });
+  if (current.mode !== parsed.data.mode) await removeAllOwnerInstances();
+
+  await prisma.cTF.update({
     where: { id: ACTIVE_CTF_ID },
     data: {
+      mode: parsed.data.mode,
       status: parsed.data.status,
       startTime: parseKoreanLocalDateTime(parsed.data.startTime),
       endTime: parseKoreanLocalDateTime(parsed.data.endTime),
     },
   });
-  if (!updated.count) return NextResponse.json({ error: '대회를 찾을 수 없습니다.' }, { status: 404 });
-
   const actor = formatActor(admin);
   recordServerLog({
     level: 'INFO',
@@ -47,6 +51,7 @@ export async function PUT(request: NextRequest) {
     statusCode: 200,
     message: `관리자 대회 일정/상태 변경: ${actor} → status=${parsed.data.status}`,
     params: {
+      mode: parsed.data.mode,
       status: parsed.data.status,
       startTime: parsed.data.startTime,
       endTime: parsed.data.endTime,

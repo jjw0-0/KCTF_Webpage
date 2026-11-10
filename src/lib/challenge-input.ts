@@ -18,6 +18,7 @@ export const challengeInputSchema = z.object({
   difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).default('INTERMEDIATE'),
   tags: z.array(z.string().trim().min(1).max(24)).max(8).default([]),
   flag: z.string().trim().max(256).optional(),
+  dynamicFlag: z.boolean().default(false),
   instanceSlug: z.string().trim().max(100)
     .regex(/^[a-zA-Z0-9._-]*$/, 'Instance slug 형식이 올바르지 않습니다.').default(''),
   usesVm: z.boolean().default(false),

@@ -6,9 +6,9 @@ export async function getCurrentAdminUser() {
   if (!session?.user?.id) return null;
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, username: true, email: true, role: true, isActive: true },
+    select: { id: true, username: true, email: true, role: true },
   });
-  if (!user?.isActive || user.role !== 'ADMIN') return null;
+  if (user?.role !== 'ADMIN') return null;
   return user;
 }
 

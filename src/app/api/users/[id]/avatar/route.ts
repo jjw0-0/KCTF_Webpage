@@ -7,7 +7,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const user = await prisma.user.findFirst({
-    where: { id, role: 'USER', isActive: true },
+    where: { id, role: 'USER' },
     select: { avatarData: true },
   });
   const avatar = user?.avatarData ? decodeAvatarDataUrl(user.avatarData) : null;

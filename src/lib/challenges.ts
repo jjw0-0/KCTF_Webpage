@@ -2,6 +2,7 @@ import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
 import { prisma } from '@/lib/prisma';
 import { Challenge } from '@/lib/platform-data';
+import { resolveOwner } from '@/lib/ownership';
 
 export type AdminChallenge = {
   id: string;
@@ -26,6 +27,7 @@ export type AdminChallenge = {
   decaySolves: number;
   decrementPerSolve: number;
   flag: string;
+  dynamicFlag: boolean;
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   tags: string[];
   instanceSlug: string;
@@ -40,6 +42,7 @@ export type AdminChallenge = {
 
 export async function getChallenges(userId?: string): Promise<Challenge[]> {
   try {
+    const owner = userId ? await resolveOwner(userId).catch(() => null) : null;
     const rows = await prisma.challenge.findMany({
       where: { ctfId: ACTIVE_CTF_ID, isVisible: true, category: { isVisible: true } },
       select: {
@@ -63,7 +66,7 @@ export async function getChallenges(userId?: string): Promise<Challenge[]> {
         connectionType: true,
         connectionUrl: true,
         category: { select: { slug: true } },
-        solves: { where: { userId: userId ?? '' }, select: { id: true } },
+        solves: { where: { ownerKey: owner?.key ?? '' }, select: { id: true } },
         _count: { select: { solves: { where: { user: { role: 'USER' } } } } },
       },
       orderBy: [{ category: { sortOrder: 'asc' } }, { points: 'asc' }, { title: 'asc' }],
@@ -118,6 +121,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
       decaySolves: true,
       decrementPerSolve: true,
       flag: true,
+      dynamicFlag: true,
       difficulty: true,
       tags: true,
       instanceSlug: true,
@@ -156,6 +160,7 @@ export async function getAdminChallenges(): Promise<AdminChallenge[]> {
     decaySolves: challenge.decaySolves,
     decrementPerSolve: challenge.decrementPerSolve,
     flag: challenge.flag ?? '',
+    dynamicFlag: challenge.dynamicFlag,
     difficulty: challenge.difficulty,
     tags: challenge.tags,
     instanceSlug: challenge.instanceSlug ?? '',
@@ -173,6 +178,7 @@ export type LeaderboardEntry = {
   rank: number;
   userId: string;
   name: string;
+  profileUrl: string;
   avatarUrl?: string;
   score: number;
   solved: number;
@@ -186,11 +192,50 @@ export type ScoreHistoryEvent = {
 };
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const ctf = await prisma.cTF.findUnique({ where: { id: ACTIVE_CTF_ID }, select: { mode: true } });
+  if (ctf?.mode === 'TEAM') {
+    const scores = await prisma.solve.groupBy({
+      by: ['ownerKey'],
+      where: { challenge: { ctfId: ACTIVE_CTF_ID }, teamId: { not: null } },
+      _sum: { points: true }, _count: { id: true }, _max: { solvedAt: true },
+      orderBy: [{ _sum: { points: 'desc' } }, { _max: { solvedAt: 'asc' } }], take: 100,
+    });
+    const teamIds = scores.map((score) => score.ownerKey.replace(/^team:/, ''));
+    const teams = await prisma.team.findMany({
+      where: { id: { in: teamIds } },
+      select: {
+        id: true,
+        name: true,
+        members: {
+          orderBy: [{ isLeader: 'desc' }, { joinedAt: 'asc' }],
+          take: 1,
+          select: { user: { select: { id: true, avatarData: true, updatedAt: true } } },
+        },
+      },
+    });
+    const teamMap = new Map(teams.map((team) => [team.id, team]));
+    return scores.map((score, index) => {
+      const teamId = score.ownerKey.replace(/^team:/, '');
+      const team = teamMap.get(teamId);
+      const leader = team?.members[0]?.user;
+      return {
+        rank: index + 1,
+        userId: score.ownerKey,
+        name: team?.name ?? 'unknown',
+        profileUrl: `/teams/${teamId}`,
+        avatarUrl: leader?.avatarData
+          ? `/api/users/${leader.id}/avatar?v=${leader.updatedAt.getTime()}`
+          : undefined,
+        score: score._sum.points ?? 0,
+        solved: score._count.id,
+      };
+    });
+  }
   const scores = await prisma.solve.groupBy({
     by: ['userId'],
     where: {
       challenge: { ctfId: ACTIVE_CTF_ID },
-      user: { role: 'USER', isActive: true },
+      user: { role: 'USER' },
     },
     _sum: { points: true },
     _count: { id: true },
@@ -218,6 +263,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
       rank: index + 1,
       userId: score.userId,
       name: user?.username ?? 'unknown',
+      profileUrl: `/users/${score.userId}`,
       avatarUrl: avatarMap.has(score.userId)
         ? `/api/users/${score.userId}/avatar?v=${avatarMap.get(score.userId)}`
         : undefined,
@@ -229,6 +275,14 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 
 export async function getScoreHistory(userIds: string[]): Promise<ScoreHistoryEvent[]> {
   if (!userIds.length) return [];
+  if (userIds[0]?.startsWith('team:')) {
+    const solves = await prisma.solve.findMany({
+      where: { ownerKey: { in: userIds }, challenge: { ctfId: ACTIVE_CTF_ID } },
+      select: { ownerKey: true, points: true, solvedAt: true, team: { select: { name: true } } },
+      orderBy: { solvedAt: 'asc' },
+    });
+    return solves.map((solve) => ({ userId: solve.ownerKey, name: solve.team?.name ?? 'unknown', points: solve.points, solvedAt: solve.solvedAt }));
+  }
   const solves = await prisma.solve.findMany({
     where: { userId: { in: userIds }, challenge: { ctfId: ACTIVE_CTF_ID } },
     select: { userId: true, points: true, solvedAt: true, user: { select: { username: true } } },

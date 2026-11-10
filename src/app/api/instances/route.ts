@@ -5,8 +5,9 @@ import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getCtfAccess } from '@/lib/ctf-access';
 import { createRemoteInstance, destroyRemoteInstance } from '@/lib/instancer';
+import { dynamicFlag, resolveOwner } from '@/lib/ownership';
 import { prisma } from '@/lib/prisma';
-import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
+import { consumeRateLimit, getRawConnectingIp, rateLimitHeaders } from '@/lib/rate-limit';
 
 const createSchema = z.object({ challengeId: z.string().min(1).max(64) });
 
@@ -15,16 +16,18 @@ async function currentUser() {
   if (!session?.user?.id) return null;
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, instancerId: true, username: true, email: true, isActive: true },
+    select: { id: true, instancerId: true, username: true, email: true },
   });
-  return user?.isActive ? user : null;
+  return user;
 }
 
 export async function GET(request: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+  const owner = await resolveOwner(user.id).catch((error) => error as Error);
+  if (owner instanceof Error) return NextResponse.json({ error: owner.message }, { status: 409 });
 
-  const instance = await prisma.challengeInstance.findUnique({ where: { userId: user.id } });
+  const instance = await prisma.challengeInstance.findUnique({ where: { ownerKey: owner.key } });
   if (!instance) return NextResponse.json({ instance: null });
 
   if (instance.expiresAt.getTime() <= Date.now()) {
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
         challengeId: instance.challengeId,
         instanceSlug: instance.instanceSlug,
         instancerId: user.instancerId,
-        vmUrl: instance.url,
+        vmUrl: instance.url.split('?')[0],
         expiresAt: instance.expiresAt.toISOString(),
       },
     });
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
       challengeId: instance.challengeId,
       instanceSlug: instance.instanceSlug,
       url: instance.url,
+      accessToken: instance.accessToken,
       expiresAt: instance.expiresAt.toISOString(),
     },
   });
@@ -76,6 +80,9 @@ export async function POST(request: NextRequest) {
   }
 
   const actor = formatActor(user);
+  const owner = await resolveOwner(user.id).catch((error) => error as Error);
+  if (owner instanceof Error) return NextResponse.json({ error: owner.message }, { status: 409 });
+  const requestIp = getRawConnectingIp(request.headers);
   const access = await getCtfAccess(ACTIVE_CTF_ID);
   if (!access.open) {
     recordServerLog({
@@ -140,7 +147,7 @@ export async function POST(request: NextRequest) {
       instanceSlug: { not: null },
       deploymentStatus: 'READY',
     },
-    select: { id: true, title: true, instanceSlug: true },
+    select: { id: true, title: true, instanceSlug: true, dynamicFlag: true },
   });
   if (!challenge?.instanceSlug) {
     recordServerLog({
@@ -151,31 +158,42 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 404,
-      message: `존재하지 않거나 비활성화된 Instance 문제 요청: ${actor} → challengeId=${parsed.data.challengeId}`,
+      message: `사용할 수 없는 Instance 문제 요청: ${actor} → challengeId=${parsed.data.challengeId}`,
       params: { challengeId: parsed.data.challengeId, instancerId: user.instancerId },
     });
     return NextResponse.json({ error: 'Instance를 사용할 수 없는 문제입니다.' }, { status: 404 });
   }
 
   try {
-    const remote = await createRemoteInstance(challenge.instanceSlug, user.instancerId);
+    const flag = challenge.dynamicFlag ? dynamicFlag(challenge.id, owner) : undefined;
+    const remote = await createRemoteInstance(challenge.instanceSlug, owner.key, flag);
     const expiresAt = new Date(remote.expires_at);
     const instance = await prisma.challengeInstance.upsert({
-      where: { userId: user.id },
+      where: { ownerKey: owner.key },
       create: {
+        ownerKey: owner.key,
         userId: user.id,
+        teamId: owner.teamId,
         challengeId: challenge.id,
         instanceSlug: challenge.instanceSlug,
         token: remote.token,
+        accessToken: remote.access_token,
         url: remote.url,
         expiresAt,
+        requestIp,
+        tokenPrefix: owner.tokenPrefix,
       },
       update: {
+        userId: user.id,
+        teamId: owner.teamId,
         challengeId: challenge.id,
         instanceSlug: challenge.instanceSlug,
         token: remote.token,
+        accessToken: remote.access_token,
         url: remote.url,
         expiresAt,
+        requestIp,
+        tokenPrefix: owner.tokenPrefix,
       },
     });
 
@@ -188,15 +206,18 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 200,
-      message: `Instance 생성 요청 및 할당 완료: ${actor} → [${challenge.title}] (${instance.url})`,
+      message: `Instance 생성 요청 및 할당 완료: ${actor} → [${challenge.title}] (${instance.url.split('?')[0]})`,
       params: {
         instanceId: instance.id,
         challengeId: challenge.id,
         challengeTitle: challenge.title,
         instanceSlug: challenge.instanceSlug,
         instancerId: user.instancerId,
-        vmUrl: instance.url,
+        vmUrl: instance.url.split('?')[0],
         expiresAt: instance.expiresAt.toISOString(),
+        ownerKey: owner.key,
+        tokenPrefix: owner.tokenPrefix,
+        requestIp,
       },
     });
 
@@ -205,6 +226,7 @@ export async function POST(request: NextRequest) {
         challengeId: instance.challengeId,
         instanceSlug: instance.instanceSlug,
         url: instance.url,
+        accessToken: instance.accessToken,
         expiresAt: instance.expiresAt.toISOString(),
       },
     }, { headers: rateLimitHeaders(limit) });
@@ -247,7 +269,9 @@ export async function DELETE(request: NextRequest) {
   }
 
   const actor = formatActor(user);
-  const instance = await prisma.challengeInstance.findUnique({ where: { userId: user.id } });
+  const owner = await resolveOwner(user.id).catch((error) => error as Error);
+  if (owner instanceof Error) return NextResponse.json({ error: owner.message }, { status: 409 });
+  const instance = await prisma.challengeInstance.findUnique({ where: { ownerKey: owner.key } });
   if (!instance) {
     recordServerLog({
       level: 'INFO',
@@ -275,12 +299,12 @@ export async function DELETE(request: NextRequest) {
       actorId: user.id,
       request,
       statusCode: 502,
-      message: `Instance 원격 종료 실패: ${actor} → slug=${instance.instanceSlug} (${instance.url})`,
+      message: `Instance 원격 종료 실패: ${actor} → slug=${instance.instanceSlug} (${instance.url.split('?')[0]})`,
       params: {
         challengeId: instance.challengeId,
         instanceSlug: instance.instanceSlug,
         instancerId: user.instancerId,
-        vmUrl: instance.url,
+        vmUrl: instance.url.split('?')[0],
         error: error instanceof Error ? error.message : String(error),
       },
     });
@@ -296,13 +320,13 @@ export async function DELETE(request: NextRequest) {
     actorId: user.id,
     request,
     statusCode: 200,
-    message: `Instance 종료 완료: ${actor} → slug=${instance.instanceSlug} (${instance.url})`,
+    message: `Instance 종료 완료: ${actor} → slug=${instance.instanceSlug} (${instance.url.split('?')[0]})`,
     params: {
       instanceId: instance.id,
       challengeId: instance.challengeId,
       instanceSlug: instance.instanceSlug,
       instancerId: user.instancerId,
-      vmUrl: instance.url,
+      vmUrl: instance.url.split('?')[0],
     },
   });
   return NextResponse.json({ instance: null });

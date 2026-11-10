@@ -8,8 +8,10 @@ import ChallengeDescription from '@/components/ChallengeDescription';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import SelectControl from '@/components/SelectControl';
 import type { CtfSchedule } from '@/lib/ctf-schedule';
+import AdminUsers from './AdminUsers';
 
-type NavItem = 'event' | 'categories' | 'challenges' | 'logs';
+type NavItem = 'event' | 'users' | 'categories' | 'challenges' | 'logs';
+type Users = Awaited<ReturnType<typeof import('@/lib/admin-users').getAdminUsers>>;
 type ChallengeForm = {
   title: string;
   description: string;
@@ -21,6 +23,7 @@ type ChallengeForm = {
   decaySolves: string;
   decrementPerSolve: string;
   flag: string;
+  dynamicFlag: boolean;
   usesVm: boolean;
   usesCompose: boolean;
   instancePort: string;
@@ -30,6 +33,7 @@ type ChallengeForm = {
 
 const navItems: { id: NavItem; label: string }[] = [
   { id: 'event', label: 'CTF 관리' },
+  { id: 'users', label: '사용자 관리' },
   { id: 'categories', label: '카테고리 관리' },
   { id: 'challenges', label: '문제 관리' },
   { id: 'logs', label: '로그' },
@@ -47,6 +51,7 @@ function emptyChallenge(categoryId = ''): ChallengeForm {
     decaySolves: '20',
     decrementPerSolve: '10',
     flag: '',
+    dynamicFlag: false,
     usesVm: false,
     usesCompose: false,
     instancePort: '',
@@ -57,9 +62,10 @@ function emptyChallenge(categoryId = ''): ChallengeForm {
 
 const headings: Record<NavItem, [string, string]> = {
   event: ['대회 일정', '참가자 화면과 문제 제출에 적용되는 운영 시간을 설정합니다.'],
+  users: ['사용자 관리', '참가자 역할과 사용자·팀 목록을 관리합니다.'],
   categories: ['카테고리 관리', '문제 목록의 분류와 노출 순서를 관리합니다.'],
   challenges: ['문제 관리', '문제 내용, 접속 방식, 플래그와 첨부파일을 관리합니다.'],
-  logs: ['로그', '침해사고 원인 분석 및 용의자 추적을 위한 웹 서비스 행위·파라미터 감사 로그와 문제 제출 로그를 확인합니다.'],
+  logs: ['로그', 'HTTP 요청, 플래그 제출, 문제 서버 요청을 확인합니다.'],
 };
 
 const statusOptions: { value: CtfSchedule['status']; label: string }[] = [
@@ -68,6 +74,10 @@ const statusOptions: { value: CtfSchedule['status']; label: string }[] = [
   { value: 'ONGOING', label: '진행 중' },
   { value: 'PAUSED', label: '일시 중지' },
   { value: 'ENDED', label: '종료' },
+];
+const modeOptions: { value: CtfSchedule['mode']; label: string }[] = [
+  { value: 'INDIVIDUAL', label: '개인전' },
+  { value: 'TEAM', label: '팀전' },
 ];
 
 const deploymentStatusCopy: Record<AdminChallenge['deploymentStatus'], { label: string; tone: string }> = {
@@ -83,11 +93,15 @@ export default function AdminDashboard({
   initialChallenges,
   initialSchedule,
   initialLogs,
+  initialUsers,
+  currentAdminId,
 }: {
   initialCategories: Category[];
   initialChallenges: AdminChallenge[];
   initialSchedule: CtfSchedule;
   initialLogs: AdminLogsPayload;
+  initialUsers: Users;
+  currentAdminId: string;
 }) {
   const [categories, setCategories] = useState(initialCategories);
   const [challenges, setChallenges] = useState(initialChallenges);
@@ -103,7 +117,7 @@ export default function AdminDashboard({
   const [deploymentFile, setDeploymentFile] = useState<File | null>(null);
   const [schedule, setSchedule] = useState(initialSchedule);
   const [logs, setLogs] = useState<AdminLogsPayload>(initialLogs);
-  const [logTab, setLogTab] = useState<'server' | 'submissions'>('server');
+  const [logTab, setLogTab] = useState<'server' | 'submissions' | 'instances'>('server');
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [submissionResultFilter, setSubmissionResultFilter] = useState<'ALL' | 'CORRECT' | 'WRONG'>('ALL');
   const [logSearch, setLogSearch] = useState('');
@@ -253,6 +267,7 @@ export default function AdminDashboard({
       decaySolves: String(challenge.decaySolves),
       decrementPerSolve: String(challenge.decrementPerSolve),
       flag: challenge.flag,
+      dynamicFlag: challenge.dynamicFlag,
       usesVm: challenge.usesVm,
       usesCompose: challenge.usesCompose,
       instancePort: challenge.instancePort ? String(challenge.instancePort) : '',
@@ -309,7 +324,7 @@ export default function AdminDashboard({
       const response = await fetch('/api/admin/ctf', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: schedule.status, startTime: schedule.startTime, endTime: schedule.endTime }),
+        body: JSON.stringify({ mode: schedule.mode, status: schedule.status, startTime: schedule.startTime, endTime: schedule.endTime }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? '일정을 저장하지 못했습니다.');
@@ -495,9 +510,25 @@ export default function AdminDashboard({
         entry.challengeTitle.toLowerCase().includes(query) ||
         entry.category.toLowerCase().includes(query) ||
         entry.flag.toLowerCase().includes(query)
+        || entry.ownerKey.toLowerCase().includes(query)
+        || entry.tokenPrefix?.toLowerCase().includes(query)
+        || entry.ipAddress?.toLowerCase().includes(query)
       );
     });
   }, [logs.submissionLogs, submissionResultFilter, logSearch]);
+
+  const filteredInstanceLogs = useMemo(() => {
+    const query = logSearch.trim().toLowerCase();
+    return logs.instanceLogs.filter((entry) => !query || [
+      entry.challengeTitle,
+      entry.owner,
+      entry.ip,
+      entry.method,
+      entry.path,
+      entry.userAgent,
+      String(entry.port),
+    ].some((value) => value?.toLowerCase().includes(query)));
+  }, [logs.instanceLogs, logSearch]);
 
   return (
     <main className="admin-main">
@@ -524,6 +555,9 @@ export default function AdminDashboard({
               <div><h3>운영 시간</h3><p>표시와 자동 개방 기준은 한국 표준시(KST)입니다.</p></div>
             </div>
             <form className="event-admin-form" onSubmit={(event) => void saveSchedule(event)}>
+              <div className="event-status-field form-field"><span>대회 방식</span>
+                <SelectControl ariaLabel="대회 방식" value={schedule.mode} options={modeOptions} onChange={(mode) => setSchedule({ ...schedule, mode })} />
+              </div>
               <div className="event-status-field form-field"><span>운영 상태</span>
                 <SelectControl ariaLabel="운영 상태" value={schedule.status} options={statusOptions} onChange={(status) => setSchedule({ ...schedule, status })} />
               </div>
@@ -571,6 +605,8 @@ export default function AdminDashboard({
             </div>
           </section>
         )}
+
+        {activeNav === 'users' && <AdminUsers users={initialUsers.users} teams={initialUsers.teams} currentAdminId={currentAdminId} />}
 
         {activeNav === 'challenges' && (
           <section ref={challengeEditorRef} className="admin-panel challenge-admin-panel">
@@ -711,15 +747,16 @@ export default function AdminDashboard({
                 </div>
               </div>
 
-              <label className="wide">
+              <div className="wide">
                 <span className="field-label-row">
                   <strong>플래그</strong>
+                  <label><input type="checkbox" checked={challengeForm.dynamicFlag} onChange={(event) => setChallengeForm({ ...challengeForm, dynamicFlag: event.target.checked })} /> 팀/개인별 Dynamic flag</label>
                   {!editingChallengeId
                     ? <small>{challengeForm.usesVm ? 'Deploy ZIP 원본 플래그' : '필수 입력'}</small>
                     : !editingChallenge?.flag && <small>기존 플래그 없음 · 입력 필요</small>}
                 </span>
-                <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId} type="text" maxLength={256} placeholder="KCTF{…}" value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
-              </label>
+                <input name="flag" autoComplete="off" spellCheck={false} required={!editingChallengeId && !challengeForm.dynamicFlag} disabled={challengeForm.dynamicFlag} type="text" maxLength={256} placeholder={challengeForm.dynamicFlag ? '소유 토큰으로 자동 생성' : 'KCTF{…}'} value={challengeForm.flag} onChange={(event) => setChallengeForm({ ...challengeForm, flag: event.target.value })} />
+              </div>
 
               <label className="wide">
                 <span className="field-label-row">
@@ -766,7 +803,7 @@ export default function AdminDashboard({
                   className={logTab === 'server' ? 'active' : ''}
                   onClick={() => setLogTab('server')}
                 >
-                  웹 서비스 로그 <span>{logs.serverLogs.length}</span>
+                  HTTP 로그 <span>{logs.serverLogs.length}</span>
                 </button>
                 <button
                   type="button"
@@ -776,6 +813,15 @@ export default function AdminDashboard({
                   onClick={() => setLogTab('submissions')}
                 >
                   문제 제출 로그 <span>{logs.submissionLogs.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={logTab === 'instances'}
+                  className={logTab === 'instances' ? 'active' : ''}
+                  onClick={() => setLogTab('instances')}
+                >
+                  문제 서버 로그 <span>{logs.instanceLogs.length}</span>
                 </button>
               </div>
 
@@ -803,7 +849,7 @@ export default function AdminDashboard({
                 <input
                   type="search"
                   className="admin-log-search"
-                  placeholder={logTab === 'server' ? 'IP·USER·경로·UA 검색…' : '닉네임·문제·카테고리·플래그 검색…'}
+                  placeholder={logTab === 'server' ? 'IP·USER·경로·UA 검색…' : logTab === 'submissions' ? '닉네임·문제·플래그 검색…' : '문제·사용자·포트·IP·UA 검색…'}
                   value={logSearch}
                   onChange={(event) => setLogSearch(event.target.value)}
                   aria-label="로그 검색"
@@ -821,12 +867,13 @@ export default function AdminDashboard({
             </div>
 
             {logTab === 'server' ? (
-              <div className="admin-server-log-list" role="region" aria-label="웹 서비스 로그 목록">
+              <div className="admin-server-log-list" role="region" aria-label="HTTP 로그 목록">
                 <div className="admin-server-log-head">
                   <span>시각</span>
                   <span>IP</span>
                   <span>USER</span>
                   <span>STATUS</span>
+                  <span>METHOD</span>
                   <span>요청</span>
                   <span>UA (클릭 시 전체 펼침)</span>
                 </div>
@@ -835,7 +882,8 @@ export default function AdminDashboard({
                     const statusCode = entry.statusCode ?? 200;
                     const statusTone =
                       statusCode >= 400 ? 'is-error' : statusCode >= 300 ? 'is-redirect' : 'is-ok';
-                    const requestLine = `${entry.method ?? 'GET'} ${entry.path ?? '/'}`;
+                    const method = entry.method ?? 'GET';
+                    const path = entry.path ?? '/';
                     const isExpanded = expandedLogId === entry.id;
                     return (
                       <div
@@ -856,12 +904,14 @@ export default function AdminDashboard({
                         <span className="log-ip-inline">{entry.ip || '127.0.0.1'}</span>
                         <span className="log-actor-inline">{entry.actor || 'anonymous'}</span>
                         <span className={`log-status-inline ${statusTone}`}>{statusCode}</span>
-                        <code className="log-line-text">{requestLine}</code>
+                        <span className="log-method-inline">{method}</span>
+                        <code className="log-line-text">{path}</code>
                         <span className="log-ua-inline">{entry.userAgent || '-'}</span>
                         {isExpanded && (
                           <div className="log-expanded-detail" onClick={(event) => event.stopPropagation()}>
                             <div><strong>STATUS</strong><code>{statusCode}</code></div>
-                            <div><strong>요청</strong><code>{requestLine}</code></div>
+                            <div><strong>METHOD</strong><code>{method}</code></div>
+                            <div><strong>요청</strong><code>{path}</code></div>
                             <div><strong>UA</strong><code>{entry.userAgent || '-'}</code></div>
                             {entry.params && Object.keys(entry.params).length > 0 && (
                               <div><strong>파라미터</strong><code>{JSON.stringify(entry.params)}</code></div>
@@ -872,10 +922,10 @@ export default function AdminDashboard({
                     );
                   })
                 ) : (
-                  <div className="admin-log-empty">조건에 맞는 웹 서비스 로그가 없습니다.</div>
+                  <div className="admin-log-empty">조건에 맞는 HTTP 로그가 없습니다.</div>
                 )}
               </div>
-            ) : (
+            ) : logTab === 'submissions' ? (
               <div className="admin-submission-log-list" role="region" aria-label="문제 제출 로그 목록">
                 <div className="admin-submission-log-head">
                   <span>시각</span>
@@ -893,7 +943,7 @@ export default function AdminDashboard({
                       </span>
                       <div className="log-user">
                         <strong>{entry.username}</strong>
-                        <small>{entry.email}</small>
+                        <small>{entry.email} · {entry.ownerKey} · {entry.tokenPrefix ?? '-'} · {entry.ipAddress ?? '-'}</small>
                       </div>
                       <div className="log-challenge">
                         <span>{entry.category}</span>
@@ -905,6 +955,52 @@ export default function AdminDashboard({
                 ) : (
                   <div className="admin-log-empty">조건에 맞는 문제 제출 로그가 없습니다.</div>
                 )}
+              </div>
+            ) : (
+              <div className="admin-server-log-list" role="region" aria-label="문제 서버 로그 목록">
+                <div className="admin-server-log-head">
+                  <span>시각</span><span>IP</span><span>USER</span><span>STATUS</span><span>METHOD</span><span>문제 / 요청</span><span>UA</span>
+                </div>
+                {filteredInstanceLogs.length ? filteredInstanceLogs.map((entry) => {
+                  const isExpanded = expandedLogId === entry.id;
+                  const method = entry.method ?? entry.protocol.toUpperCase();
+                  const path = entry.path ?? '';
+                  const statusTone = entry.status >= 400 ? 'is-error' : entry.status >= 300 ? 'is-redirect' : 'is-ok';
+                  return (
+                    <div
+                      key={entry.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
+                      className={isExpanded ? 'admin-server-log-row is-expanded' : 'admin-server-log-row'}
+                      onClick={() => setExpandedLogId(isExpanded ? null : entry.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setExpandedLogId(isExpanded ? null : entry.id);
+                        }
+                      }}
+                    >
+                      <time dateTime={entry.timestamp}>{logTimestampFormatter.format(new Date(entry.timestamp))}</time>
+                      <span className="log-ip-inline">{entry.ip}</span>
+                      <span className="log-actor-inline">{entry.owner}</span>
+                      <span className={`log-status-inline ${statusTone}`}>{entry.status}</span>
+                      <span className="log-method-inline">{method}</span>
+                      <code className="log-line-text">[{entry.challengeTitle}:{entry.port}] {path}</code>
+                      <span className="log-ua-inline">{entry.userAgent || '-'}</span>
+                      {isExpanded && (
+                        <div className="log-expanded-detail" onClick={(event) => event.stopPropagation()}>
+                          <div><strong>문제</strong><code>{entry.challengeTitle} · {entry.protocol.toUpperCase()} {entry.port}</code></div>
+                          <div><strong>METHOD</strong><code>{method}</code></div>
+                          <div><strong>요청</strong><code>{path || '-'}</code></div>
+                          <div><strong>UA</strong><code>{entry.userAgent || '-'}</code></div>
+                          <div><strong>소요 시간</strong><code>{entry.durationMs ?? 0}ms</code></div>
+                          {entry.params && Object.keys(entry.params).length > 0 && <div><strong>파라미터</strong><code>{JSON.stringify(entry.params)}</code></div>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : <div className="admin-log-empty">조건에 맞는 문제 서버 로그가 없습니다.</div>}
               </div>
             )}
           </section>

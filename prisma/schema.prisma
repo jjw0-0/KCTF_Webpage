@@ -13,6 +13,7 @@ datasource db {
 enum UserRole {
   ADMIN
   USER
+  GHOST
 }
 
 enum CTFStatus {
@@ -61,49 +62,65 @@ model User {
   passwordHash  String
   avatarData    String?
   role          UserRole @default(USER)
-  isActive      Boolean  @default(true)
   lastLoginAt   DateTime?
   passwordUpdatedAt DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  accessTokenHash   String? @unique
+  accessTokenPrefix String?
 
   // Relations
   teamMemberships TeamMember[]
   submissions     Submission[]
   solves          Solve[]
-  challengeInstance ChallengeInstance?
+  challengeInstances ChallengeInstance[]
 
   @@map("users")
 }
 
 model ChallengeInstance {
   id            String   @id @default(cuid())
-  userId        String   @unique
+  ownerKey      String   @unique
+  userId        String
+  teamId        String?
   challengeId   String
   instanceSlug  String
   token         String   @unique
+  accessToken   String
   url           String
   expiresAt     DateTime
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  requestIp     String?
+  tokenPrefix   String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
+  @@index([requestIp])
+  @@index([tokenPrefix])
   @@map("challenge_instances")
 }
 
 model Team {
   id          String   @id @default(cuid())
-  name        String   @unique
+  name        String
   inviteCode  String   @unique
+  ctfId       String
+  accessTokenHash   String? @unique
+  accessTokenPrefix String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   members     TeamMember[]
   submissions Submission[]
+  solves      Solve[]
+  challengeInstances ChallengeInstance[]
+  ctf         CTF @relation(fields: [ctfId], references: [id], onDelete: Cascade)
 
+  @@unique([ctfId, name])
   @@map("teams")
 }
 
@@ -136,6 +153,7 @@ model CTF {
   // Relations
   challenges Challenge[]
   categories Category[]
+  teams      Team[]
 
   @@map("ctfs")
 }
@@ -176,6 +194,7 @@ model Challenge {
   difficulty    ChallengeDifficulty @default(INTERMEDIATE)
   tags          String[]            @default([])
   flag          String?
+  dynamicFlag   Boolean             @default(false)
   instanceSlug  String?             @unique
   usesVm        Boolean             @default(false)
   usesCompose   Boolean             @default(false)
@@ -219,6 +238,9 @@ model Submission {
   flag        String
   isCorrect   Boolean
   submittedAt DateTime @default(now())
+  ownerKey    String
+  tokenPrefix String?
+  ipAddress   String?
 
   // Relations
   challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
@@ -229,6 +251,8 @@ model Submission {
   @@index([userId])
   @@index([teamId])
   @@index([submittedAt])
+  @@index([ipAddress])
+  @@index([tokenPrefix])
   @@map("submissions")
 }
 
@@ -236,13 +260,16 @@ model Solve {
   id          String   @id @default(cuid())
   challengeId String
   userId      String
+  teamId      String?
+  ownerKey    String
   points      Int
   solvedAt    DateTime @default(now())
 
   challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  @@unique([challengeId, userId])
+  @@unique([challengeId, ownerKey])
   @@index([userId, solvedAt])
   @@index([solvedAt])
   @@map("solves")

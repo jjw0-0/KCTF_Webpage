@@ -39,7 +39,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
 
   const parsed = createSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: '카테고리 이름을 확인해 주세요.' }, { status: 400 });
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
 
   const parsed = categoriesSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: '카테고리 데이터 형식이 올바르지 않습니다.' }, { status: 400 });

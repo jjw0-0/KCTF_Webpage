@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getTcpCommand } from '@/lib/challenge-media';
 
-type Instance = { challengeId: string; url: string; expiresAt: string };
+type Instance = { challengeId: string; url: string; accessToken: string; expiresAt: string };
 
 export default function InstanceControl({ challengeId, connectionType, enabled }: { challengeId: string; connectionType: 'HTTP' | 'TCP'; enabled: boolean }) {
   const [instance, setInstance] = useState<Instance | null>(null);
@@ -67,6 +67,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
 
   const isCurrent = instance?.challengeId === challengeId;
   const tcpCommand = isCurrent && connectionType === 'TCP' ? getTcpCommand(instance.url) : undefined;
+  const authenticatedTcpCommand = tcpCommand && instance ? `(printf 'KCTF_TOKEN ${instance.accessToken}\\n'; cat) | ${tcpCommand}` : undefined;
 
   return (
     <section className="instance-control" aria-label="Challenge Instance">
@@ -78,8 +79,8 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
         <Link href={`/login?callbackUrl=/ctf`}>로그인 후 생성</Link>
       ) : isCurrent ? (
         <div className="instance-actions">
-          {tcpCommand
-            ? <code className="instance-command">{tcpCommand}</code>
+          {authenticatedTcpCommand
+            ? <code className="instance-command">{authenticatedTcpCommand}</code>
             : <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기</a>}
           <button type="button" onClick={() => void destroy()} disabled={loading}>종료</button>
         </div>

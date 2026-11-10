@@ -11,7 +11,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
 
   const { id } = await params;
   const challenge = await prisma.challenge.findFirst({ where: { id, ctfId: ACTIVE_CTF_ID }, select: { id: true, title: true } });
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   const { id } = await params;
   const updated = await prisma.challenge.updateMany({
     where: { id, ctfId: ACTIVE_CTF_ID },

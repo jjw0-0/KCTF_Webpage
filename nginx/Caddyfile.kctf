@@ -1,10 +1,16 @@
-# Production reverse proxy for ctf.jjw0-0.kr.
-# This block is also installed into the host Caddyfile during deployment.
-ctf.jjw0-0.kr {
+# Set DOMAIN when running Caddy, for example: DOMAIN=ctf.kknock.org.
+{$DOMAIN:ctf.kknock.org} {
 	encode zstd gzip
+	log {
+		output file /var/log/kctf/access.jsonl {
+			roll_size 10MiB
+			roll_keep 3
+		}
+		format json
+	}
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Strict-Transport-Security "max-age=0"
 	}
 
 	@immutable path /_next/static/*

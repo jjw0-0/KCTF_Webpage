@@ -24,7 +24,7 @@ async function main() {
       startTime: new Date('2026-12-10T01:00:00.000Z'),
       endTime: new Date('2026-12-13T13:00:00.000Z'),
     },
-    update: { mode: 'INDIVIDUAL' },
+    update: {},
   });
 
   if (bootstrapDefaults) {
@@ -59,7 +59,7 @@ async function main() {
         passwordHash,
         role: 'ADMIN',
       },
-      update: {},
+      update: { username: adminUsername, role: 'ADMIN' },
     });
     console.log(`Admin account ensured for ${adminEmail}.`);
   } else {

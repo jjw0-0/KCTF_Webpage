@@ -75,11 +75,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             username: true,
             passwordHash: true,
             role: true,
-            isActive: true,
           },
         });
 
-        if (!user?.isActive) {
+        if (!user) {
           recordServerLog({
             level: 'WARN',
             source: 'AUTH',
@@ -88,11 +87,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             request,
             path: '/api/auth/callback/credentials',
             statusCode: 401,
-            message: `존재하지 않거나 비활성화된 계정 로그인 시도: ${parsed.data.email}`,
+            message: `존재하지 않는 계정 로그인 시도: ${parsed.data.email}`,
             params: {
               attemptedEmail: parsed.data.email,
               accountExists: Boolean(user),
-              isActive: user?.isActive ?? false,
             },
           });
           return null;
@@ -159,17 +157,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
         token.role = user.role;
         token.username = user.username;
+      } else if (token.id) {
+        const current = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { role: true, username: true },
+        });
+        if (current) {
+          token.role = current.role;
+          token.username = current.username;
+        }
       }
       return token;
     },
     session({ session, token }) {
       session.user.id = String(token.id);
-      session.user.role = token.role === 'ADMIN' ? 'ADMIN' : 'USER';
+      session.user.role = token.role === 'ADMIN' || token.role === 'GHOST' ? token.role : 'USER';
       session.user.username = String(token.username);
       return session;
     },

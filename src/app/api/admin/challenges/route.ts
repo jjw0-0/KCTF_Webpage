@@ -16,14 +16,14 @@ export async function POST(request: NextRequest) {
       action: 'ADMIN_CHALLENGE_CREATE_DENIED',
       actor: 'unauthorized',
       request,
-      statusCode: 403,
+      statusCode: 404,
       message: '권한 없는 사용자의 문제 생성 시도 차단',
     });
-    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+    return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   }
 
   const parsed = challengeInputSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success || !parsed.data.flag) {
+  if (!parsed.success || (!parsed.data.flag && !parsed.data.dynamicFlag)) {
     return NextResponse.json({ error: parsed.success ? '플래그를 입력해 주세요.' : parsed.error.issues[0]?.message }, { status: 400 });
   }
 

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
 import ScoreHistoryChart from '@/components/ScoreHistoryChart';
 import { getLeaderboard, getScoreHistory } from '@/lib/challenges';
@@ -25,7 +26,7 @@ export default async function ScoreboardPage() {
               <tr className={player.rank <= 3 ? 'is-top-three' : ''} key={player.userId}>
                 <td>#{String(player.rank).padStart(2, '0')}</td>
                 <th scope="row">
-                  <div className="scoreboard-player">
+                  <Link href={player.profileUrl} className="scoreboard-player">
                     <div className="scoreboard-avatar" aria-hidden="true">
                       {player.avatarUrl ? (
                         <Image src={player.avatarUrl} alt="" width={40} height={40} unoptimized />
@@ -34,7 +35,7 @@ export default async function ScoreboardPage() {
                       )}
                     </div>
                     <span>{player.name}</span>
-                  </div>
+                  </Link>
                 </th>
                 <td>{pointFormatter.format(player.score)}</td>
               </tr>

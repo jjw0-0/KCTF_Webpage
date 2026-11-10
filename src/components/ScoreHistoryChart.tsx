@@ -316,11 +316,16 @@ export default function ScoreHistoryChart({
           <desc id="score-chart-description">{players.map((player) => `${player.name} ${player.score}점`).join(', ')}</desc>
           <defs>
             {series.map((item) => (
-              <linearGradient key={item.player.userId} id={`score-grad-${item.index}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={item.color} stopOpacity={item.index < 3 ? '0.18' : '0.08'} />
-                <stop offset="75%" stopColor={item.color} stopOpacity={item.index < 3 ? '0.04' : '0.015'} />
-                <stop offset="100%" stopColor={item.color} stopOpacity="0.0" />
-              </linearGradient>
+              <g key={item.player.userId}>
+                <linearGradient id={`score-grad-${item.index}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={item.color} stopOpacity={item.index < 3 ? '0.18' : '0.08'} />
+                  <stop offset="75%" stopColor={item.color} stopOpacity={item.index < 3 ? '0.04' : '0.015'} />
+                  <stop offset="100%" stopColor={item.color} stopOpacity="0.0" />
+                </linearGradient>
+                <clipPath id={`score-avatar-${item.index}`}>
+                  <circle cx="940" cy={y(item.player.score)} r="14" />
+                </clipPath>
+              </g>
             ))}
           </defs>
 
@@ -381,6 +386,24 @@ export default function ScoreHistoryChart({
                     <title>{`${point.name} · ${pointFormatter.format(point.total)}점 · ${dateFormatter.format(point.solvedAt)}`}</title>
                   </circle>
                 ))}
+                <a href={item.player.profileUrl} aria-label={`${item.player.name} 프로필`}>
+                  <circle cx="940" cy={y(item.player.score)} r="16" className="score-endpoint-ring" />
+                  {item.player.avatarUrl ? (
+                    <image
+                      href={item.player.avatarUrl}
+                      x="926"
+                      y={y(item.player.score) - 14}
+                      width="28"
+                      height="28"
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#score-avatar-${item.index})`}
+                    />
+                  ) : (
+                    <text x="940" y={y(item.player.score) + 3.5} textAnchor="middle" className="score-endpoint-initials">
+                      {item.player.name.slice(0, 2).toUpperCase()}
+                    </text>
+                  )}
+                </a>
               </g>
             );
           })}

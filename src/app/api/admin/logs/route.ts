@@ -11,7 +11,7 @@ export async function GET() {
       source: 'ADMIN',
       message: 'GET /api/admin/logs 403 — Unauthorized admin log access attempt',
     });
-    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+    return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   }
 
   const logs = await getAdminLogs();

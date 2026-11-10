@@ -20,6 +20,7 @@ if [ ! -e "$env_file" ]; then
   postgres_password=$(openssl rand -hex 24)
   nextauth_secret=$(openssl rand -hex 48)
   instancer_token=$(openssl rand -hex 32)
+  dynamic_flag_secret=$(openssl rand -hex 32)
   admin_password=$(openssl rand -hex 16)
   admin_email=${ADMIN_EMAIL:-admin@$domain}
   admin_username=${ADMIN_USERNAME:-admin}
@@ -31,10 +32,11 @@ if [ ! -e "$env_file" ]; then
     'POSTGRES_DB=kctf' \
     "NEXTAUTH_SECRET=$nextauth_secret" \
     "KCTF_INSTANCER_TOKEN=$instancer_token" \
+    "DYNAMIC_FLAG_SECRET=$dynamic_flag_secret" \
+    'DISCORD_SOLVE_WEBHOOK_URL=' \
     "INSTANCER_PUBLIC_HOST=$domain" \
     'INSTANCER_TTL_MS=3600000' \
-    'INSTANCER_PORT_MIN=10000' \
-    'INSTANCER_PORT_MAX=19999' \
+    'INSTANCER_ENV_FILE=./config/instancer.env' \
     'INSTANCER_MAX_MEMORY_MB=1024' \
     'INSTANCER_MAX_CPU=2' \
     'INSTANCER_MAX_PIDS=256' \
@@ -45,11 +47,15 @@ if [ ! -e "$env_file" ]; then
   created=true
 fi
 
+mkdir -p data/logs
+touch data/logs/access.jsonl
+chmod 644 data/logs/access.jsonl
+
 ./scripts/deploy-prod.sh
 docker compose --env-file "$env_file" -f docker-compose.prod.yml --profile bundled-proxy up -d caddy
 
 printf '\nKCTF is starting at https://%s\n' "$domain"
-printf 'Allow inbound TCP 80, 443, and 10000-19999 (plus UDP 443) in the host firewall.\n'
+printf 'Open the instance ports from config/instancer.env in the host firewall.\n'
 if [ "$created" = true ]; then
   printf 'Initial admin: %s / %s\n' "$admin_email" "$admin_password"
   printf 'Credentials and generated secrets are stored in %s with owner-only permissions.\n' "$env_file"

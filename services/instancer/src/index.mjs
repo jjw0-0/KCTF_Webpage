@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   chmod,
   mkdir,
+  readdir,
   readFile,
   rename,
   rm,
@@ -35,10 +36,11 @@ const gatewayImage = process.env.INSTANCER_GATEWAY_IMAGE || 'kctf/instance-gatew
 const gatewayService = 'kctf_gateway';
 const gatewayNetwork = 'kctf_edge';
 const gatewayPort = 20_000;
-const runtimeVersion = 5;
+const runtimeVersion = 6;
 
 const deploymentsFile = path.join(dataDir, 'deployments.json');
 const instancesFile = path.join(dataDir, 'instances.json');
+const accessLogsDir = path.join(dataDir, 'access-logs');
 const deployments = new Map();
 const instances = new Map();
 let buildQueue = Promise.resolve();
@@ -46,6 +48,7 @@ let instanceQueue = Promise.resolve();
 
 await mkdir(dataDir, { recursive: true, mode: 0o700 });
 await chmod(dataDir, 0o700);
+await mkdir(accessLogsDir, { recursive: true, mode: 0o700 });
 await loadState(deploymentsFile, deployments);
 await loadState(instancesFile, instances);
 
@@ -106,8 +109,8 @@ async function loadState(filename, target) {
     const rows = JSON.parse(await readFile(filename, 'utf8'));
     if (!Array.isArray(rows)) return;
     for (const row of rows) {
-      if (row && typeof row.slug === 'string') target.set(row.slug, row);
-      else if (row && typeof row.token === 'string') target.set(row.token, row);
+      if (row && typeof row.token === 'string') target.set(row.token, row);
+      else if (row && typeof row.slug === 'string') target.set(row.slug, row);
     }
   } catch (error) {
     if (error?.code !== 'ENOENT') console.error(`[state] failed to load ${filename}`, error);
@@ -442,7 +445,15 @@ function prepareBuildCompose(compose, slug, hash) {
   return output;
 }
 
-function prepareRuntimeCompose(record, token, hostPort) {
+function prepareRuntimeCompose(
+  record,
+  token,
+  hostPort,
+  flag,
+  accessTokenHash = '0'.repeat(64),
+  ownerId = 'user:test',
+  accessLogFile = '/tmp/kctf-access.jsonl',
+) {
   const output = clone(record.compose);
   for (const [serviceName, service] of Object.entries(output.services)) {
     const attachedNetworks = Array.isArray(service.networks)
@@ -484,6 +495,9 @@ function prepareRuntimeCompose(record, token, hostPort) {
   }
 
   const entry = output.services[record.manifest.entryService];
+  if (flag) {
+    entry.environment = { ...normalizeEnvironment(entry.environment), FLAG: flag, KCTF_FLAG: flag };
+  }
   const entryNetworks = Array.isArray(entry.networks)
     ? entry.networks
     : isPlainObject(entry.networks)
@@ -497,13 +511,21 @@ function prepareRuntimeCompose(record, token, hostPort) {
   output.networks[gatewayNetwork] = { driver: 'bridge' };
   output.services[gatewayService] = {
     image: gatewayImage,
-    command: [
-      `TCP-LISTEN:${gatewayPort},fork,reuseaddr`,
-      `TCP:${record.manifest.entryService}:${record.manifest.internalPort}`,
-    ],
+    environment: {
+      LISTEN_PORT: String(gatewayPort),
+      TARGET_HOST: record.manifest.entryService,
+      TARGET_PORT: String(record.manifest.internalPort),
+      PROTOCOL: record.manifest.protocol,
+      ACCESS_TOKEN_HASH: accessTokenHash,
+      INSTANCE_TOKEN: token,
+      CHALLENGE_SLUG: record.slug,
+      OWNER_ID: ownerId,
+      HOST_PORT: String(hostPort),
+    },
     depends_on: [record.manifest.entryService],
     networks: [entryNetwork, gatewayNetwork],
     ports: [`0.0.0.0:${hostPort}:${gatewayPort}`],
+    volumes: [`${accessLogFile}:/logs/access.jsonl`],
     restart: 'no',
     read_only: true,
     mem_limit: '32m',
@@ -620,8 +642,8 @@ async function pickHostPort() {
   throw new Error('no free challenge port is available');
 }
 
-function activeForUser(userId) {
-  return [...instances.values()].find((instance) => instance.userId === userId && instance.status === 'RUNNING');
+function activeForOwner(ownerId) {
+  return [...instances.values()].find((instance) => (instance.ownerId ?? `user:${instance.userId}`) === ownerId && instance.status === 'RUNNING');
 }
 
 function withInstanceLock(operation) {
@@ -682,6 +704,19 @@ app.get('/healthz', (_request, response) => response.status(200).send('ok'));
 
 app.get('/api/instancer/status', requireBearer, (_request, response) => {
   response.json({ active: [...instances.values()].filter((instance) => instance.status === 'RUNNING').length, capacity: null });
+});
+
+app.get('/api/instancer/logs', requireBearer, async (_request, response) => {
+  const files = await readdir(accessLogsDir).catch(() => []);
+  const rows = [];
+  for (const file of files.filter((name) => name.endsWith('.jsonl')).slice(-200)) {
+    const lines = await readFile(path.join(accessLogsDir, file), 'utf8').catch(() => '');
+    for (const line of lines.trim().split('\n').slice(-200)) {
+      try { rows.push(JSON.parse(line)); } catch {}
+    }
+  }
+  rows.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+  response.json({ logs: rows.slice(0, 500) });
 });
 
 app.post('/api/instancer/deployments/:slug', requireBearer, upload.single('bundle'), async (request, response) => {
@@ -773,27 +808,34 @@ app.delete('/api/instancer/deployments/:slug', requireBearer, async (request, re
 
 app.post('/api/instancer/create', requireBearer, async (request, response) => {
   const slug = safeSlug(request.body?.slug);
-  const userId = Number(request.body?.user_id);
+  const ownerId = request.body?.owner_id;
+  const flag = request.body?.flag;
   if (!slug) return response.status(400).json({ error: 'unknown slug' });
-  if (!Number.isInteger(userId) || userId <= 0) return response.status(400).json({ error: 'user_id must be a positive integer' });
+  if (typeof ownerId !== 'string' || !/^(user|team):[a-zA-Z0-9_-]{1,100}$/.test(ownerId)) return response.status(400).json({ error: 'owner_id is invalid' });
+  if (flag !== undefined && (typeof flag !== 'string' || !flag || flag.length > 256)) return response.status(400).json({ error: 'flag is invalid' });
   const deployment = deployments.get(slug);
   if (!deployment || deployment.status !== 'READY') return response.status(409).json({ error: 'deployment is not ready' });
 
   try {
     return await withInstanceLock(async () => {
-      const existing = activeForUser(userId);
+      const existing = activeForOwner(ownerId);
       if (existing?.slug === slug && await instanceIsRunning(existing)) {
-        return response.json({ token: existing.token, url: existing.url, expires_at: existing.expiresAt });
+        return response.json({ token: existing.token, access_token: existing.accessToken, url: existing.url, expires_at: existing.expiresAt });
       }
       if (existing) await destroyInstance(existing);
 
       const token = randomBytes(8).toString('hex');
+      const accessToken = randomBytes(24).toString('base64url');
+      const accessTokenHash = createHash('sha256').update(accessToken).digest('hex');
       const hostPort = await pickHostPort();
       const projectName = `kctf-i-${token}`;
       const instanceDir = path.join(dataDir, 'instances', token);
       const composeFile = path.join(instanceDir, 'compose.yml');
+      const accessLogFile = path.join(accessLogsDir, `${token}.jsonl`);
       await mkdir(instanceDir, { recursive: true, mode: 0o700 });
-      const runtimeCompose = prepareRuntimeCompose(deployment, token, hostPort);
+      await writeFile(accessLogFile, '', { mode: 0o666 });
+      await chmod(accessLogFile, 0o666);
+      const runtimeCompose = prepareRuntimeCompose(deployment, token, hostPort, flag, accessTokenHash, ownerId, accessLogFile);
       await writeFile(composeFile, stringifyYaml(runtimeCompose), { mode: 0o600 });
       try {
         await run('docker', ['compose', '-p', projectName, '-f', composeFile, 'up', '-d', '--no-build'], {
@@ -811,11 +853,13 @@ app.post('/api/instancer/create', requireBearer, async (request, response) => {
       }
 
       const scheme = deployment.manifest.protocol === 'http' ? 'http' : 'tcp';
-      const url = `${scheme}://${publicHost}:${hostPort}${scheme === 'http' ? '/' : ''}`;
+      const baseUrl = `${scheme}://${publicHost}:${hostPort}${scheme === 'http' ? '/' : ''}`;
+      const url = scheme === 'http' ? `${baseUrl}?token=${encodeURIComponent(accessToken)}` : baseUrl;
       const instance = {
         token,
+        accessToken,
         slug,
-        userId,
+        ownerId,
         hostPort,
         projectName,
         composeFile,
@@ -827,7 +871,7 @@ app.post('/api/instancer/create', requireBearer, async (request, response) => {
       };
       instances.set(token, instance);
       await saveState(instancesFile, instances);
-      return response.status(201).json({ token, url, expires_at: instance.expiresAt });
+      return response.status(201).json({ token, access_token: accessToken, url, expires_at: instance.expiresAt });
     });
   } catch (error) {
     console.error('[instance:create]', error);

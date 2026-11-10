@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const instanceSchema = z.object({
   token: z.string().min(1),
+  access_token: z.string().min(1),
   url: z.string().url(),
   expires_at: z.string().datetime(),
 });
@@ -65,15 +66,15 @@ export async function deleteRemoteDeployment(slug: string) {
   if (!response.ok && response.status !== 404) throw new Error(await parseError(response, '배포를 삭제하지 못했습니다.'));
 }
 
-export async function createRemoteInstance(slug: string, userId: number) {
+export async function createRemoteInstance(slug: string, ownerId: string, flag?: string) {
   const response = await fetch(`${process.env.INSTANCER_URL}/api/instancer/create`, {
     method: 'POST',
     headers: {
       ...instancerHeaders(),
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ slug, user_id: userId }),
-    signal: AbortSignal.timeout(15_000),
+    body: JSON.stringify({ slug, owner_id: ownerId, flag }),
+    signal: AbortSignal.timeout(45_000),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : '인스턴스 발급에 실패했습니다.');
@@ -84,8 +85,36 @@ export async function destroyRemoteInstance(token: string) {
   const response = await fetch(`${process.env.INSTANCER_URL}/api/instancer/destroy/${encodeURIComponent(token)}`, {
     method: 'DELETE',
     headers: instancerHeaders(),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(70_000),
   });
   if (!response.ok && response.status !== 404) throw new Error('인스턴스 종료에 실패했습니다.');
+}
+
+export type InstanceAccessLog = {
+  timestamp: string;
+  instanceToken: string;
+  challengeSlug: string;
+  ownerId: string;
+  hostPort: number;
+  protocol: string;
+  ip: string;
+  method?: string;
+  path?: string;
+  query?: Record<string, unknown>;
+  params?: unknown;
+  status: number;
+  userAgent?: string;
+  durationMs?: number;
+};
+
+export async function getRemoteInstanceLogs(): Promise<InstanceAccessLog[]> {
+  const response = await fetch(`${process.env.INSTANCER_URL}/api/instancer/logs`, {
+    headers: instancerHeaders(),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) return [];
+  const body = await response.json().catch(() => ({ logs: [] })) as { logs?: InstanceAccessLog[] };
+  return Array.isArray(body.logs) ? body.logs : [];
 }
 

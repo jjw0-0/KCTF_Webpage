@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import PageLayout from '@/components/PageLayout';
@@ -5,16 +6,18 @@ import ProfileAvatar from '@/components/ProfileAvatar';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getLeaderboard } from '@/lib/challenges';
 import { prisma } from '@/lib/prisma';
+import { resolveOwner } from '@/lib/ownership';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect('/login?callbackUrl=/profile');
+  const owner = await resolveOwner(session.user.id);
 
   const [solves, challengeCount, leaderboard, user] = await Promise.all([
     prisma.solve.findMany({
-      where: { userId: session.user.id, challenge: { ctfId: ACTIVE_CTF_ID } },
+      where: { ownerKey: owner.key, challenge: { ctfId: ACTIVE_CTF_ID } },
       include: { challenge: { include: { category: { select: { slug: true } } } } },
       orderBy: { solvedAt: 'desc' },
     }),
@@ -23,7 +26,8 @@ export default async function ProfilePage() {
     prisma.user.findUnique({ where: { id: session.user.id }, select: { avatarData: true } }),
   ]);
   const score = solves.reduce((total, solve) => total + solve.points, 0);
-  const rank = leaderboard.find((entry) => entry.userId === session.user.id)?.rank;
+  const leaderboardId = owner.teamId ? owner.key : session.user.id;
+  const rank = leaderboard.find((entry) => entry.userId === leaderboardId)?.rank;
   const initials = session.user.username.slice(0, 2).toUpperCase();
   const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -35,6 +39,7 @@ export default async function ProfilePage() {
           <div className="profile-identity">
             <h1 id="profile-title">{session.user.username}</h1>
             <p>{session.user.email}</p>
+            {owner.teamId && <p><Link href={`/teams/${owner.teamId}`}>{owner.label}</Link></p>}
           </div>
           <dl className="profile-record" aria-label="참가 기록">
             <div><dt>순위</dt><dd>{rank ? `#${rank}` : '—'}</dd></div>

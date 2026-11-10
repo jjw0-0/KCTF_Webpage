@@ -6,8 +6,10 @@ import { ACTIVE_CTF_ID } from '@/lib/categories';
 import { getCtfAccess } from '@/lib/ctf-access';
 import { calculateChallengePoints } from '@/lib/challenge-scoring';
 import { matchesPlainFlag } from '@/lib/flags';
+import { sendSolveNotice } from '@/lib/discord';
+import { dynamicFlag, resolveOwner } from '@/lib/ownership';
 import { prisma } from '@/lib/prisma';
-import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
+import { consumeRateLimit, getRawConnectingIp, rateLimitHeaders } from '@/lib/rate-limit';
 
 const submissionSchema = z.object({ flag: z.string().trim().min(1).max(256) });
 type RouteContext = { params: Promise<{ id: string }> };
@@ -31,13 +33,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, username: true, email: true, role: true, isActive: true },
+    select: { id: true, username: true, email: true, role: true },
   });
-  if (!user?.isActive) {
-    return NextResponse.json({ error: '활성 계정으로 로그인해 주세요.' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
 
   const actor = formatActor(user);
+  const owner = await resolveOwner(user.id).catch((error) => error as Error);
+  if (owner instanceof Error) return NextResponse.json({ error: owner.message }, { status: 409 });
+  const ipAddress = getRawConnectingIp(request.headers);
   const access = await getCtfAccess(ACTIVE_CTF_ID);
   if (!access.open) {
     recordServerLog({
@@ -101,13 +104,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       decaySolves: true,
       decrementPerSolve: true,
       flag: true,
+      dynamicFlag: true,
       solveCount: true,
     },
   });
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
 
   const submittedFlag = parsed.data.flag.trim();
-  const correct = challenge.flag ? matchesPlainFlag(submittedFlag, challenge.flag) : false;
+  const expectedFlag = challenge.dynamicFlag ? dynamicFlag(challenge.id, owner) : challenge.flag;
+  const correct = expectedFlag ? matchesPlainFlag(submittedFlag, expectedFlag) : false;
   if (!correct) {
     const sub = await prisma.submission.create({
       data: {
@@ -115,6 +120,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         userId: session.user.id,
         flag: submittedFlag,
         isCorrect: false,
+        teamId: owner.teamId,
+        ownerKey: owner.key,
+        tokenPrefix: owner.tokenPrefix,
+        ipAddress,
       },
     });
     recordServerLog({
@@ -137,6 +146,34 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ correct: false }, { headers: rateLimitHeaders(limit) });
   }
 
+  if (user.role !== 'USER') {
+    const sub = await prisma.submission.create({
+      data: {
+        challengeId: challenge.id,
+        userId: session.user.id,
+        flag: submittedFlag,
+        isCorrect: true,
+        teamId: owner.teamId,
+        ownerKey: owner.key,
+        tokenPrefix: owner.tokenPrefix,
+        ipAddress,
+      },
+    });
+    recordServerLog({
+      id: `sub-http-${sub.id}`,
+      level: 'INFO',
+      source: 'SUBMIT',
+      action: 'FLAG_TEST_CORRECT',
+      actor,
+      actorId: user.id,
+      request,
+      statusCode: 200,
+      message: `점수 제외 계정 플래그 검증 성공: ${actor} → [${challenge.title}]`,
+      params: { submissionId: sub.id, challengeId: challenge.id, role: user.role, ownerKey: owner.key, tokenPrefix: owner.tokenPrefix, ipAddress },
+    });
+    return NextResponse.json({ correct: true, excludedFromScore: true }, { headers: rateLimitHeaders(limit) });
+  }
+
   try {
     const result = await prisma.$transaction(async (transaction) => {
       const sub = await transaction.submission.create({
@@ -145,18 +182,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           userId: session.user.id,
           flag: submittedFlag,
           isCorrect: true,
+          teamId: owner.teamId,
+          ownerKey: owner.key,
+          tokenPrefix: owner.tokenPrefix,
+          ipAddress,
         },
       });
       await transaction.solve.create({
-        data: { challengeId: challenge.id, userId: session.user.id, points: challenge.points },
+        data: { challengeId: challenge.id, userId: session.user.id, teamId: owner.teamId, ownerKey: owner.key, points: challenge.points },
       });
-      const updated = user.role === 'USER'
-        ? await transaction.challenge.update({
-            where: { id: challenge.id },
-            data: { solveCount: { increment: 1 } },
-            select: { points: true, scoringMode: true, minimumPoints: true, decaySolves: true, decrementPerSolve: true, solveCount: true },
-          })
-        : challenge;
+      const updated = await transaction.challenge.update({
+        where: { id: challenge.id },
+        data: { solveCount: { increment: 1 } },
+        select: { points: true, scoringMode: true, minimumPoints: true, decaySolves: true, decrementPerSolve: true, solveCount: true },
+      });
       const points = calculateChallengePoints(updated, updated.solveCount);
       await transaction.solve.updateMany({ where: { challengeId: challenge.id }, data: { points } });
       return { subId: sub.id, points, solves: updated.solveCount };
@@ -179,8 +218,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         isCorrect: true,
         points: result.points,
         totalSolves: result.solves,
+        ownerKey: owner.key,
+        tokenPrefix: owner.tokenPrefix,
+        ipAddress,
       },
     });
+
+    sendSolveNotice({ challenge: challenge.title, solver: owner.label, points: result.points, firstBlood: result.solves === 1 })
+      .catch((error) => console.error('[discord]', error));
 
     return NextResponse.json(
       { correct: true, alreadySolved: false, points: result.points, solves: result.solves },

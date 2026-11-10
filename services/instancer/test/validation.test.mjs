@@ -112,6 +112,8 @@ services:
     assert.equal(runtime.networks.kctf_edge.internal, undefined);
     assert.deepEqual(runtime.services.kctf_gateway.networks, ['default', 'kctf_edge']);
     assert.deepEqual(runtime.services.kctf_gateway.ports, ['0.0.0.0:21000:20000']);
+    assert.equal(runtime.services.kctf_gateway.environment.PROTOCOL, 'http');
+    assert.equal(runtime.services.kctf_gateway.environment.ACCESS_TOKEN_HASH.length, 64);
     assert.deepEqual(runtime.services.kctf_gateway.cap_drop, ['ALL']);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -155,6 +157,18 @@ services:
   assert.equal(runtime.services.web.environment.ORIGINAL_FLAG_MODE, 'static');
   assert.equal(runtime.services.web.environment.FLAG, undefined);
   assert.equal(runtime.services.web.volumes, undefined);
+});
+
+test('injects a dynamic flag only into the entry service', () => {
+  const compose = validateCompose('services:\n  web:\n    image: alpine\n  db:\n    image: alpine\n', '/tmp/deployment');
+  const manifest = validateManifest({
+    version: 1,
+    runtime: { entryService: 'web', protocol: 'http', port: 8080 },
+  }, compose, '/tmp/deployment');
+  const runtime = prepareRuntimeCompose({ compose, manifest, sourceDir: '/tmp/deployment', slug: 'test' }, 'token', 21000, 'KCTF{team}');
+  assert.equal(runtime.services.web.environment.FLAG, 'KCTF{team}');
+  assert.equal(runtime.services.web.environment.KCTF_FLAG, 'KCTF{team}');
+  assert.equal(runtime.services.db.environment, undefined);
 });
 
 test('rejects volume driver options that can create host bind mounts', () => {

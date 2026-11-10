@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { formatActor, recordServerLog } from '@/lib/admin-logs';
 import { prisma } from '@/lib/prisma';
+import { issueToken } from '@/lib/ownership';
 import { consumeRateLimit, getRateLimitAddress, rateLimitHeaders } from '@/lib/rate-limit';
 
 const registerSchema = z.object({
@@ -81,8 +82,9 @@ export async function POST(request: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const accessToken = issueToken('personal');
   const user = await prisma.user.create({
-    data: { username, email, passwordHash },
+    data: { username, email, passwordHash, accessTokenHash: accessToken.hash, accessTokenPrefix: accessToken.prefix },
     select: { id: true, instancerId: true, username: true, email: true, role: true },
   });
 
@@ -106,5 +108,5 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ user }, { status: 201, headers: rateLimitHeaders(limit) });
+  return NextResponse.json({ user, accessToken: accessToken.token }, { status: 201, headers: rateLimitHeaders(limit) });
 }

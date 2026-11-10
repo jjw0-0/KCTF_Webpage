@@ -36,6 +36,8 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - INSTANCER_URL=http://instancer:7000
       - INSTANCER_TOKEN=${KCTF_INSTANCER_TOKEN}
+      - DYNAMIC_FLAG_SECRET=${DYNAMIC_FLAG_SECRET}
+      - DISCORD_SOLVE_WEBHOOK_URL=${DISCORD_SOLVE_WEBHOOK_URL:-}
     volumes:
       - .:/app
       - /app/node_modules
@@ -56,13 +58,13 @@ services:
     build:
       context: ./services/instancer
     restart: unless-stopped
+    env_file:
+      - ${INSTANCER_ENV_FILE:-./config/instancer.env}
     environment:
       INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN}
       INSTANCER_PUBLIC_HOST: ${INSTANCER_PUBLIC_HOST:-127.0.0.1}
       INSTANCER_DATA_DIR: /var/lib/kctf-instancer
       INSTANCER_TTL_MS: ${INSTANCER_TTL_MS:-3600000}
-      INSTANCER_PORT_MIN: ${INSTANCER_PORT_MIN:-10000}
-      INSTANCER_PORT_MAX: ${INSTANCER_PORT_MAX:-19999}
       INSTANCER_INSTALL_AMD64_EMULATION: ${INSTANCER_INSTALL_AMD64_EMULATION:-true}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

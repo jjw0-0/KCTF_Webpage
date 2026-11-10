@@ -29,16 +29,20 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      NEXTAUTH_URL: https://${DOMAIN:-ctf.jjw0-0.kr}
+      NEXTAUTH_URL: https://${DOMAIN:-ctf.kknock.org}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_SECRET: ${NEXTAUTH_SECRET}
       AUTH_TRUST_HOST: "true"
       INSTANCER_URL: http://instancer:7000
       INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN:-}
+      DYNAMIC_FLAG_SECRET: ${DYNAMIC_FLAG_SECRET}
+      DISCORD_SOLVE_WEBHOOK_URL: ${DISCORD_SOLVE_WEBHOOK_URL:-}
       PORT: 3000
       HOSTNAME: 0.0.0.0
     ports:
       - "127.0.0.1:${KCTF_HOST_PORT:-3020}:3000"
+    volumes:
+      - ${KCTF_ACCESS_LOG_DIR:-./data/logs}:/var/log/kctf:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,13 +65,13 @@ services:
     build:
       context: ./services/instancer
     restart: unless-stopped
+    env_file:
+      - ${INSTANCER_ENV_FILE:-./config/instancer.env}
     environment:
       INSTANCER_TOKEN: ${KCTF_INSTANCER_TOKEN}
-      INSTANCER_PUBLIC_HOST: ${INSTANCER_PUBLIC_HOST:-ctf.jjw0-0.kr}
+      INSTANCER_PUBLIC_HOST: ${INSTANCER_PUBLIC_HOST:-ctf.kknock.org}
       INSTANCER_DATA_DIR: /var/lib/kctf-instancer
       INSTANCER_TTL_MS: ${INSTANCER_TTL_MS:-3600000}
-      INSTANCER_PORT_MIN: ${INSTANCER_PORT_MIN:-10000}
-      INSTANCER_PORT_MAX: ${INSTANCER_PORT_MAX:-19999}
       INSTANCER_MAX_MEMORY_MB: ${INSTANCER_MAX_MEMORY_MB:-1024}
       INSTANCER_MAX_CPU: ${INSTANCER_MAX_CPU:-2}
       INSTANCER_MAX_PIDS: ${INSTANCER_MAX_PIDS:-256}
@@ -90,7 +94,7 @@ services:
     profiles: ["bundled-proxy"]
     restart: unless-stopped
     environment:
-      DOMAIN: ${DOMAIN:-ctf.jjw0-0.kr}
+      DOMAIN: ${DOMAIN:-ctf.kknock.org}
     ports:
       - "80:80"
       - "443:443"
@@ -99,6 +103,7 @@ services:
       - ./nginx/Caddyfile.portable:/etc/caddy/Caddyfile:ro
       - kctf-caddy-data:/data
       - kctf-caddy-config:/config
+      - ${KCTF_ACCESS_LOG_DIR:-./data/logs}:/var/log/kctf
     depends_on:
       app:
         condition: service_healthy

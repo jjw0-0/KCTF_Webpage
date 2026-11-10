@@ -29,7 +29,7 @@ export function getTcpCommand(value: string): string | undefined {
 export function getVideoSource(value: string): { kind: 'video' | 'embed'; src: string } | undefined {
   const safe = safeResourceUrl(value);
   if (!safe) return undefined;
-  const url = new URL(safe, 'https://ctf.jjw0-0.kr');
+  const url = new URL(safe, 'https://ctf.example');
   if (/\.(mp4|webm|ogv|m4v)$/i.test(url.pathname)) return { kind: 'video', src: safe };
   let id: string | null = null;
   if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'www.youtube-nocookie.com'].includes(url.hostname)) {

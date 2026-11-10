@@ -27,7 +27,7 @@ async function challengeForDeployment(id: string) {
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   const { id } = await params;
   const challenge = await challengeForDeployment(id);
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
@@ -50,7 +50,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   const { id } = await params;
   const challenge = await challengeForDeployment(id);
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
-  if (!admin) return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+  if (!admin) return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   const { id } = await params;
   const challenge = await challengeForDeployment(id);
   if (!challenge) return NextResponse.json({ error: '문제를 찾을 수 없습니다.' }, { status: 404 });

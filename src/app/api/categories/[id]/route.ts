@@ -10,7 +10,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function DELETE(request: Request, { params }: RouteContext) {
   const admin = await getCurrentAdminUser();
   if (!admin) {
-    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 });
+    return NextResponse.json({ error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
   }
 
   const { id } = await params;

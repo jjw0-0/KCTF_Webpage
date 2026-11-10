@@ -11,9 +11,9 @@ async function currentUserId() {
   if (!session?.user?.id) return null;
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, username: true, email: true, isActive: true },
+    select: { id: true, username: true, email: true },
   });
-  return user?.isActive ? user : null;
+  return user;
 }
 
 export async function POST(request: NextRequest) {

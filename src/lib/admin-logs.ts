@@ -1,6 +1,8 @@
+import { readFile } from 'node:fs/promises';
 import { ACTIVE_CTF_ID } from '@/lib/categories';
+import { getRemoteInstanceLogs } from '@/lib/instancer';
 import { prisma } from '@/lib/prisma';
-import { consumeRateLimit, getClientAddress, ipv6ToFallbackIpv4 } from '@/lib/rate-limit';
+import { consumeRateLimit, getRawConnectingIp } from '@/lib/rate-limit';
 
 export type ServerLogLevel = 'INFO' | 'WARN' | 'ERROR';
 export type ServerLogSource = 'VM' | 'SUBMIT' | 'AUTH' | 'FILE' | 'USER' | 'ADMIN' | 'SYSTEM' | 'HTTP';
@@ -32,11 +34,31 @@ export type SubmissionLogEntry = {
   points: number;
   isCorrect: boolean;
   flag: string;
+  ownerKey: string;
+  tokenPrefix?: string;
+  ipAddress?: string;
 };
 
 export type AdminLogsPayload = {
   serverLogs: ServerLogEntry[];
   submissionLogs: SubmissionLogEntry[];
+  instanceLogs: InstanceLogEntry[];
+};
+
+export type InstanceLogEntry = {
+  id: string;
+  timestamp: string;
+  challengeTitle: string;
+  owner: string;
+  port: number;
+  protocol: string;
+  ip: string;
+  method?: string;
+  path?: string;
+  status: number;
+  userAgent?: string;
+  durationMs?: number;
+  params?: Record<string, unknown>;
 };
 
 const MAX_BUFFER_LOGS = 400;
@@ -60,7 +82,7 @@ export function extractRequestMeta(
       path: fallbackPath,
     };
   }
-  const ip = getClientAddress(request.headers);
+  const ip = getRawConnectingIp(request.headers);
   const rawUa = request.headers.get('user-agent')?.trim();
   const userAgent = rawUa ? rawUa.slice(0, 240) : undefined;
   let path = fallbackPath;
@@ -81,7 +103,7 @@ export function extractRequestMeta(
 }
 
 export function extractHeadersMeta(headers: Headers, method = 'GET', path = '/') {
-  const ip = getClientAddress(headers);
+  const ip = getRawConnectingIp(headers);
   const rawUa = headers.get('user-agent')?.trim();
   const userAgent = rawUa ? rawUa.slice(0, 240) : undefined;
   const referer = headers.get('referer')?.trim() || undefined;
@@ -240,7 +262,7 @@ export function recordServerLog(entry: {
     action: entry.action ?? `${source}_EVENT`,
     actor: normalizeActorUsername(entry.actor),
     actorId: entry.actorId,
-    ip: ipv6ToFallbackIpv4(rawIp),
+    ip: rawIp,
     userAgent: entry.userAgent ?? reqMeta?.userAgent,
     method: entry.method ?? reqMeta?.method ?? 'GET',
     path: entry.path ?? reqMeta?.path ?? '/',
@@ -309,7 +331,7 @@ async function loadPersistedAuditLogs(): Promise<ServerLogEntry[]> {
         action: row.action || 'EVENT',
         actor: normalizeActorUsername(row.actor),
         actorId: row.actorId ?? undefined,
-        ip: ipv6ToFallbackIpv4(row.ip || '127.0.0.1'),
+        ip: row.ip || '127.0.0.1',
         userAgent: row.userAgent ?? '-',
         method: row.method ?? 'GET',
         path: row.path ?? '/',
@@ -323,8 +345,68 @@ async function loadPersistedAuditLogs(): Promise<ServerLogEntry[]> {
   }
 }
 
+type CaddyAccessLog = {
+  ts?: number;
+  status?: number;
+  duration?: number;
+  actor?: string;
+  request?: {
+    remote_ip?: string;
+    method?: string;
+    host?: string;
+    uri?: string;
+    headers?: Record<string, string[]>;
+  };
+  resp_headers?: Record<string, string[]>;
+};
+
+async function loadProxyAccessLogs(auditLogs: ServerLogEntry[]): Promise<ServerLogEntry[]> {
+  try {
+    const raw = await readFile(/* turbopackIgnore: true */ process.env.KCTF_ACCESS_LOG_PATH || '/var/log/kctf/access.jsonl', 'utf8');
+    const expectedHost = process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).host : '';
+    const rows = raw.trim().split('\n').slice(-500).flatMap((line) => {
+      try { return [JSON.parse(line) as CaddyAccessLog]; } catch { return []; }
+    }).filter((row) => !expectedHost || row.request?.host === expectedHost);
+    return rows.map((row, index) => {
+      const timestamp = new Date((row.ts ?? 0) * 1000).toISOString();
+      const ip = row.request?.remote_ip ?? 'unknown';
+      const method = row.request?.method ?? 'GET';
+      const path = row.request?.uri ?? '/';
+      const time = new Date(timestamp).getTime();
+      const matched = auditLogs.find((entry) => entry.ip === ip && entry.method === method
+        && entry.path === path && Math.abs(new Date(entry.timestamp).getTime() - time) < 5_000);
+      const encodedActor = row.actor ?? row.resp_headers?.['X-Kctf-Actor']?.[0];
+      let actor = matched?.actor ?? 'anonymous';
+      try { actor = encodedActor ? decodeURIComponent(encodedActor) : actor; } catch {}
+      const query = Object.fromEntries(new URL(path, 'http://log').searchParams);
+      return {
+        id: `proxy-${row.ts ?? 0}-${index}`,
+        timestamp,
+        level: (row.status ?? 200) >= 500 ? 'ERROR' as const : (row.status ?? 200) >= 400 ? 'WARN' as const : 'INFO' as const,
+        source: 'HTTP' as const,
+        action: 'HTTP_ACCESS',
+        actor,
+        actorId: matched?.actorId,
+        ip,
+        userAgent: row.request?.headers?.['User-Agent']?.[0] ?? '-',
+        method,
+        path,
+        statusCode: row.status ?? 200,
+        message: `${method} ${path}`,
+        params: {
+          host: row.request?.host,
+          ...(Object.keys(query).length ? { query } : {}),
+          durationMs: Math.round((row.duration ?? 0) * 1000),
+        },
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getAdminLogs(): Promise<AdminLogsPayload> {
-  const [persistedLogs, submissions, instances, challenges] = await Promise.all([
+  const [persistedLogs, submissions, instances, challenges, remoteInstanceLogs] = await Promise.all([
     loadPersistedAuditLogs(),
     prisma.submission.findMany({
       where: { challenge: { ctfId: ACTIVE_CTF_ID } },
@@ -335,6 +417,9 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
         flag: true,
         isCorrect: true,
         submittedAt: true,
+        ownerKey: true,
+        tokenPrefix: true,
+        ipAddress: true,
         user: { select: { username: true, email: true } },
         challenge: {
           select: {
@@ -355,6 +440,9 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
         instanceSlug: true,
         url: true,
         createdAt: true,
+        ownerKey: true,
+        tokenPrefix: true,
+        requestIp: true,
         user: { select: { username: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -364,6 +452,7 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
       where: { ctfId: ACTIVE_CTF_ID },
       select: { id: true, title: true, instanceSlug: true },
     }),
+    getRemoteInstanceLogs().catch(() => []),
   ]);
 
   const titleById = new Map(challenges.map((c) => [c.id, c.title]));
@@ -415,9 +504,13 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
     points: sub.challenge.points,
     isCorrect: sub.isCorrect,
     flag: sub.flag,
+    ownerKey: sub.ownerKey,
+    tokenPrefix: sub.tokenPrefix ?? undefined,
+    ipAddress: sub.ipAddress ?? undefined,
   }));
 
   const synthesized: ServerLogEntry[] = [];
+  const proxyLogs = await loadProxyAccessLogs(persistedLogs);
 
   for (const inst of instances) {
     const chTitle = titleById.get(inst.challengeId) ?? titleBySlug.get(inst.instanceSlug) ?? inst.instanceSlug;
@@ -429,10 +522,11 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
       action: 'VM_CREATE',
       actor: inst.user.username,
       actorId: inst.userId,
-      ip: '127.0.0.1',
+      ip: inst.requestIp ?? '127.0.0.1',
       userAgent: '-',
       method: 'POST',
       path: `/api/instances ([${chTitle}])`,
+      params: { ownerKey: inst.ownerKey, tokenPrefix: inst.tokenPrefix },
       statusCode: 200,
       message: `POST /api/instances ([${chTitle}])`,
     });
@@ -447,7 +541,7 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
       action: 'FLAG_SUBMIT',
       actor: sub.user.username,
       actorId: sub.userId,
-      ip: '127.0.0.1',
+      ip: sub.ipAddress ?? '127.0.0.1',
       userAgent: '-',
       method: 'POST',
       path: `/api/challenges/[${sub.challenge.title}]/submit`,
@@ -457,13 +551,13 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
   }
 
   const combinedMap = new Map<string, ServerLogEntry>();
-  for (const item of [...getBuffer(), ...persistedLogs, ...synthesized]) {
-    if (item.source === 'SYSTEM') continue;
+  for (const item of [...proxyLogs, ...getBuffer(), ...persistedLogs, ...synthesized]) {
+    if (item.source === 'SYSTEM' || item.source === 'SUBMIT' || item.source === 'VM') continue;
     if (!combinedMap.has(item.id)) {
       combinedMap.set(item.id, {
         ...item,
         actor: normalizeActorUsername(item.actor),
-        ip: ipv6ToFallbackIpv4(item.ip),
+        ip: item.ip,
         path: humanizeChallengePath(item.path, item.params),
       });
     }
@@ -473,5 +567,30 @@ export async function getAdminLogs(): Promise<AdminLogsPayload> {
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 300);
 
-  return { serverLogs, submissionLogs };
+  const ownerKeys = [...new Set(remoteInstanceLogs.map((log) => log.ownerId))];
+  const [logUsers, logTeams] = await Promise.all([
+    prisma.user.findMany({ where: { id: { in: ownerKeys.filter((key) => key.startsWith('user:')).map((key) => key.slice(5)) } }, select: { id: true, username: true } }),
+    prisma.team.findMany({ where: { id: { in: ownerKeys.filter((key) => key.startsWith('team:')).map((key) => key.slice(5)) } }, select: { id: true, name: true } }),
+  ]);
+  const ownerNames = new Map<string, string>([
+    ...logUsers.map((user) => [`user:${user.id}`, user.username] as const),
+    ...logTeams.map((team) => [`team:${team.id}`, team.name] as const),
+  ]);
+  const instanceLogs: InstanceLogEntry[] = remoteInstanceLogs.map((log, index) => ({
+    id: `${log.instanceToken}-${log.timestamp}-${index}`,
+    timestamp: log.timestamp,
+    challengeTitle: titleBySlug.get(log.challengeSlug) ?? log.challengeSlug,
+    owner: ownerNames.get(log.ownerId) ?? log.ownerId,
+    port: log.hostPort,
+    protocol: log.protocol,
+    ip: log.ip,
+    method: log.method,
+    path: log.path,
+    status: log.status,
+    userAgent: log.userAgent,
+    durationMs: log.durationMs,
+    params: { ...(log.query ?? {}), ...(log.params && typeof log.params === 'object' ? log.params as Record<string, unknown> : {}) },
+  }));
+
+  return { serverLogs, submissionLogs, instanceLogs };
 }

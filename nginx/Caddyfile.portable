@@ -1,8 +1,15 @@
 {$DOMAIN} {
 	encode zstd gzip
+	log {
+		output file /var/log/kctf/access.jsonl {
+			roll_size 10MiB
+			roll_keep 3
+		}
+		format json
+	}
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Strict-Transport-Security "max-age=0"
 	}
 
 	@immutable path /_next/static/*

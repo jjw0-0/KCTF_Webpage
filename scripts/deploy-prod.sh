@@ -13,9 +13,16 @@ umask 077
 if ! grep -Eq '^KCTF_INSTANCER_TOKEN=.+$' "$env_file"; then
   printf '\nKCTF_INSTANCER_TOKEN=%s\n' "$(openssl rand -hex 32)" >> "$env_file"
 fi
+if ! grep -Eq '^DYNAMIC_FLAG_SECRET=.+$' "$env_file"; then
+  printf 'DYNAMIC_FLAG_SECRET=%s\n' "$(openssl rand -hex 32)" >> "$env_file"
+fi
+if ! grep -Eq '^DISCORD_SOLVE_WEBHOOK_URL=' "$env_file"; then
+  printf 'DISCORD_SOLVE_WEBHOOK_URL=\n' >> "$env_file"
+fi
 
 compose='docker compose --env-file .env.prod.local -f docker-compose.prod.yml'
 $compose --profile tools build app instancer migrate
+docker build --pull -t kctf/instance-gateway:1 services/instancer/gateway
 $compose --profile tools run --rm migrate
 $compose --profile tools run --rm migrate npx prisma db seed
 $compose up -d --no-build postgres instancer app
