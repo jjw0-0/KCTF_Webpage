@@ -1,4 +1,4 @@
-# KCTF
+# K.knock CTF Platform
 
 [한국어](README.md)
 
@@ -25,7 +25,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Replace the secrets in `.env`, then open `http://localhost:3000`.
+Update `.env`, then open `http://localhost:3000`.
 
 To run Next.js directly while keeping PostgreSQL in Docker:
 
@@ -118,25 +118,14 @@ services:
     image: postgres:16-alpine
 ```
 
-There is no `challenge.yaml`. The instancer allocates the public port and
-ignores Compose published ports.
+The instancer allocates the public port and ignores Compose published ports.
 
 Privileged mode, Docker sockets, host namespaces, devices, added capabilities,
 absolute host mounts, and external networks or volumes are rejected. Runtime
 CPU, memory, PID, and capability limits are applied.
 
 Individual mode gives each user one instance. Team mode gives each team one
-shared instance. Starting another challenge replaces the current instance.
-
-## Accounts and scoring
-
-- Users own solves, score, instances, and dynamic flags in individual mode.
-- Teams share them in team mode.
-- Dynamic flags are passed to instances as `FLAG` and `KCTF_FLAG`.
-- Ghost submissions do not affect the scoreboard or solve counts.
-
-Static flags and submission logs are visible to administrators. Grant that role
-only to event operators.
+shared instance.
 
 ## Checks
 
@@ -170,4 +159,4 @@ src/lib/                Auth, scoring, logs, and instancer client
 
 ## License
 
-Copyright © 2025 K.knock
+Copyright © 2026 K.knock

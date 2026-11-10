@@ -1,4 +1,4 @@
-# KCTF
+# K.knock CTF Platform
 
 [English](README.en.md)
 
@@ -23,7 +23,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-`.env`의 비밀값을 변경한 뒤 `http://localhost:3000`으로 접속합니다.
+`.env` 값을 변경한 뒤 `http://localhost:3000`으로 접속합니다.
 
 Next.js를 직접 실행하려면 PostgreSQL만 Docker로 실행합니다.
 
@@ -115,25 +115,14 @@ services:
     image: postgres:16-alpine
 ```
 
-`challenge.yaml`은 사용하지 않습니다. Instancer가 공개 포트를 할당하므로
-Compose의 published port도 사용하지 않습니다.
+Instancer가 공개 포트를 할당하므로 Compose의 published port는 사용하지
+않습니다.
 
 Privileged mode, Docker socket, host namespace, device, capability 추가,
 절대 경로 mount와 external network/volume은 거부됩니다. 인스턴스에는 CPU,
 memory, PID와 capability 제한이 적용됩니다.
 
 개인전에서는 사용자마다, 팀전에서는 팀마다 인스턴스 하나를 사용합니다.
-다른 문제를 실행하면 기존 인스턴스가 교체됩니다.
-
-## 계정과 점수
-
-- 개인전에서는 사용자가 Solve, Score, Instance와 Dynamic flag를 소유합니다.
-- 팀전에서는 팀이 이를 공유합니다.
-- Dynamic flag는 인스턴스에 `FLAG`와 `KCTF_FLAG`로 전달됩니다.
-- Ghost 계정의 제출은 Scoreboard와 Solve 수에 반영되지 않습니다.
-
-Static flag와 제출 로그는 관리자가 확인할 수 있으므로 관리자 권한은 운영자에게만
-부여해야 합니다.
 
 ## 검사
 
@@ -167,4 +156,4 @@ src/lib/                인증, 점수, 로그, instancer 연동
 
 ## License
 
-Copyright © 2025 K.knock
+Copyright © 2026 K.knock
