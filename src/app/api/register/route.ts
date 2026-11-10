@@ -108,5 +108,5 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ user, accessToken: accessToken.token }, { status: 201, headers: rateLimitHeaders(limit) });
+  return NextResponse.json({ user }, { status: 201, headers: rateLimitHeaders(limit) });
 }

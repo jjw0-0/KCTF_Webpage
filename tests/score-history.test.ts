@@ -6,7 +6,7 @@ import ScoreHistoryChart from '../src/components/ScoreHistoryChart.tsx';
 
 test('score history renders one cumulative track per ranked player', () => {
   const leaderboard = [
-    { rank: 1, userId: 'u1', name: 'alpha', profileUrl: '/users/u1', score: 300, solved: 2 },
+    { rank: 1, userId: 'u1', name: 'alpha', profileUrl: '/users/u1', avatarUrl: '/avatar.png', score: 300, solved: 2 },
     { rank: 2, userId: 'u2', name: 'beta', profileUrl: '/users/u2', score: 100, solved: 1 },
   ];
   const history = [
@@ -18,6 +18,7 @@ test('score history renders one cumulative track per ranked player', () => {
   assert.match(markup, /상위 참가자 누적 점수 변화/);
   assert.equal((markup.match(/score-player-line/g) ?? []).length, 2);
   assert.match(markup, /alpha 300점/);
-  assert.match(markup, /href="\/users\/u1"/);
-  assert.equal((markup.match(/score-endpoint-ring/g) ?? []).length, 2);
+  assert.equal((markup.match(/score-endpoint-dot/g) ?? []).length, 2);
+  assert.doesNotMatch(markup, /score-avatar|<image/);
+  assert.match(markup, /aria-pressed="true"/);
 });

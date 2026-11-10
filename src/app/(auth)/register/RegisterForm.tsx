@@ -2,11 +2,12 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterForm() {
+  const router = useRouter();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [accessToken, setAccessToken] = useState('');
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,7 +29,7 @@ export default function RegisterForm() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? '회원가입에 실패했습니다.');
-      setAccessToken(payload.accessToken);
+      router.replace('/login');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '회원가입에 실패했습니다.');
     } finally {
@@ -38,15 +39,6 @@ export default function RegisterForm() {
 
   return (
     <>
-      {accessToken ? (
-        <div className="auth-form">
-          <h2>개인 토큰</h2>
-          <p>이 토큰은 다시 표시되지 않습니다.</p>
-          <code className="registration-token">{accessToken}</code>
-          <button type="button" className="auth-submit" onClick={() => void navigator.clipboard.writeText(accessToken)}>복사</button>
-          <p className="auth-switch"><Link href="/login?registered=1">로그인</Link></p>
-        </div>
-      ) : (
       <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <div className="auth-field">
           <label htmlFor="email">이메일</label>
@@ -69,7 +61,6 @@ export default function RegisterForm() {
           {isSubmitting ? '계정 생성 중…' : '회원가입'}
         </button>
       </form>
-      )}
       <p className="auth-switch">이미 계정이 있으신가요? <Link href="/login">로그인</Link></p>
     </>
   );

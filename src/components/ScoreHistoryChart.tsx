@@ -26,133 +26,12 @@ const CHART_HEIGHT = CHART_BOTTOM - CHART_TOP;
 type PlotNode = {
   x: number;
   y: number;
-  time: number;
-  total: number;
 };
 
-type HermiteSegment = {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  m0: number;
-  m1: number;
-};
-
-/**
- * Fritsch–Carlson monotone cubic Hermite spline.
- * Guarantees smooth C1 curves through cumulative score points with zero overshoot.
- */
-function buildMonotoneSpline(rawNodes: PlotNode[]): {
-  linePath: string;
-  areaPath: string;
-  segments: HermiteSegment[];
-} {
-  // Merge nodes with identical X coordinates (keep the latest cumulative point at that X)
-  const nodes: PlotNode[] = [];
-  for (const node of rawNodes) {
-    const prev = nodes.at(-1);
-    if (prev && Math.abs(node.x - prev.x) < 0.5) {
-      nodes[nodes.length - 1] = node;
-    } else {
-      nodes.push(node);
-    }
-  }
-
-  const n = nodes.length;
-  if (n === 0) return { linePath: '', areaPath: '', segments: [] };
-  if (n === 1) {
-    const p = nodes[0];
-    const linePath = `M ${CHART_LEFT} ${p.y.toFixed(1)} L ${CHART_RIGHT} ${p.y.toFixed(1)}`;
-    const areaPath = `${linePath} V ${CHART_BOTTOM} H ${CHART_LEFT} Z`;
-    return { linePath, areaPath, segments: [] };
-  }
-
-  const dx: number[] = [];
-  const dy: number[] = [];
-  const slopes: number[] = [];
-  for (let i = 0; i < n - 1; i++) {
-    const deltaX = Math.max(1e-3, nodes[i + 1].x - nodes[i].x);
-    const deltaY = nodes[i + 1].y - nodes[i].y;
-    dx.push(deltaX);
-    dy.push(deltaY);
-    slopes.push(deltaY / deltaX);
-  }
-
-  const tangents = new Array<number>(n).fill(0);
-  tangents[0] = slopes[0];
-  tangents[n - 1] = slopes[n - 2];
-
-  for (let i = 1; i < n - 1; i++) {
-    const s0 = slopes[i - 1];
-    const s1 = slopes[i];
-    if (s0 * s1 <= 0) {
-      tangents[i] = 0;
-    } else {
-      const w0 = 2 * dx[i] + dx[i - 1];
-      const w1 = dx[i] + 2 * dx[i - 1];
-      tangents[i] = (w0 + w1) / (w0 / s0 + w1 / s1);
-    }
-  }
-
-  for (let i = 0; i < n - 1; i++) {
-    const s = slopes[i];
-    if (Math.abs(s) < 1e-6) {
-      tangents[i] = 0;
-      tangents[i + 1] = 0;
-    } else {
-      const a = tangents[i] / s;
-      const b = tangents[i + 1] / s;
-      const hypot = Math.hypot(a, b);
-      if (hypot > 3) {
-        const scale = 3 / hypot;
-        tangents[i] = scale * a * s;
-        tangents[i + 1] = scale * b * s;
-      }
-    }
-  }
-
-  let linePath = `M ${nodes[0].x.toFixed(1)} ${nodes[0].y.toFixed(1)}`;
-  const segments: HermiteSegment[] = [];
-
-  for (let i = 0; i < n - 1; i++) {
-    const p0 = nodes[i];
-    const p1 = nodes[i + 1];
-    const h = dx[i];
-    const m0 = tangents[i];
-    const m1 = tangents[i + 1];
-    const cp1x = p0.x + h / 3;
-    const cp1y = p0.y + (m0 * h) / 3;
-    const cp2x = p1.x - h / 3;
-    const cp2y = p1.y - (m1 * h) / 3;
-    linePath += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
-    segments.push({ x0: p0.x, y0: p0.y, x1: p1.x, y1: p1.y, m0, m1 });
-  }
-
-  const areaPath = `${linePath} V ${CHART_BOTTOM} H ${nodes[0].x.toFixed(1)} Z`;
-  return { linePath, areaPath, segments };
-}
-
-function evaluateHermiteY(segments: HermiteSegment[], targetX: number, fallbackY: number): number {
-  if (!segments.length) return fallbackY;
-  if (targetX <= segments[0].x0) return segments[0].y0;
-  const last = segments[segments.length - 1];
-  if (targetX >= last.x1) return last.y1;
-
-  for (const seg of segments) {
-    if (targetX >= seg.x0 && targetX <= seg.x1) {
-      const h = Math.max(1e-3, seg.x1 - seg.x0);
-      const t = (targetX - seg.x0) / h;
-      const t2 = t * t;
-      const t3 = t2 * t;
-      const h00 = 2 * t3 - 3 * t2 + 1;
-      const h10 = t3 - 2 * t2 + t;
-      const h01 = -2 * t3 + 3 * t2;
-      const h11 = t3 - t2;
-      return h00 * seg.y0 + h10 * h * seg.m0 + h01 * seg.y1 + h11 * h * seg.m1;
-    }
-  }
-  return fallbackY;
+function buildStepPath(points: PlotNode[]) {
+  let path = `M ${CHART_LEFT} ${CHART_BOTTOM}`;
+  for (const point of points) path += ` H ${point.x.toFixed(1)} V ${point.y.toFixed(1)}`;
+  return `${path} H ${CHART_RIGHT}`;
 }
 
 export default function ScoreHistoryChart({
@@ -224,31 +103,11 @@ export default function ScoreHistoryChart({
       };
     });
 
-    const firstSolveTime = points[0]?.time ?? startTime;
-    const preSolveLeadTime = Math.max(startTime, firstSolveTime - Math.max(8 * 60_000, duration * 0.12));
-
-    const splineNodes: PlotNode[] = [
-      { x: CHART_LEFT, y: y(0), time: startTime, total: 0 },
-    ];
-    if (preSolveLeadTime > startTime + 60_000) {
-      splineNodes.push({ x: x(preSolveLeadTime), y: y(0), time: preSolveLeadTime, total: 0 });
-    }
-    for (const pt of points) {
-      splineNodes.push({ x: pt.x, y: pt.y, time: pt.time, total: pt.total });
-    }
-    const finalScore = points.at(-1)?.total ?? 0;
-    splineNodes.push({ x: CHART_RIGHT, y: y(finalScore), time: endTime, total: finalScore });
-
-    const { linePath, areaPath, segments } = buildMonotoneSpline(splineNodes);
-
     return {
       player,
       color: COLORS[index],
-      index,
       points,
-      linePath,
-      areaPath,
-      segments,
+      linePath: buildStepPath(points),
       hidden: hiddenUserIds.has(player.userId),
     };
   });
@@ -272,13 +131,12 @@ export default function ScoreHistoryChart({
               if (pt.time <= cursorTime) scoreAtTime = pt.total;
               else break;
             }
-            const curveY = evaluateHermiteY(item.segments, cursorX, y(scoreAtTime));
             return {
               userId: item.player.userId,
               name: item.player.name,
               color: item.color,
               score: scoreAtTime,
-              y: curveY,
+              y: y(scoreAtTime),
             };
           })
           .sort((a, b) => b.score - a.score)
@@ -314,20 +172,6 @@ export default function ScoreHistoryChart({
         >
           <title id="score-chart-title">상위 참가자 누적 점수 변화</title>
           <desc id="score-chart-description">{players.map((player) => `${player.name} ${player.score}점`).join(', ')}</desc>
-          <defs>
-            {series.map((item) => (
-              <g key={item.player.userId}>
-                <linearGradient id={`score-grad-${item.index}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={item.color} stopOpacity={item.index < 3 ? '0.18' : '0.08'} />
-                  <stop offset="75%" stopColor={item.color} stopOpacity={item.index < 3 ? '0.04' : '0.015'} />
-                  <stop offset="100%" stopColor={item.color} stopOpacity="0.0" />
-                </linearGradient>
-                <clipPath id={`score-avatar-${item.index}`}>
-                  <circle cx="940" cy={y(item.player.score)} r="14" />
-                </clipPath>
-              </g>
-            ))}
-          </defs>
 
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
             <g key={ratio}>
@@ -373,7 +217,6 @@ export default function ScoreHistoryChart({
                 style={{ '--chart-color': item.color } as React.CSSProperties}
                 className={isDimmed ? 'score-series is-dimmed' : isHighlighted ? 'score-series is-highlighted' : 'score-series'}
               >
-                <path d={item.areaPath} fill={`url(#score-grad-${item.index})`} className="score-player-area" />
                 <path d={item.linePath} className="score-player-line" />
                 {item.points.map((point) => (
                   <circle
@@ -386,24 +229,7 @@ export default function ScoreHistoryChart({
                     <title>{`${point.name} · ${pointFormatter.format(point.total)}점 · ${dateFormatter.format(point.solvedAt)}`}</title>
                   </circle>
                 ))}
-                <a href={item.player.profileUrl} aria-label={`${item.player.name} 프로필`}>
-                  <circle cx="940" cy={y(item.player.score)} r="16" className="score-endpoint-ring" />
-                  {item.player.avatarUrl ? (
-                    <image
-                      href={item.player.avatarUrl}
-                      x="926"
-                      y={y(item.player.score) - 14}
-                      width="28"
-                      height="28"
-                      preserveAspectRatio="xMidYMid slice"
-                      clipPath={`url(#score-avatar-${item.index})`}
-                    />
-                  ) : (
-                    <text x="940" y={y(item.player.score) + 3.5} textAnchor="middle" className="score-endpoint-initials">
-                      {item.player.name.slice(0, 2).toUpperCase()}
-                    </text>
-                  )}
-                </a>
+                <circle cx={CHART_RIGHT} cy={y(item.player.score)} r="4.5" className="score-endpoint-dot" />
               </g>
             );
           })}
@@ -449,16 +275,21 @@ export default function ScoreHistoryChart({
 
       <ul className="score-legend" aria-label="그래프 참가자">
         {series.map((item) => (
-          <li
-            key={item.player.userId}
-            className={item.hidden ? 'is-muted' : hoveredUserId === item.player.userId ? 'is-active' : ''}
-            onPointerEnter={() => setHoveredUserId(item.player.userId)}
-            onPointerLeave={() => setHoveredUserId(null)}
-            onClick={() => toggleUser(item.player.userId)}
-          >
-            <i style={{ backgroundColor: item.color }} />
-            <span>{item.player.name}</span>
-            <strong>{pointFormatter.format(item.player.score)} PTS</strong>
+          <li key={item.player.userId}>
+            <button
+              type="button"
+              aria-pressed={!item.hidden}
+              className={item.hidden ? 'is-muted' : hoveredUserId === item.player.userId ? 'is-active' : ''}
+              onPointerEnter={() => setHoveredUserId(item.player.userId)}
+              onPointerLeave={() => setHoveredUserId(null)}
+              onFocus={() => setHoveredUserId(item.player.userId)}
+              onBlur={() => setHoveredUserId(null)}
+              onClick={() => toggleUser(item.player.userId)}
+            >
+              <i style={{ backgroundColor: item.color }} />
+              <span>{item.player.name}</span>
+              <strong>{pointFormatter.format(item.player.score)} PTS</strong>
+            </button>
           </li>
         ))}
       </ul>

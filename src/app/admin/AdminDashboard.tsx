@@ -111,6 +111,7 @@ export default function AdminDashboard({
   const [noticeTone, setNoticeTone] = useState<'neutral' | 'error'>('neutral');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChallengeEditorOpen, setIsChallengeEditorOpen] = useState(false);
   const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
   const [challengeForm, setChallengeForm] = useState<ChallengeForm>(() => emptyChallenge(initialCategories[0]?.id));
   const [challengeFile, setChallengeFile] = useState<File | null>(null);
@@ -255,6 +256,7 @@ export default function AdminDashboard({
   };
 
   const editChallenge = (challenge: AdminChallenge) => {
+    setIsChallengeEditorOpen(true);
     setEditingChallengeId(challenge.id);
     setChallengeForm({
       title: challenge.title,
@@ -286,10 +288,23 @@ export default function AdminDashboard({
   };
 
   const resetChallengeForm = () => {
+    setIsChallengeEditorOpen(false);
     setEditingChallengeId(null);
     setChallengeForm(emptyChallenge(categories[0]?.id));
     setChallengeFile(null);
     setDeploymentFile(null);
+  };
+
+  const addChallenge = () => {
+    resetChallengeForm();
+    setNotice('');
+    setIsChallengeEditorOpen(true);
+    window.requestAnimationFrame(() => {
+      challengeEditorRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
   };
 
   const watchDeployment = async (challengeId: string) => {
@@ -610,11 +625,24 @@ export default function AdminDashboard({
 
         {activeNav === 'challenges' && (
           <section ref={challengeEditorRef} className="admin-panel challenge-admin-panel">
-            <div className="admin-panel-heading">
-              <div><h3>{editingChallengeId ? '문제 수정' : '새 문제'}</h3></div>
-              {editingChallengeId && <button type="button" className="button button-ghost" onClick={resetChallengeForm}>수정 취소</button>}
+            <div className="admin-panel-heading challenge-list-heading">
+              <div><h3>문제 목록</h3><p>{challenges.length}개 문제</p></div>
+              <button type="button" className="challenge-add-button" aria-expanded={isChallengeEditorOpen} aria-controls="challenge-editor" onClick={addChallenge}>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+                문제 추가하기
+              </button>
             </div>
-            <form className="challenge-admin-form" onSubmit={(event) => void saveChallenge(event)}>
+            {!isChallengeEditorOpen && notice && <p className={`challenge-list-notice ${noticeTone}`} aria-live="polite">{notice}</p>}
+
+            {isChallengeEditorOpen && (
+              <div id="challenge-editor" className="challenge-editor">
+                <div className="challenge-editor-heading">
+                  <div><h4>{editingChallengeId ? '문제 수정' : '문제 추가'}</h4><p>{editingChallengeId ? '문제 설정을 수정합니다.' : '새 문제의 설정을 입력합니다.'}</p></div>
+                  <button type="button" className="challenge-editor-close" onClick={resetChallengeForm} aria-label={`${editingChallengeId ? '문제 수정' : '문제 추가'} 닫기`}>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8" /></svg>
+                  </button>
+                </div>
+                <form className="challenge-admin-form" onSubmit={(event) => void saveChallenge(event)}>
               <label>
                 <span className="field-label-row"><strong>제목</strong></span>
                 <input name="title" autoComplete="off" required maxLength={80} placeholder="문제 제목" value={challengeForm.title} onChange={(event) => setChallengeForm({ ...challengeForm, title: event.target.value })} />
@@ -750,7 +778,7 @@ export default function AdminDashboard({
               <div className="wide">
                 <span className="field-label-row">
                   <strong>플래그</strong>
-                  <label><input type="checkbox" checked={challengeForm.dynamicFlag} onChange={(event) => setChallengeForm({ ...challengeForm, dynamicFlag: event.target.checked })} /> 팀/개인별 Dynamic flag</label>
+                  <label className="inline-check"><input type="checkbox" checked={challengeForm.dynamicFlag} onChange={(event) => setChallengeForm({ ...challengeForm, dynamicFlag: event.target.checked })} /><span aria-hidden="true" /> 팀/개인별 Dynamic flag</label>
                   {!editingChallengeId
                     ? <small>{challengeForm.usesVm ? 'Deploy ZIP 원본 플래그' : '필수 입력'}</small>
                     : !editingChallenge?.flag && <small>기존 플래그 없음 · 입력 필요</small>}
@@ -765,11 +793,14 @@ export default function AdminDashboard({
                 </span>
                 <textarea name="description" autoComplete="off" required maxLength={10000} rows={8} placeholder="문제 배경, 접속 안내, 힌트 등을 Markdown 형식으로 작성하세요." value={challengeForm.description} onChange={(event) => setChallengeForm({ ...challengeForm, description: event.target.value })} aria-describedby="description-help" />
               </label>
-              {challengeForm.description && <details className="wide description-preview"><summary>문제 설명 미리보기</summary><ChallengeDescription content={challengeForm.description} /></details>}
-              <div className="challenge-form-actions"><p className={`admin-notice ${noticeTone}`} aria-live="polite">{notice}</p><button className="button button-primary" disabled={isSaving}>{isSaving ? '저장 중…' : editingChallengeId ? '문제 저장' : '문제 만들기'}</button></div>
-            </form>
+                  {challengeForm.description && <details className="wide description-preview"><summary><span>문제 설명 미리보기</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg></summary><ChallengeDescription content={challengeForm.description} /></details>}
+                  <div className="challenge-form-actions"><p className={`admin-notice ${noticeTone}`} aria-live="polite">{notice}</p><div><button type="button" className="button button-ghost" onClick={resetChallengeForm}>취소</button><button className="button button-primary" disabled={isSaving}>{isSaving ? '저장 중…' : editingChallengeId ? '문제 저장' : '문제 만들기'}</button></div></div>
+                </form>
+              </div>
+            )}
 
             <div className="challenge-admin-table">
+              {challenges.length === 0 && <p className="challenge-list-empty">등록된 문제가 없습니다.</p>}
               {challenges.map((challenge) => (
                 <article key={challenge.id}>
                   <div className="challenge-list-copy">
