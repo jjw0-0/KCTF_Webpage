@@ -100,7 +100,7 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./nginx/Caddyfile.portable:/etc/caddy/Caddyfile:ro
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - kctf-caddy-data:/data
       - kctf-caddy-config:/config
       - ${KCTF_ACCESS_LOG_DIR:-./data/logs}:/var/log/kctf

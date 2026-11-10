@@ -10,7 +10,7 @@ if [ -z "$domain" ] || ! printf '%s' "$domain" | grep -Eq '^[A-Za-z0-9.-]+$'; th
 fi
 
 command -v docker >/dev/null 2>&1 || { printf 'Docker is required.\n' >&2; exit 1; }
-docker compose version >/dev/null 2>&1 || { printf 'Docker Compose v2 is required.\n' >&2; exit 1; }
+docker compose version >/dev/null 2>&1 || { printf 'Docker Compose is required.\n' >&2; exit 1; }
 command -v openssl >/dev/null 2>&1 || { printf 'OpenSSL is required.\n' >&2; exit 1; }
 
 env_file=.env.prod.local
