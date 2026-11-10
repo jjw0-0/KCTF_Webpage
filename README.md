@@ -4,41 +4,23 @@
 
 경기대학교 정보보안 동아리 K.knock에서 운영하는 CTF 플랫폼입니다.
 
-Next.js, PostgreSQL, Prisma로 구성되어 있으며 문제 관리, 개인전·팀전,
-Scoreboard, Docker 인스턴스와 운영 로그를 제공합니다.
+## 기술 스택
+
+- Next.js, React, TypeScript
+- PostgreSQL, Prisma
+- Docker, Docker Compose
 
 ## 요구 사항
 
 - Docker Engine
 - Docker Compose
-- Node.js 22 이상과 npm: 로컬 개발 시에만 필요
 - 운영 서버를 가리키는 도메인
 
-## 로컬 실행
+## 배포
 
 ```bash
 git clone git@github.com:jjw0-0/KCTF_Webpage.git
 cd KCTF_Webpage
-cp .env.example .env
-docker compose up --build
-```
-
-`.env` 값을 변경한 뒤 `http://localhost:3000`으로 접속합니다.
-
-Next.js를 직접 실행하려면 PostgreSQL만 Docker로 실행합니다.
-
-```bash
-npm install
-docker compose up -d postgres
-npm run prisma:migrate
-npm run dev
-```
-
-## 운영 서버 설치
-
-DNS를 서버로 연결한 뒤 실행합니다.
-
-```bash
 ./scripts/install.sh ctf.example.com
 ```
 
@@ -123,36 +105,6 @@ Privileged mode, Docker socket, host namespace, device, capability 추가,
 memory, PID와 capability 제한이 적용됩니다.
 
 개인전에서는 사용자마다, 팀전에서는 팀마다 인스턴스 하나를 사용합니다.
-
-## 검사
-
-```bash
-npm run type-check
-npm test
-npm run build
-(cd services/instancer && npm test)
-```
-
-## 디렉터리
-
-```text
-config/                 Instancer 설정
-deploy/                 실제 배포 설정
-examples/               서버 설정 예시
-prisma/                 Schema, migration, seed
-scripts/                설치 및 배포 스크립트
-services/instancer/     문제 빌드와 인스턴스 관리
-src/app/                페이지와 API
-src/components/         공용 UI
-src/lib/                인증, 점수, 로그, instancer 연동
-```
-
-## 운영 시 확인할 것
-
-- `3020` 포트를 외부에 직접 공개하지 않습니다.
-- Client IP 헤더는 reverse proxy에서만 받습니다.
-- Docker socket을 사용하는 instancer의 접근 권한을 제한합니다.
-- 플랫폼 전체 인스턴스 수 제한은 없으므로 호스트 자원을 모니터링합니다.
 
 ## License
 
