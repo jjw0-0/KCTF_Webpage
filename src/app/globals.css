@@ -470,14 +470,24 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .participant-list article { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px; background: #07100c; }
 .participant-list article > div { display: flex; gap: 8px; }
 .participant-list small { display: block; margin-top: 4px; color: #718078; }
-.participant-list button, .participant-list select { border: 1px solid var(--line); padding: 7px 10px; color: #b8c5bd; background: #0a1711; }
 .participant-identity { min-width: 0; flex-direction: column; gap: 2px !important; }
 .participant-identity strong { display: flex; align-items: center; gap: 8px; color: #edf7f1; }
 .participant-identity strong span { border: 1px solid #4de0a744; padding: 2px 6px; color: var(--brand); font: 10px var(--font-mono), monospace; }
 .participant-actions { flex: 0 0 auto; align-items: center; }
-.participant-actions .ui-select { min-width: 132px; }
-.participant-actions .ui-select-trigger { min-height: 38px; }
-.participant-actions button.danger { color: #ff938d; }
+.participant-role { --role-color: #4de0a7; min-width: 150px; }
+.participant-role.is-admin { --role-color: #72a9ff; }
+.participant-role.is-ghost { --role-color: #a794c9; }
+.participant-role .ui-select-trigger { min-height: 42px; border-color: color-mix(in srgb, var(--role-color) 28%, #26382f); background: rgba(5,15,10,.92); box-shadow: inset 0 1px rgba(255,255,255,.025); }
+.participant-role .ui-select-trigger > span { display: flex; align-items: center; gap: 9px; }
+.participant-role .ui-select-trigger > span::before { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; content: ""; background: var(--role-color); box-shadow: 0 0 9px color-mix(in srgb, var(--role-color) 62%, transparent); }
+.participant-role .ui-select-trigger:hover:not(:disabled),
+.participant-role .ui-select-trigger[aria-expanded="true"] { border-color: color-mix(in srgb, var(--role-color) 68%, transparent); background: rgba(8,24,16,.96); }
+.participant-role .ui-select-trigger:disabled { cursor: not-allowed; opacity: .5; }
+.participant-role .ui-select-menu { min-width: 150px; }
+.participant-delete { display: inline-flex; min-height: 42px; align-items: center; gap: 7px; border: 1px solid rgba(255,107,113,.28); border-radius: 5px; padding: 0 12px; background: rgba(255,107,113,.055); color: #d9878a; font-size: 12px; font-weight: 600; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.participant-delete svg { width: 15px; height: 15px; fill: none; stroke: currentcolor; stroke-width: 1.35; stroke-linecap: square; stroke-linejoin: miter; }
+.participant-delete:hover:not(:disabled),
+.participant-delete:focus-visible { border-color: rgba(255,107,113,.62); background: rgba(255,107,113,.13); color: #ffacaf; }
 .participant-actions button:disabled { cursor: not-allowed; opacity: .45; }
 .participant-team-heading { margin-top: 34px; }
 .admin-list-count { color: #88a397; font: 12px var(--font-mono), monospace; font-variant-numeric: tabular-nums; }
@@ -486,7 +496,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 @media (max-width: 720px) {
   .participant-list article { align-items: flex-start; flex-direction: column; padding: 16px 18px; }
   .participant-actions { width: 100%; justify-content: space-between; }
-  .participant-actions .ui-select { flex: 1; width: 100%; }
+  .participant-role { min-width: 0; flex: 1; }
 }
 .admin-footer-actions { display: flex; align-items: center; gap: 18px; }
 .admin-footer-actions .button-primary { min-height: 38px; color: #04110c; }
@@ -1281,8 +1291,12 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .visibility-toggle > span::after { background: #72857b; }
   .participant-list article,
   .admin-empty-state { background: rgba(255, 255, 255, .82); }
-  .participant-list button,
-  .participant-list select { background: white; color: #354b40; }
+  .participant-role .ui-select-trigger { border-color: color-mix(in srgb, var(--role-color) 36%, var(--line)); background: rgba(247, 249, 248, .9); color: #21372c; box-shadow: inset 0 1px rgba(255,255,255,.8); }
+  .participant-role .ui-select-trigger:hover:not(:disabled),
+  .participant-role .ui-select-trigger[aria-expanded="true"] { border-color: color-mix(in srgb, var(--role-color) 72%, transparent); background: var(--panel); }
+  .participant-delete { border-color: rgba(189,52,59,.3); background: rgba(189,52,59,.055); color: #9e3439; }
+  .participant-delete:hover:not(:disabled),
+  .participant-delete:focus-visible { border-color: rgba(189,52,59,.58); background: rgba(189,52,59,.11); color: #7e1f25; }
   .challenge-admin-form > label,
   .challenge-admin-form > .form-field,
   .field-label-row strong { color: #354b40; }

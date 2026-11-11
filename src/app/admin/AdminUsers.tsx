@@ -49,23 +49,28 @@ export default function AdminUsers({ users, teams, currentAdminId }: { users: Us
               <small>{user.teamMemberships[0]?.team.name ?? '소속 팀 없음'}</small>
             </div>
             <div className="participant-actions">
-              <SelectControl
-                ariaLabel={`${user.username} 역할`}
-                value={user.role}
-                options={roleOptions}
-                disabled={pendingId === user.id || user.id === currentAdminId}
-                onChange={(role) => void run(user.id, () => request('/api/admin/users', 'PATCH', { id: user.id, role }))}
-              />
+              <div className={`participant-role is-${user.role.toLowerCase()}`}>
+                <SelectControl
+                  ariaLabel={`${user.username} 역할`}
+                  value={user.role}
+                  options={roleOptions}
+                  disabled={pendingId === user.id || user.id === currentAdminId}
+                  onChange={(role) => void run(user.id, () => request('/api/admin/users', 'PATCH', { id: user.id, role }))}
+                />
+              </div>
               <button
                 type="button"
-                className="danger"
+                className="participant-delete"
                 disabled={pendingId === user.id || user.id === currentAdminId}
                 onClick={() => void run(user.id, async () => {
                   if (await confirm({ title: '사용자 삭제', description: `${user.username} 계정과 풀이 기록을 삭제합니다.`, confirmLabel: '삭제', danger: true })) {
                     await request(`/api/admin/users?id=${encodeURIComponent(user.id)}`, 'DELETE');
                   }
                 })}
-              >삭제</button>
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M8 3.5h4M6 5.5l.6 11h6.8l.6-11M8 8.5v5M12 8.5v5" /></svg>
+                삭제
+              </button>
             </div>
           </article>
         ))}
@@ -86,14 +91,17 @@ export default function AdminUsers({ users, teams, currentAdminId }: { users: Us
             <div className="participant-actions">
               <button
                 type="button"
-                className="danger"
+                className="participant-delete"
                 disabled={pendingId === team.id}
                 onClick={() => void run(team.id, async () => {
                   if (await confirm({ title: '팀 삭제', description: `${team.name} 팀과 팀 풀이 기록을 삭제합니다.`, confirmLabel: '삭제', danger: true })) {
                     await request(`/api/admin/teams?id=${encodeURIComponent(team.id)}`, 'DELETE');
                   }
                 })}
-              >삭제</button>
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M8 3.5h4M6 5.5l.6 11h6.8l.6-11M8 8.5v5M12 8.5v5" /></svg>
+                삭제
+              </button>
             </div>
           </article>
         ))}
