@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import AuthMenu from '@/components/AuthMenu';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default async function Header() {
   const session = await auth();
@@ -31,6 +32,7 @@ export default async function Header() {
         <Link href="/scoreboard" className="header-link">
           Scoreboard
         </Link>
+        <ThemeToggle />
         <AuthMenu username={session?.user?.username} isAdmin={session?.user?.role === 'ADMIN'} />
       </nav>
     </header>

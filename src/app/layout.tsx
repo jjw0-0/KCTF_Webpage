@@ -3,11 +3,23 @@
  * 모든 페이지에 공통으로 적용되는 HTML 구조와 메타데이터를 정의
  */
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Orbitron, Noto_Sans_KR } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import NetworkBackground from '@/components/NetworkBackground';
 import './globals.css';
+
+const themeScript = `
+  try {
+    const saved = localStorage.getItem('theme');
+    document.documentElement.dataset.theme = saved === 'light' || saved === 'dark'
+      ? saved
+      : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  } catch {
+    document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+`;
 
 const korean = Noto_Sans_KR({
   display: 'swap',
@@ -39,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${GeistMono.variable} ${korean.variable} ${display.variable} antialiased`}>
         <div className="app-shell">
           <NetworkBackground />
@@ -47,6 +59,7 @@ export default function RootLayout({
             {children}
           </div>
         </div>
+        <Script id="theme" strategy="beforeInteractive">{themeScript}</Script>
       </body>
     </html>
   );
