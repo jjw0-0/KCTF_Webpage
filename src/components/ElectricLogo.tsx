@@ -753,12 +753,17 @@ const ElectricLogo = ({
     const container = containerRef.current;
     if (!container) return undefined;
 
-    const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio || 1, 1.25),
-      alpha: true,
-      premultipliedAlpha: true,
-      antialias: false
-    });
+    let renderer: Renderer;
+    try {
+      renderer = new Renderer({
+        dpr: Math.min(window.devicePixelRatio || 1, 1.25),
+        alpha: true,
+        premultipliedAlpha: true,
+        antialias: false
+      });
+    } catch {
+      return undefined;
+    }
     const gl = renderer.gl;
     const gl2 = gl as WebGL2RenderingContext;
     if (!renderer.isWebgl2) {
@@ -771,6 +776,7 @@ const ElectricLogo = ({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     container.appendChild(canvas);
+    container.classList.add('is-rendered');
 
     const makeSlot = (): Slot => ({
       shape: null,
@@ -1100,10 +1106,15 @@ const ElectricLogo = ({
       container.removeEventListener('pointercancel', onLeave);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+      container.classList.remove('is-rendered');
     };
   }, []);
 
-  return <div ref={containerRef} className={`electric-logo ${className}`.trim()} style={style} />;
+  return (
+    <div ref={containerRef} className={`electric-logo ${className}`.trim()} style={style}>
+      <span className="electric-logo-fallback" aria-hidden="true">KCTF</span>
+    </div>
+  );
 };
 
 export default ElectricLogo;
