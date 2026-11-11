@@ -484,8 +484,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .participant-role .ui-select-trigger[aria-expanded="true"] { border-color: color-mix(in srgb, var(--role-color) 68%, transparent); background: rgba(8,24,16,.96); }
 .participant-role .ui-select-trigger:disabled { cursor: not-allowed; opacity: .5; }
 .participant-role .ui-select-menu { min-width: 150px; }
-.participant-delete { display: inline-flex; min-height: 42px; align-items: center; gap: 7px; border: 1px solid rgba(255,107,113,.28); border-radius: 5px; padding: 0 12px; background: rgba(255,107,113,.055); color: #d9878a; font-size: 12px; font-weight: 600; transition: border-color .18s ease, background .18s ease, color .18s ease; }
-.participant-delete svg { width: 15px; height: 15px; fill: none; stroke: currentcolor; stroke-width: 1.35; stroke-linecap: square; stroke-linejoin: miter; }
+.participant-delete { display: inline-flex; min-height: 42px; align-items: center; border: 1px solid rgba(255,107,113,.28); border-radius: 5px; padding: 0 14px; background: rgba(255,107,113,.055); color: #d9878a; font-size: 12px; font-weight: 600; transition: border-color .18s ease, background .18s ease, color .18s ease; }
 .participant-delete:hover:not(:disabled),
 .participant-delete:focus-visible { border-color: rgba(255,107,113,.62); background: rgba(255,107,113,.13); color: #ffacaf; }
 .participant-actions button:disabled { cursor: not-allowed; opacity: .45; }
