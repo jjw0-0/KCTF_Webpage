@@ -40,7 +40,7 @@ if [ ! -e "$env_file" ]; then
     'INSTANCER_MAX_MEMORY_MB=1024' \
     'INSTANCER_MAX_CPU=2' \
     'INSTANCER_MAX_PIDS=256' \
-    'KCTF_HOST_PORT=3020' \
+    'KCTF_HOST_PORT=3333' \
     "ADMIN_EMAIL=$admin_email" \
     "ADMIN_USERNAME=$admin_username" \
     "ADMIN_INITIAL_PASSWORD=$admin_password" > "$env_file"

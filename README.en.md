@@ -35,7 +35,7 @@ If the host already runs a reverse proxy, create `.env.prod.local` and run:
 ./scripts/deploy-prod.sh
 ```
 
-The application listens on `127.0.0.1:3020` on the host.
+The application listens on `127.0.0.1:3333` on the host.
 
 ## Configuration
 
