@@ -143,7 +143,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
 }
 
-.network-canvas { opacity: .44; mask-image: radial-gradient(ellipse at center, black 28%, transparent 86%); }
+.network-canvas { opacity: .5; mask-image: radial-gradient(ellipse at center, black 28%, transparent 86%); }
 
 .site-header {
   position: sticky;
@@ -475,9 +475,10 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .participant-identity strong { display: flex; align-items: center; gap: 8px; color: #edf7f1; }
 .participant-identity strong span { border: 1px solid #4de0a744; padding: 2px 6px; color: var(--brand); font: 10px var(--font-mono), monospace; }
 .participant-actions { flex: 0 0 auto; align-items: center; }
-.participant-actions select { min-width: 132px; }
+.participant-actions .ui-select { min-width: 132px; }
+.participant-actions .ui-select-trigger { min-height: 38px; }
 .participant-actions button.danger { color: #ff938d; }
-.participant-actions button:disabled, .participant-actions select:disabled { cursor: not-allowed; opacity: .45; }
+.participant-actions button:disabled { cursor: not-allowed; opacity: .45; }
 .participant-team-heading { margin-top: 34px; }
 .admin-list-count { color: #88a397; font: 12px var(--font-mono), monospace; font-variant-numeric: tabular-nums; }
 .admin-empty-state { margin: 0; padding: 28px; color: #718078; background: #07100c; }
@@ -485,7 +486,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 @media (max-width: 720px) {
   .participant-list article { align-items: flex-start; flex-direction: column; padding: 16px 18px; }
   .participant-actions { width: 100%; justify-content: space-between; }
-  .participant-actions label, .participant-actions select { flex: 1; width: 100%; }
+  .participant-actions .ui-select { flex: 1; width: 100%; }
 }
 .admin-footer-actions { display: flex; align-items: center; gap: 18px; }
 .admin-footer-actions .button-primary { min-height: 38px; color: #04110c; }
@@ -1183,7 +1184,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
       var(--ink);
   }
   .app-shell::before { opacity: .52; }
-  .network-canvas { opacity: .38; mix-blend-mode: multiply; filter: saturate(.78) contrast(1.18); }
+  .network-canvas { opacity: .44; mix-blend-mode: multiply; filter: saturate(.82) contrast(1.22); }
 
   .site-header { border-color: var(--line); background: rgba(223, 231, 226, .9); backdrop-filter: blur(16px); }
   .brand-logo { filter: brightness(0) saturate(100%) invert(18%) sepia(22%) saturate(1076%) hue-rotate(105deg) brightness(89%) contrast(95%); }

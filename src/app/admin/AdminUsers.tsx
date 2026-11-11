@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
+import SelectControl from '@/components/SelectControl';
 
 type Role = 'USER' | 'ADMIN' | 'GHOST';
 type User = { id: string; username: string; email: string; role: Role; teamMemberships: { team: { name: string } }[] };
 type Team = { id: string; name: string; members: { user: { id: string; username: string } }[] };
 
 const roleLabels: Record<Role, string> = { USER: 'Participant', ADMIN: 'Admin', GHOST: 'Ghost' };
+const roleOptions = (Object.keys(roleLabels) as Role[]).map((role) => ({ value: role, label: roleLabels[role] }));
 
 export default function AdminUsers({ users, teams, currentAdminId }: { users: User[]; teams: Team[]; currentAdminId: string }) {
   const [error, setError] = useState('');
@@ -47,16 +49,13 @@ export default function AdminUsers({ users, teams, currentAdminId }: { users: Us
               <small>{user.teamMemberships[0]?.team.name ?? '소속 팀 없음'}</small>
             </div>
             <div className="participant-actions">
-              <label>
-                <span className="sr-only">{user.username} 역할</span>
-                <select
-                  value={user.role}
-                  disabled={pendingId === user.id || user.id === currentAdminId}
-                  onChange={(event) => void run(user.id, () => request('/api/admin/users', 'PATCH', { id: user.id, role: event.target.value }))}
-                >
-                  {(Object.keys(roleLabels) as Role[]).map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}
-                </select>
-              </label>
+              <SelectControl
+                ariaLabel={`${user.username} 역할`}
+                value={user.role}
+                options={roleOptions}
+                disabled={pendingId === user.id || user.id === currentAdminId}
+                onChange={(role) => void run(user.id, () => request('/api/admin/users', 'PATCH', { id: user.id, role }))}
+              />
               <button
                 type="button"
                 className="danger"
