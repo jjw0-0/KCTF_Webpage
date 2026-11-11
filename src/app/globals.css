@@ -1156,32 +1156,32 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 /* Light mode */
 :root[data-theme="light"] {
     color-scheme: light;
-    --background: 142 14% 89%;
+    --background: 143 13% 82%;
     --foreground: 150 29% 10%;
-    --card: 140 19% 96%;
+    --card: 142 17% 91%;
     --card-foreground: 150 29% 10%;
-    --popover: 140 19% 96%;
+    --popover: 142 17% 91%;
     --popover-foreground: 150 29% 10%;
-    --primary: 158 86% 19%;
+    --primary: 158 92% 15%;
     --primary-foreground: 0 0% 100%;
-    --muted: 143 17% 88%;
-    --muted-foreground: 151 12% 36%;
-    --border: 150 17% 70%;
-    --input: 140 19% 96%;
-    --ring: 158 86% 19%;
-    --ink: #dfe7e2;
-    --panel: #f2f6f3;
-    --panel-raised: #e8efeb;
-    --line: rgba(16, 62, 44, .22);
-    --line-strong: rgba(16, 62, 44, .38);
-    --muted: #52685d;
-    --text-muted: #465e52;
-    --green: #075c43;
-    --green-strong: #034a35;
-    --green-dark: #c8ddd2;
+    --muted: 143 15% 84%;
+    --muted-foreground: 151 16% 29%;
+    --border: 150 18% 61%;
+    --input: 142 17% 91%;
+    --ring: 158 92% 15%;
+    --ink: #cad6cf;
+    --panel: #e6ede9;
+    --panel-raised: #d8e3dd;
+    --line: rgba(12, 52, 36, .28);
+    --line-strong: rgba(12, 52, 36, .46);
+    --muted: #425c4e;
+    --text-muted: #354f42;
+    --green: #034c36;
+    --green-strong: #023b2a;
+    --green-dark: #b4cec0;
     --danger: #bd343b;
   &,
-  body { background: var(--ink); color: #14241c; }
+  body { background: var(--ink); color: #0d2117; }
 
   select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23087d57' stroke-width='1.5' stroke-linecap='square'/%3E%3C/svg%3E") !important;
@@ -1189,29 +1189,29 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 
   .app-shell {
     background:
-      radial-gradient(ellipse at 16% 82%, rgba(7, 92, 67, .14), transparent 38%),
-      radial-gradient(ellipse at 78% 35%, rgba(7, 92, 67, .1), transparent 42%),
+      radial-gradient(ellipse at 16% 82%, rgba(3, 76, 54, .17), transparent 38%),
+      radial-gradient(ellipse at 78% 35%, rgba(3, 76, 54, .12), transparent 42%),
       var(--ink);
   }
   .app-shell::before { opacity: .52; }
   .network-canvas { opacity: .44; mix-blend-mode: multiply; filter: saturate(.82) contrast(1.22); }
 
-  .site-header { border-color: var(--line); background: rgba(223, 231, 226, .9); backdrop-filter: blur(16px); }
+  .site-header { border-color: var(--line); background: rgba(202, 214, 207, .93); backdrop-filter: blur(16px); }
   .brand-logo { filter: brightness(0) saturate(100%) invert(18%) sepia(22%) saturate(1076%) hue-rotate(105deg) brightness(89%) contrast(95%); }
   .site-footer { border-color: var(--line); }
   .site-footer p:not(.eyebrow),
-  .site-footer a { color: #52685d; }
+  .site-footer a { color: #415a4d; }
   .site-footer p span { color: var(--green); }
   .header-link,
   .header-login,
   .auth-mobile-menu summary,
-  .theme-toggle { color: #485b51; }
+  .theme-toggle { color: #344d40; }
   .header-link:hover,
   .header-link:focus-visible { color: #10251b; }
   .auth-mobile-menu > div,
-  .ui-select-menu { background: rgba(242, 246, 243, .98); box-shadow: 0 18px 50px rgba(24, 55, 41, .16); }
+  .ui-select-menu { background: rgba(230, 237, 233, .98); box-shadow: 0 18px 50px rgba(18, 47, 33, .2); }
   .auth-mobile-menu > div > *,
-  .ui-select-menu button { color: #53665c; }
+  .ui-select-menu button { color: #40594c; }
   .auth-mobile-menu > div > *:hover,
   .auth-mobile-menu > div > *:focus-visible,
   .ui-select-menu button:hover,
@@ -1229,7 +1229,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .button-primary:hover,
   .auth-submit:hover:not(:disabled),
   .flag-form button:hover:not(:disabled) { background: var(--green-strong); }
-  .button-ghost { background: rgba(242, 246, 243, .72); color: #294036; }
+  .button-ghost { background: rgba(230, 237, 233, .82); color: #233b2f; }
   .button-danger { color: #a62b32; }
   .button-danger:hover { color: #7e1f25; }
   .confirm-dialog { color: #14241c; }
@@ -1240,11 +1240,11 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .ui-select-trigger:hover:not(:disabled),
   .ui-select-trigger[aria-expanded="true"] { background: var(--panel-raised); }
 
-  .auth-panel { background: linear-gradient(145deg, rgba(242, 246, 243, .98), rgba(232, 239, 235, .96)); box-shadow: 0 28px 90px rgba(24, 55, 41, .18); }
+  .auth-panel { background: linear-gradient(145deg, rgba(230, 237, 233, .98), rgba(216, 227, 221, .97)); box-shadow: 0 28px 90px rgba(18, 47, 33, .22); }
   .auth-field label { color: #42564c; }
-  .auth-field input { background: #f7f9f8; color: #14241c; }
-  .auth-field input::placeholder { color: #819188; }
-  .auth-field input:focus { background: #fbfcfb; }
+  .auth-field input { background: #edf2ef; color: #0d2117; }
+  .auth-field input::placeholder { color: #667b70; }
+  .auth-field input:focus { background: #f1f4f2; }
   .auth-switch { color: var(--text-muted); }
 
   .admin-sidebar h1 span,
@@ -1266,7 +1266,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .admin-panel-footer button { color: #455b50; }
   .admin-panel-footer button:hover { color: #10251b; }
   .admin-panel,
-  .load-panel { background: rgba(242, 246, 243, .72); }
+  .load-panel { background: rgba(230, 237, 233, .82); }
   .challenge-editor-heading,
   .challenge-list-notice { background: rgba(8, 125, 87, .05); }
   .challenge-editor-heading h4,
@@ -1282,16 +1282,16 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .challenge-admin-form input:not([type="checkbox"]):not([type="radio"]),
   .challenge-admin-form select,
   .challenge-admin-form textarea,
-  .admin-log-search { background-color: white; color: #172920; color-scheme: light; }
+  .admin-log-search { background-color: #edf2ef; color: #10251a; color-scheme: light; }
   .category-admin-row.table-head,
   .admin-server-log-head,
-  .admin-submission-log-head { background: #e8f0eb; color: #5a6c63; }
+  .admin-submission-log-head { background: #d6e1db; color: #415a4d; }
   .category-edit-fields input { color: #172920; }
   .visibility-toggle > span { border-color: #9bafa5; background: #dfe8e3; }
   .visibility-toggle > span::after { background: #72857b; }
   .participant-list article,
-  .admin-empty-state { background: rgba(255, 255, 255, .82); }
-  .participant-role .ui-select-trigger { border-color: color-mix(in srgb, var(--role-color) 36%, var(--line)); background: rgba(247, 249, 248, .9); color: #21372c; box-shadow: inset 0 1px rgba(255,255,255,.8); }
+  .admin-empty-state { background: rgba(230, 237, 233, .9); }
+  .participant-role .ui-select-trigger { border-color: color-mix(in srgb, var(--role-color) 36%, var(--line)); background: rgba(237, 242, 239, .94); color: #173126; box-shadow: inset 0 1px rgba(255,255,255,.55); }
   .participant-role .ui-select-trigger:hover:not(:disabled),
   .participant-role .ui-select-trigger[aria-expanded="true"] { border-color: color-mix(in srgb, var(--role-color) 72%, transparent); background: var(--panel); }
   .participant-delete { border-color: rgba(189,52,59,.3); background: rgba(189,52,59,.055); color: #9e3439; }
@@ -1301,9 +1301,9 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .challenge-admin-form > .form-field,
   .field-label-row strong { color: #354b40; }
   .scoring-control,
-  .challenge-access { background: rgba(225, 237, 230, .58); }
+  .challenge-access { background: rgba(207, 221, 213, .72); }
   .admin-log-tabs,
-  .admin-log-filters { background: rgba(242, 246, 243, .78); }
+  .admin-log-filters { background: rgba(230, 237, 233, .84); }
   .admin-log-tabs button,
   .admin-log-filters button { color: #566a60; }
   .admin-log-tabs button:hover,
@@ -1323,12 +1323,12 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .profile-record dt,
   .recent-solves > div > p,
   .recent-solves article small,
-  .recent-solves article time { color: #5b6e64; }
-  .score-grid-line { stroke: rgba(18, 75, 53, .16); }
-  .score-grid-line.is-vertical { stroke: rgba(18, 75, 53, .08); }
+  .recent-solves article time { color: #425b4e; }
+  .score-grid-line { stroke: rgba(12, 52, 36, .23); }
+  .score-grid-line.is-vertical { stroke: rgba(12, 52, 36, .13); }
   .score-player-point { fill: var(--ink); }
   .score-endpoint-dot { stroke: var(--ink); }
-  .score-chart-tooltip { background: rgba(255, 255, 255, .96); box-shadow: 0 14px 36px rgba(24, 55, 41, .18); }
+  .score-chart-tooltip { background: rgba(230, 237, 233, .98); box-shadow: 0 14px 36px rgba(18, 47, 33, .23); }
   .score-chart-tooltip li span,
   .score-legend button,
   .team-members a { color: #2b4136; }
@@ -1339,9 +1339,9 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .profile-avatar-actions label { color: #277358; }
   .profile-avatar-actions label:hover { color: var(--green); }
 
-  .category-tabs { background: rgba(242, 246, 243, .78); box-shadow: inset 0 1px rgba(255,255,255,.7), 0 16px 45px rgba(24, 55, 41, .11); }
-  .category-tabs button { color: #5b6c63; }
-  .category-tabs button span { color: #75867d; }
+  .category-tabs { background: rgba(230, 237, 233, .86); box-shadow: inset 0 1px rgba(255,255,255,.5), 0 16px 45px rgba(18, 47, 33, .14); }
+  .category-tabs button { color: #40594c; }
+  .category-tabs button span { color: #586f62; }
   .category-tabs button:hover { color: #173126; }
   .category-tabs button.active { color: var(--green); }
   .challenge-group-title h2 { color: #2c4338; }
@@ -1349,9 +1349,9 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .stacked-card-surface {
     border-color: color-mix(in srgb, var(--category-accent) 48%, #a8bbb1);
     background:
-      radial-gradient(circle at 14% -12%, rgba(255, 255, 255, .72), transparent 38%),
-      linear-gradient(112deg, rgba(7, 92, 67, .1), transparent 37%),
-      rgba(242, 246, 243, .82);
+      radial-gradient(circle at 14% -12%, rgba(255, 255, 255, .48), transparent 38%),
+      linear-gradient(112deg, rgba(3, 76, 54, .13), transparent 37%),
+      rgba(230, 237, 233, .9);
     color: #14241c;
     box-shadow: 0 22px 48px rgba(24, 55, 41, .17), inset 0 1px white, inset 0 -1px rgba(8, 125, 87, .08);
     backdrop-filter: blur(12px);
@@ -1369,7 +1369,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .challenge-dialog-backdrop { background: rgba(26, 47, 37, .56); backdrop-filter: blur(8px); }
   .challenge-dialog { background: var(--panel); box-shadow: 0 40px 120px rgba(20, 45, 33, .3); }
   .dialog-header { background: linear-gradient(110deg, rgba(8, 125, 87, .09), transparent 70%), repeating-linear-gradient(90deg, transparent 0 11px, rgba(8, 125, 87, .035) 11px 12px); }
-  .dialog-close { background: rgba(242, 246, 243, .72); color: #52675d; }
+  .dialog-close { background: rgba(230, 237, 233, .82); color: #40594c; }
   .dialog-close:hover { color: #14241c; }
   .challenge-dialog h2,
   .challenge-description h1,
@@ -1386,14 +1386,14 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .dialog-value strong { color: var(--green); }
   .challenge-description a,
   .challenge-description code { color: var(--green); }
-  .challenge-description pre { background: #edf4f0; }
-  .dialog-dock { background: #edf4f0; }
+  .challenge-description pre { background: #d7e2dc; }
+  .dialog-dock { background: #d7e2dc; }
   .challenge-file,
-  .instance-control { background: rgba(242, 246, 243, .78); color: #2d4438; }
+  .instance-control { background: rgba(230, 237, 233, .86); color: #263f32; }
   .instance-control span { color: #30483c; }
-  .flag-form .flag-input-box { border-color: #9db1a7; background: white; }
+  .flag-form .flag-input-box { border-color: #879f92; background: #edf2ef; }
   .flag-form input { color: #14241c; }
   .flag-form button { color: white; }
   .flag-form button:disabled { background: #9bb8aa; color: #334b3f; }
-  &.challenge-opening::view-transition-image-pair(challenge-panel) { background: #fdfefd; box-shadow: 0 24px 64px rgba(20, 45, 33, .3); }
+  &.challenge-opening::view-transition-image-pair(challenge-panel) { background: var(--panel); box-shadow: 0 24px 64px rgba(20, 45, 33, .3); }
 }
