@@ -1187,6 +1187,10 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 
   .site-header { border-color: var(--line); background: rgba(223, 231, 226, .9); backdrop-filter: blur(16px); }
   .brand-logo { filter: brightness(0) saturate(100%) invert(18%) sepia(22%) saturate(1076%) hue-rotate(105deg) brightness(89%) contrast(95%); }
+  .site-footer { border-color: var(--line); }
+  .site-footer p:not(.eyebrow),
+  .site-footer a { color: #52685d; }
+  .site-footer p span { color: var(--green); }
   .header-link,
   .header-login,
   .auth-mobile-menu summary,
