@@ -1,111 +1,47 @@
 # K.knock CTF Platform
 
-[English](README.en.md)
+[English](README.en.md) · [기여 안내](CONTRIBUTING.md) · [운영 가이드](docs/operations.md) · [공개 정책 준비](docs/policy-setup.md)
 
-경기대학교 정보보안 동아리 K.knock에서 운영하는 CTF 플랫폼입니다.
+경기대학교 정보보안 동아리 **K.knock**의 CTF 플랫폼입니다. 문제 게시와 제출, 개인전·팀전 점수판, 관리자 운영 화면, 참가자별 또는 팀별 Docker 인스턴스를 지원합니다.
 
-## 기술 스택
+## 시작하기
 
-- Next.js, React, TypeScript
-- PostgreSQL, Prisma
-- Docker, Docker Compose
-
-## 요구 사항
-
-- Docker Engine
-- Docker Compose
-- 운영 서버를 가리키는 도메인
-
-## 배포
+운영 서버에는 Docker Engine, Docker Compose, OpenSSL, 서버를 가리키는 도메인이 필요합니다. 80/443 포트와 인스턴스 포트 범위를 열어야 합니다.
 
 ```bash
-git clone git@github.com:jjw0-0/KCTF_Webpage.git
+git clone https://github.com/jjw0-0/KCTF_Webpage.git
 cd KCTF_Webpage
 ./scripts/install.sh ctf.example.com
 ```
 
-스크립트는 `.env.prod.local`을 생성하고 migration, seed, 애플리케이션,
-instancer와 Caddy를 설정합니다. 최초 관리자 계정도 이때 생성됩니다.
+처음 실행하면 설치 스크립트가 `.env.prod.local`에 비밀값을 생성하고 PostgreSQL migration과 seed를 실행한 뒤 앱, instancer, Caddy를 시작합니다. 최초 관리자 자격 증명은 새 환경 파일을 만들 때만 출력됩니다. **이 출력과 환경 파일을 안전하게 보관하세요.** 기존 reverse proxy를 사용한다면 [운영 가이드](docs/operations.md)의 수동 배포 절차를 따르세요.
 
-이미 reverse proxy를 운영 중이면 `.env.prod.local`을 직접 작성하고 다음
-스크립트만 실행합니다.
+개발 환경은 Node.js 22 LTS(22.12 이상), npm 10+, PostgreSQL이 필요합니다. [`.env.example`](.env.example)을 `.env`로 복사해 로컬 값을 설정한 다음 실행합니다.
 
 ```bash
-./scripts/deploy-prod.sh
+npm ci
+npm run prisma:generate
+npm run prisma:migrate
+npm run dev
 ```
 
-애플리케이션은 호스트의 `127.0.0.1:3333`에서 대기합니다.
+앱은 기본적으로 `http://localhost:3000`에서 열립니다. Docker Compose 개발 환경은 `.env`를 설정한 뒤 `docker compose up --build`로 실행할 수 있습니다. 이 구성은 Docker 소켓을 instancer에 연결하므로 신뢰할 수 있는 개발 호스트에서만 사용하세요.
 
-## 설정
+## 주요 구성
 
-전체 환경변수 형식은 [.env.example](.env.example)에 있습니다. 운영에 필요한
-주요 값은 다음과 같습니다.
-
-| 변수 | 용도 |
+| 구성 | 역할 |
 | --- | --- |
-| `DOMAIN` | 플랫폼 도메인 |
-| `POSTGRES_*` | PostgreSQL 접속 정보 |
-| `NEXTAUTH_SECRET` | 세션 서명 키 |
-| `DYNAMIC_FLAG_SECRET` | 개인·팀별 플래그 생성 키 |
-| `KCTF_INSTANCER_TOKEN` | 애플리케이션과 instancer 사이의 인증 키 |
-| `INSTANCER_PUBLIC_HOST` | 문제 인스턴스 접속 호스트 |
-| `DISCORD_SOLVE_WEBHOOK_URL` | Solve 알림 Webhook, 선택 사항 |
+| Next.js · React · TypeScript | 참가자 및 관리자 화면, API |
+| PostgreSQL · Prisma | 계정, 문제, 제출, 점수 데이터 |
+| Docker instancer | 격리된 문제 인스턴스 생성 및 수명 관리 |
 
-인스턴스 포트는 [config/instancer.env](config/instancer.env)에서 지정합니다.
+문제 카드의 **PTS**, **SOLVERS**, 상세 화면의 **Author**, **INSTANCE** 표기는 실제 UI 용어를 따릅니다. 관리자는 참가자 제공 ZIP과 비공개 배포 ZIP을 별도로 등록할 수 있습니다. 배포 ZIP 최상위에 `Dockerfile` 또는 `docker-compose.yml`을 두고 컨테이너 내부 접속 포트를 지정합니다. Compose 문제는 관리자 화면에서 `Docker Compose 사용`을 켭니다. 외부 공개 포트는 instancer가 배정합니다.
 
-```dotenv
-INSTANCER_PORT_MIN=10021
-INSTANCER_PORT_MAX=10030
-```
+## 운영과 정책
 
-같은 범위를 서버 방화벽에도 열어야 합니다. 일반 Cloudflare 프록시는 이
-포트들을 전달하지 않으므로 인스턴스용 호스트는 DNS Only로 설정합니다.
+- [운영 가이드](docs/operations.md): 환경변수, 포트, proxy, 배포 및 점검
+- [기여 안내](CONTRIBUTING.md): 개발 확인 명령과 변경 제안 방법
+- [UI 결정 기록](docs/ui-polish.md): 문제 보드의 접근성, 동작, 모션 기준
+- [공개 정책 준비](docs/policy-setup.md): 라이선스 결정, 보안 신고 채널, 배포 승인 설정
 
-## Reverse proxy
-
-Caddy와 Nginx 중 하나만 사용합니다.
-
-- [deploy/caddy/Caddyfile](deploy/caddy/Caddyfile): Docker Compose가 사용하는
-  실제 Caddy 설정
-- [examples/reverse-proxy/Caddyfile](examples/reverse-proxy/Caddyfile): 호스트
-  Caddy 예시
-- [examples/reverse-proxy/nginx.conf](examples/reverse-proxy/nginx.conf): 호스트
-  Nginx 예시
-
-`examples/`의 파일은 자동으로 사용되지 않습니다. 하나를 복사해 도메인과
-인증서 경로를 수정합니다. HTTP 로그를 사용하려면 `/var/log/kctf`를 만들고
-선택한 proxy가 쓸 수 있게 설정해야 합니다.
-
-## 인스턴스 문제
-
-관리자 화면에서 다음 두 파일을 등록할 수 있습니다.
-
-- 풀이자 제공 ZIP: 참가자가 내려받는 파일
-- Instance 배포 ZIP: instancer가 빌드하는 비공개 파일
-
-Dockerfile 문제는 ZIP 최상위에 `Dockerfile`을 둡니다. Compose 문제는
-최상위에 `docker-compose.yml`을 두고 관리자 화면에서 `Docker Compose 사용`을
-켭니다. 두 방식 모두 참가자가 접속할 컨테이너 내부 포트를 입력해야 합니다.
-
-```yaml
-services:
-  web:
-    build: ./web
-    depends_on: [db]
-    expose: ["8080"]
-  db:
-    image: postgres:16-alpine
-```
-
-Instancer가 공개 포트를 할당하므로 Compose의 published port는 사용하지
-않습니다.
-
-Privileged mode, Docker socket, host namespace, device, capability 추가,
-절대 경로 mount와 external network/volume은 거부됩니다. 인스턴스에는 CPU,
-memory, PID와 capability 제한이 적용됩니다.
-
-개인전에서는 사용자마다, 팀전에서는 팀마다 인스턴스 하나를 사용합니다.
-
-## License
-
-Copyright © 2026 K.knock
+**라이선스는 아직 선택되지 않았습니다.** `Copyright © 2026 K.knock`이며, 재사용 조건은 유지관리자가 결정해 `LICENSE` 파일로 공개하기 전까지 명시되지 않습니다.

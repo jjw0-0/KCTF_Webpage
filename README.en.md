@@ -1,113 +1,47 @@
 # K.knock CTF Platform
 
-[한국어](README.md)
+[한국어](README.md) · [Contributing](CONTRIBUTING.md) · [Operations](docs/operations.md) · [Policy setup](docs/policy-setup.md)
 
-A CTF platform operated by K.knock, the information security club at Kyonggi
-University.
+The CTF platform operated by **K.knock**, the information security club at Kyonggi University. It supports challenges and submissions, individual and team scoreboards, an administrator console, and per-user or per-team Docker instances.
 
-## Stack
+## Get started
 
-- Next.js, React, TypeScript
-- PostgreSQL, Prisma
-- Docker, Docker Compose
-
-## Requirements
-
-- Docker Engine
-- Docker Compose
-- A domain pointing to the production server
-
-## Deployment
+Production requires Docker Engine, Docker Compose, OpenSSL, a domain pointing to the server, and open ports 80/443 plus the configured instance port range.
 
 ```bash
-git clone git@github.com:jjw0-0/KCTF_Webpage.git
+git clone https://github.com/jjw0-0/KCTF_Webpage.git
 cd KCTF_Webpage
 ./scripts/install.sh ctf.example.com
 ```
 
-The script creates `.env.prod.local`, applies migrations and seed data, and
-starts the application, instancer, and Caddy. It also creates the initial
-administrator.
+On its first run, the installer generates secrets in `.env.prod.local`, runs PostgreSQL migrations and seed, then starts the app, instancer, and Caddy. It prints the initial administrator credentials only when it creates the environment file. **Store that output and the environment file securely.** For an existing reverse proxy, follow the manual deployment steps in [Operations](docs/operations.md).
 
-If the host already runs a reverse proxy, create `.env.prod.local` and run:
+For local development, use Node.js 22 LTS (22.12 or later), npm 10+, and PostgreSQL. Copy [`.env.example`](.env.example) to `.env`, set local values, then run:
 
 ```bash
-./scripts/deploy-prod.sh
+npm ci
+npm run prisma:generate
+npm run prisma:migrate
+npm run dev
 ```
 
-The application listens on `127.0.0.1:3333` on the host.
+The app opens at `http://localhost:3000` by default. After setting `.env`, start the Docker Compose development environment with `docker compose up --build`. This configuration mounts the Docker socket into the instancer; use it only on a trusted development host.
 
-## Configuration
+## At a glance
 
-See [.env.example](.env.example) for the complete environment template.
-
-| Variable | Purpose |
+| Component | Purpose |
 | --- | --- |
-| `DOMAIN` | Platform domain |
-| `POSTGRES_*` | PostgreSQL connection |
-| `NEXTAUTH_SECRET` | Session signing key |
-| `DYNAMIC_FLAG_SECRET` | Per-user or per-team flag key |
-| `KCTF_INSTANCER_TOKEN` | Application-to-instancer credential |
-| `INSTANCER_PUBLIC_HOST` | Public instance host |
-| `DISCORD_SOLVE_WEBHOOK_URL` | Optional solve notification webhook |
+| Next.js · React · TypeScript | Participant and administrator UI, API |
+| PostgreSQL · Prisma | Accounts, challenges, submissions, scores |
+| Docker instancer | Isolated challenge instances and lifecycle |
 
-Set the instance port range in
-[config/instancer.env](config/instancer.env):
+Challenge cards use **PTS** and **SOLVERS**; detail views use **Author** and **INSTANCE**. Administrators can upload a public participant ZIP and a separate private deployment ZIP. Put `Dockerfile` or `docker-compose.yml` at the deployment ZIP root and specify the container's internal entry port. Enable `Docker Compose 사용` in the administrator form for Compose challenges. The instancer assigns the public port.
 
-```dotenv
-INSTANCER_PORT_MIN=10021
-INSTANCER_PORT_MAX=10030
-```
+## Operations and policies
 
-Open the same range in the host firewall. A normal Cloudflare proxy does not
-forward these ports, so the instance hostname must use DNS Only.
+- [Operations](docs/operations.md): environment, ports, proxy, deploys, and checks
+- [Contributing](CONTRIBUTING.md): development checks and proposing changes
+- [UI decisions](docs/ui-polish.md): challenge board accessibility, navigation, and motion
+- [Policy setup](docs/policy-setup.md): license decision, security reporting, and deployment approval settings
 
-## Reverse proxy
-
-Use either Caddy or Nginx.
-
-- [deploy/caddy/Caddyfile](deploy/caddy/Caddyfile): Caddy configuration loaded
-  by Docker Compose
-- [examples/reverse-proxy/Caddyfile](examples/reverse-proxy/Caddyfile): host
-  Caddy example
-- [examples/reverse-proxy/nginx.conf](examples/reverse-proxy/nginx.conf): host
-  Nginx example
-
-Files under `examples/` are not loaded automatically. Copy one and replace its
-domain and certificate paths. To collect HTTP logs, create `/var/log/kctf` and
-make it writable by the selected proxy.
-
-## Instance challenges
-
-The administrator can attach two files to a challenge:
-
-- Public ZIP: downloaded by participants
-- Instance deployment ZIP: private source built by the instancer
-
-For a Dockerfile challenge, place `Dockerfile` at the archive root. For a
-Compose challenge, place `docker-compose.yml` at the root and enable Compose in
-the administrator form. Both modes require the container's internal entry
-port.
-
-```yaml
-services:
-  web:
-    build: ./web
-    depends_on: [db]
-    expose: ["8080"]
-  db:
-    image: postgres:16-alpine
-```
-
-The instancer allocates the public port and ignores Compose published ports.
-
-Privileged mode, Docker sockets, host namespaces, devices, added capabilities,
-absolute host mounts, and external networks or volumes are rejected. Runtime
-CPU, memory, PID, and capability limits are applied.
-
-Individual mode gives each user one instance. Team mode gives each team one
-shared instance.
-
-## License
-
-Copyright © 2026 K.knock
+**A license has not been selected.** `Copyright © 2026 K.knock`; reuse terms remain unspecified until maintainers choose a license and publish a `LICENSE` file.
