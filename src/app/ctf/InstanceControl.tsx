@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getTcpCommand } from '@/lib/challenge-media';
+import CopyCommand from './CopyCommand';
 
 type Instance = { challengeId: string; url: string; accessToken: string; expiresAt: string };
 
@@ -14,15 +15,20 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
 
   useEffect(() => {
     if (!enabled) return;
-    fetch('/api/instances').then(async (response) => {
+    const controller = new AbortController();
+    fetch('/api/instances', { signal: controller.signal }).then(async (response) => {
       if (response.status === 401) {
-        setRequiresLogin(true);
+        if (!controller.signal.aborted) setRequiresLogin(true);
         return;
       }
       const payload = await response.json();
-      if (response.ok) setInstance(payload.instance);
-    }).catch(() => setMessage('Instance 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'))
-      .finally(() => setLoading(false));
+      if (!controller.signal.aborted && response.ok) setInstance(payload.instance);
+    }).catch(() => {
+      if (!controller.signal.aborted) setMessage('Instance 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
   }, [enabled]);
 
   if (!enabled) return null;
@@ -80,7 +86,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
       ) : isCurrent ? (
         <div className="instance-actions">
           {authenticatedTcpCommand
-            ? <code className="instance-command">{authenticatedTcpCommand}</code>
+            ? <CopyCommand command={authenticatedTcpCommand} codeClassName="instance-command" />
             : <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기</a>}
           <button type="button" onClick={() => void destroy()} disabled={loading}>종료</button>
         </div>

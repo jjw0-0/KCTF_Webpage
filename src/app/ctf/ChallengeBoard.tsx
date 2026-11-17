@@ -1,202 +1,53 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
-import { Category, Challenge } from '@/lib/platform-data';
-import type { CtfSchedule } from '@/lib/ctf-schedule';
-import InstanceControl from './InstanceControl';
-import ChallengeDescription from '@/components/ChallengeDescription';
-import { getTcpCommand, safeResourceUrl } from '@/lib/challenge-media';
+import { useMemo, useState, useSyncExternalStore } from 'react';
+import type { Category, Challenge } from '@/lib/platform-data';
+import ChallengeDialog from './ChallengeDialog';
+import useChallengeNavigation from './useChallengeNavigation';
 
 type ChallengeBoardProps = {
   initialCategory: string;
   initialChallengeId?: string;
-  schedule?: CtfSchedule;
   isAuthenticated: boolean;
   categories: Category[];
   challenges: Challenge[];
 };
 
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (update: () => void) => { finished: Promise<void> };
-};
+const subscribeToHydration = () => () => {};
 
 export default function ChallengeBoard({ initialCategory, initialChallengeId, isAuthenticated, categories, challenges: initialChallenges }: ChallengeBoardProps) {
+  const ready = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const visibleCategories = useMemo(() => categories.filter((category) => category.visible), [categories]);
   const [challenges, setChallenges] = useState(initialChallenges);
-  const [activeCategory, setActiveCategory] = useState(
-    visibleCategories.some((category) => category.slug === initialCategory) ? initialCategory : 'all',
-  );
-  const [selected, setSelected] = useState<Challenge | null>(
-    () => initialChallenges.find((challenge) => challenge.id === initialChallengeId) ?? null,
-  );
   const [hoveredChallengeId, setHoveredChallengeId] = useState<string | null>(null);
-  const [transitionChallengeId, setTransitionChallengeId] = useState<string | null>(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const [flag, setFlag] = useState('');
-  const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'duplicate' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
-  const dialogRef = useRef<HTMLElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
-  const transitionSourceRef = useRef<HTMLElement | null>(null);
-  const closeTimerRef = useRef<number | null>(null);
-  const selectedId = selected?.id;
-  const selectedFileUrl = selected?.fileUrl ? safeResourceUrl(selected.fileUrl) : undefined;
-  const selectedConnectionUrl = selected?.connectionType !== 'TCP' && selected?.connectionUrl ? safeResourceUrl(selected.connectionUrl) : undefined;
-  const selectedTcpCommand = selected?.connectionType === 'TCP' && selected.connectionUrl ? getTcpCommand(selected.connectionUrl) : undefined;
-
-  const closeChallenge = useCallback(() => {
-    if (closeTimerRef.current) return;
-    const viewTransition = (document as ViewTransitionDocument).startViewTransition;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const source = transitionSourceRef.current;
-    if (viewTransition && source?.isConnected && !reduceMotion) {
-      document.documentElement.classList.remove('challenge-opening');
-      document.documentElement.classList.add('challenge-closing');
-      const transition = viewTransition.call(document, () => {
-        source.style.viewTransitionName = 'challenge-panel';
-        flushSync(() => {
-          setTransitionChallengeId(null);
-          setSelected(null);
-        });
-      });
-      const cleanupTransition = () => {
-        source.style.viewTransitionName = '';
-        document.documentElement.classList.remove('challenge-closing');
-        transitionSourceRef.current = null;
-      };
-      transition.finished.then(cleanupTransition, cleanupTransition);
-      return;
-    }
-    setIsClosing(true);
-    const duration = reduceMotion ? 0 : 180;
-    closeTimerRef.current = window.setTimeout(() => {
-      setTransitionChallengeId(null);
-      setSelected(null);
-      setIsClosing(false);
-      closeTimerRef.current = null;
-      transitionSourceRef.current = null;
-    }, duration);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selectedId) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousFocus = returnFocusRef.current;
-    const handleDialogKeys = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeChallenge();
-      if (event.key !== 'Tab') return;
-      const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), video[controls], iframe, [tabindex="0"]') ?? [])];
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleDialogKeys);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleDialogKeys);
-      previousFocus?.focus();
-    };
-  }, [closeChallenge, selectedId]);
-
-  const groups = useMemo(() => {
-    return visibleCategories.flatMap((category) => {
-      if (activeCategory !== 'all' && activeCategory !== category.slug) return [];
-      const items = challenges.filter((challenge) => challenge.category === category.slug);
-      return items.length ? [{ category, items }] : [];
-    });
-  }, [activeCategory, challenges, visibleCategories]);
-
+  const { activeCategory, changeCategory, selected, openChallenge, closeChallenge, dialogRef, boardRef, transitionChallengeId, isClosing } = useChallengeNavigation(initialCategory, initialChallengeId, visibleCategories, challenges);
+  const groups = useMemo(() => visibleCategories.flatMap((category) => {
+    if (activeCategory !== 'all' && activeCategory !== category.slug) return [];
+    const items = challenges.filter((challenge) => challenge.category === category.slug);
+    return items.length ? [{ category, items }] : [];
+  }), [activeCategory, challenges, visibleCategories]);
   const resultCount = groups.reduce((count, group) => count + group.items.length, 0);
-
-  const openChallenge = (challenge: Challenge, source: HTMLElement) => {
-    returnFocusRef.current = document.activeElement as HTMLElement | null;
-    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    closeTimerRef.current = null;
-    const viewTransition = (document as ViewTransitionDocument).startViewTransition;
-    const useSharedTransition = Boolean(viewTransition) && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const update = () => {
-      source.style.viewTransitionName = '';
-      flushSync(() => {
-        setIsClosing(false);
-        setTransitionChallengeId(useSharedTransition ? challenge.id : null);
-        setSelected(challenge);
-        setFlag('');
-        setSubmission({ state: 'idle' });
-      });
-    };
-    transitionSourceRef.current = useSharedTransition ? source : null;
-    if (useSharedTransition && viewTransition) {
-      document.documentElement.classList.remove('challenge-closing');
-      document.documentElement.classList.add('challenge-opening');
-      source.style.viewTransitionName = 'challenge-panel';
-      const transition = viewTransition.call(document, update);
-      const cleanupTransition = () => document.documentElement.classList.remove('challenge-opening');
-      transition.finished.then(cleanupTransition, cleanupTransition);
-    } else {
-      update();
-    }
-  };
-
-  const submitFlag = async () => {
-    if (!isAuthenticated || !selected || !flag.trim()) return;
-    const submittedId = selected.id;
-    setSubmission({ state: 'submitting' });
-    try {
-      const response = await fetch(`/api/challenges/${encodeURIComponent(selected.id)}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ flag }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? '제출에 실패했습니다.');
-      if (!payload.correct) {
-        setSubmission({ state: 'wrong', message: '오답입니다' });
-        return;
-      }
-      setChallenges((current) => current.map((challenge) => challenge.id === submittedId
-        ? { ...challenge, solved: true, solves: payload.solves, points: payload.points }
-        : challenge));
-      setSelected((challenge) => challenge?.id === submittedId ? { ...challenge, solved: true, solves: payload.solves, points: payload.points } : challenge);
-      setSubmission(
-        payload.alreadySolved
-          ? { state: 'duplicate', message: '이미 해결했습니다' }
-          : { state: 'correct', message: '정답입니다' },
-      );
-    } catch (error) {
-      setSubmission({ state: 'error', message: error instanceof Error ? error.message : '제출에 실패했습니다.' });
-    }
-  };
+  const availableChallenges = challenges.filter((challenge) => visibleCategories.some((category) => category.slug === challenge.category));
+  const solvedCount = availableChallenges.filter((challenge) => challenge.solved).length;
+  const categoryName = visibleCategories.find((category) => category.slug === activeCategory)?.shortName ?? '전체';
 
   return (
     <main className="challenge-main">
-      <header className="challenge-heading">
-        <div className="challenge-tools">
-          <div className="category-tabs" role="group" aria-label="카테고리 필터">
-            <button type="button" aria-pressed={activeCategory === 'all'} className={activeCategory === 'all' ? 'active' : ''} onClick={() => setActiveCategory('all')}>ALL</button>
-            {visibleCategories.map((category) => (
-              <button key={category.id} type="button" aria-pressed={activeCategory === category.slug} className={activeCategory === category.slug ? 'active' : ''} onClick={() => setActiveCategory(category.slug)}>
-                {category.shortName}
-              </button>
-            ))}
+      <div ref={boardRef} inert={Boolean(selected)}>
+        <header className="challenge-heading">
+          <div className="challenge-tools">
+            <div className="category-tabs" role="group" aria-label="카테고리 필터">
+              <button type="button" disabled={!ready} aria-pressed={activeCategory === 'all'} className={activeCategory === 'all' ? 'active' : ''} onClick={() => changeCategory('all')}>ALL</button>
+              {visibleCategories.map((category) => (
+                <button key={category.id} type="button" disabled={!ready} aria-pressed={activeCategory === category.slug} className={activeCategory === category.slug ? 'active' : ''} onClick={() => changeCategory(category.slug)}>{category.shortName}</button>
+              ))}
+            </div>
+            <p className="challenge-progress">전체 <strong>{solvedCount} / {availableChallenges.length}</strong> 해결</p>
+            <p className="sr-only" role="status" aria-atomic="true">{categoryName} 문제 {resultCount}개 표시</p>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="challenge-groups" aria-live="polite">
+      <div className="challenge-groups">
         {groups.map(({ category, items }) => (
           <section className="challenge-group" key={category.id} aria-labelledby={`category-${category.id}`}>
             <div className="challenge-group-title">
@@ -211,7 +62,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 <div
                   key={challenge.id}
                   className={`challenge-card-slot ${hoveredChallengeId === challenge.id ? 'is-active' : ''}`}
-                  style={{ '--stack-index': index, '--stack-step': Math.min(index, 4) } as React.CSSProperties}
+                  style={{ '--stack-index': index, '--stack-step': Math.min(index, 4), '--entrance-index': Math.min(index, 5) } as React.CSSProperties}
                   onPointerEnter={(event) => { if (event.pointerType !== 'touch') setHoveredChallengeId(challenge.id); }}
                   onPointerLeave={() => setHoveredChallengeId(null)}
                   onPointerCancel={() => setHoveredChallengeId(null)}
@@ -220,6 +71,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 >
                 <button
                   type="button"
+                  disabled={!ready}
                   className={`stacked-card ${challenge.solved ? 'is-solved' : ''} ${hoveredChallengeId === challenge.id ? 'is-hovered' : ''}`}
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={(event) => openChallenge(challenge, event.currentTarget.querySelector<HTMLElement>('.stacked-card-surface') ?? event.currentTarget)}
@@ -255,111 +107,25 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
         {!resultCount && (
           <div className="empty-state">
             <p>선택한 카테고리에 문제가 없습니다.</p>
-            <button type="button" onClick={() => setActiveCategory('all')}>전체 문제 보기</button>
+            <button type="button" disabled={!ready} onClick={() => changeCategory('all')}>전체 문제 보기</button>
           </div>
         )}
       </div>
 
+      </div>
       {selected && (
-        <div className={`challenge-dialog-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={closeChallenge}>
-          <section
-            ref={dialogRef}
-            className={`challenge-dialog ${transitionChallengeId === selected.id ? 'is-shared-transition' : ''}`}
-            style={{ '--category-accent': visibleCategories.find((category) => category.slug === selected.category)?.color ?? '#34b27b', viewTransitionName: transitionChallengeId === selected.id ? 'challenge-panel' : undefined } as React.CSSProperties}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="challenge-dialog-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <span className="card-beam dialog-beam" aria-hidden="true" />
-            <header className="dialog-header">
-              <div className="dialog-hero">
-                <div className="dialog-title-group">
-                  <h2 id="challenge-dialog-title">{selected.title}</h2>
-                  <p className="dialog-author"><span>Author</span> {selected.author || '-'}</p>
-                </div>
-                <div className="dialog-header-actions">
-                  <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
-                  <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
-                    <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
-                  </button>
-                </div>
-              </div>
-            </header>
-            <div className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
-              <ChallengeDescription content={selected.description || selected.summary} />
-            </div>
-            <footer className="dialog-dock">
-              {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
-                <div className="dialog-resources">
-                  {selectedFileUrl && (
-                    <a className="challenge-file" href={selectedFileUrl} target="_blank" rel="noopener noreferrer" download>
-                      <span className="file-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path d="M9 2v9m0 0 3.5-3.5M9 11 5.5 7.5M3 15h12" /></svg></span>
-                      <span>{selected.attachmentName || '문제 파일'}<small>첨부파일 다운로드</small></span>
-                    </a>
-                  )}
-                  {!selected.usesVm && selectedConnectionUrl && (
-                    <a className="challenge-file challenge-access-link" href={selectedConnectionUrl} target="_blank" rel="noopener noreferrer">
-                      <span className="file-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path d="m5 13 8-8M7 5h6v6" /></svg></span>
-                      <span>URL<small>{selected.connectionUrl}</small></span>
-                    </a>
-                  )}
-                  {!selected.usesVm && selectedTcpCommand && (
-                    <div className="challenge-file challenge-access-command">
-                      <span className="file-icon is-terminal" aria-hidden="true">NC</span>
-                      <span>NC<small><code>{selectedTcpCommand}</code></small></span>
-                    </div>
-                  )}
-                  {(selected.usesVm || selected.instanceSlug) && (selected.instanceSlug
-                    ? <InstanceControl key={selected.id} challengeId={selected.id} connectionType={selected.connectionType ?? 'HTTP'} enabled />
-                    : <div className="instance-control vm-pending"><strong>Instance 준비 중</strong><p>생성 방식이 연결되면 이곳에서 Instance를 시작할 수 있습니다.</p></div>)}
-                </div>
-              )}
-              <form className="flag-form" onSubmit={(event) => { event.preventDefault(); void submitFlag(); }}>
-                <div className="flag-form-head">
-                  <label htmlFor="flag-input">플래그 제출</label>
-                  {isAuthenticated && submission.message && (
-                    <span className={`flag-status-badge is-${submission.state}`} role="status">
-                      <svg viewBox="0 0 16 16" aria-hidden="true">
-                        {submission.state === 'correct'
-                          ? <path d="m3 8.2 3.1 3.1L13 4.5" />
-                          : submission.state === 'duplicate'
-                            ? <><path d="M8 2.1 14 13H2L8 2.1Z" /><path d="M8 5.7v3.5M8 11.4v.1" /></>
-                            : <path d="m4 4 8 8m0-8-8 8" />}
-                      </svg>
-                      {submission.message}
-                    </span>
-                  )}
-                </div>
-                <div className={`flag-input-box is-${submission.state}`}>
-                  <input
-                    id="flag-input"
-                    name="flag"
-                    required
-                    maxLength={256}
-                    value={flag}
-                    onChange={(event) => {
-                      setFlag(event.target.value);
-                      if (submission.state !== 'idle') setSubmission({ state: 'idle' });
-                    }}
-                    placeholder={isAuthenticated ? 'KCTF{…}' : '로그인 후 제출할 수 있습니다'}
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    disabled={!isAuthenticated}
-                    aria-invalid={submission.state === 'wrong' || submission.state === 'error'}
-                  />
-                  <button type="submit" disabled={!isAuthenticated || !flag.trim() || submission.state === 'submitting'}>{submission.state === 'submitting' ? '확인 중…' : isAuthenticated ? '제출' : '로그인 필요'}</button>
-                </div>
-                {!isAuthenticated && selected && (
-                  <p className="submission-message error" role="status">
-                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/ctf?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
-                  </p>
-                )}
-              </form>
-            </footer>
-          </section>
-        </div>
+        <ChallengeDialog
+          key={selected.id}
+          challenge={selected}
+          category={activeCategory}
+          accentColor={visibleCategories.find((category) => category.slug === selected.category)?.color ?? '#34b27b'}
+          isAuthenticated={isAuthenticated}
+          isClosing={isClosing}
+          transitionChallengeId={transitionChallengeId}
+          dialogRef={dialogRef}
+          onClose={closeChallenge}
+          onSolved={(id, result) => setChallenges((current) => current.map((challenge) => challenge.id === id ? { ...challenge, solved: true, ...result } : challenge))}
+        />
       )}
     </main>
   );

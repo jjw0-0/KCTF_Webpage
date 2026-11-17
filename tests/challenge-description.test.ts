@@ -21,3 +21,11 @@ test('description HTML and executable URLs cannot create active content', () => 
   assert.doesNotMatch(html, /<script|<img|onerror=|href="javascript:|src="data:/);
   assert.match(html, /click/);
 });
+
+test('image dimensions reserve the author-specified ratio without changing ordinary titles', () => {
+  const html = render('![wide](/wide.png "800x400")\n\n![plain](/plain.png "caption")\n\n![invalid](/invalid.png "0x400")');
+  assert.match(html, /<img[^>]+alt="wide"[^>]+width="800" height="400"/);
+  assert.match(html, /<img[^>]+alt="plain"[^>]+title="caption"/);
+  assert.match(html, /<img[^>]+alt="invalid"[^>]+title="0x400"/);
+  assert.doesNotMatch(html, /width="0"/);
+});
