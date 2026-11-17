@@ -11,5 +11,8 @@ README.md
 .vscode
 .DS_Store
 coverage
+test-results
+playwright-report
+output
 postgres-data
 files
