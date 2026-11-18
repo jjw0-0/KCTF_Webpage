@@ -4,7 +4,7 @@ import PageLayout from '@/components/PageLayout';
 import RegisterForm from './RegisterForm';
 
 export default async function RegisterPage() {
-  if ((await auth())?.user) redirect('/ctf');
+  if ((await auth())?.user) redirect('/challenges');
 
   return (
     <PageLayout>

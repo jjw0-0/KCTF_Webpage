@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     },
   });
 
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   revalidatePath('/admin');
   return NextResponse.json({ challenges: await getAdminChallenges() });
 }
@@ -86,7 +86,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     params: { challengeId: id },
   });
 
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   revalidatePath('/admin');
   return NextResponse.json({ challenges: await getAdminChallenges() });
 }

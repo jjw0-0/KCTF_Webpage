@@ -125,7 +125,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       message: `관리자 배포 ZIP 등록: ${formatActor(admin)} → [${challenge.title}]`,
       params: { challengeId: challenge.id, instanceSlug: slug, mode: deployment.mode, fileName: file.name, fileSize: file.size },
     });
-    revalidatePath('/ctf');
+    revalidatePath('/challenges');
     revalidatePath('/admin');
     return NextResponse.json({ deployment, challenges: await getAdminChallenges() }, { status: 202 });
   } catch (error) {
@@ -169,7 +169,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     message: `관리자 배포 삭제: ${formatActor(admin)} → [${challenge.title}]`,
     params: { challengeId: challenge.id, instanceSlug: slug },
   });
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   revalidatePath('/admin');
   return NextResponse.json({ challenges: await getAdminChallenges() });
 }

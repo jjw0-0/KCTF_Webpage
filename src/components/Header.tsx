@@ -20,7 +20,7 @@ export default async function Header() {
         />
       </Link>
       <nav className="header-primary" aria-label="주요 메뉴">
-        <Link href="/ctf" className="header-link">
+        <Link href="/challenges" className="header-link">
           Challenges
         </Link>
         <Link href="/scoreboard" className="header-link">

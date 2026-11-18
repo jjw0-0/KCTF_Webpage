@@ -378,7 +378,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 </div>
                 {!isAuthenticated && selected && (
                   <p className="submission-message error" role="status">
-                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/ctf?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
+                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/challenges?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
                   </p>
                 )}
               </form>

@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    revalidatePath('/ctf');
+    revalidatePath('/challenges');
     revalidatePath('/admin');
     return NextResponse.json({ challengeId: challenge.id, challenges: await getAdminChallenges() }, { status: 201 });
   } catch (error) {

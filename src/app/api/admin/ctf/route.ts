@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest) {
   });
 
   revalidatePath('/');
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   revalidatePath('/admin');
   return NextResponse.json({ schedule: await getCtfSchedule() });
 }

@@ -3,12 +3,11 @@ import { auth } from '@/auth';
 import ElectricLogo from '@/components/ElectricLogo';
 import PageLayout from '@/components/PageLayout';
 import { getCategories } from '@/lib/categories';
-import { getCtfSchedule } from '@/lib/ctf-schedule';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [session, allCategories, schedule] = await Promise.all([auth(), getCategories(), getCtfSchedule()]);
+  const [session, allCategories] = await Promise.all([auth(), getCategories()]);
   const categories = allCategories.filter((category) => category.visible);
   const isAuthenticated = Boolean(session?.user?.id);
 
@@ -40,7 +39,6 @@ export default async function HomePage() {
                   cursorRadius={120}
                 />
               </h1>
-              <p><time dateTime={schedule.startTime}>{schedule.startLabel}</time><span>~</span><time dateTime={schedule.endTime}>{schedule.endLabel}</time></p>
             </div>
 
             <div className="landing-categories" aria-label="문제 카테고리">
@@ -57,7 +55,7 @@ export default async function HomePage() {
 
           <div className="landing-actions">
             {isAuthenticated ? (
-              <Link href="/ctf">참가하기 <span aria-hidden="true">→</span></Link>
+              <Link href="/challenges">참가하기 <span aria-hidden="true">→</span></Link>
             ) : (
               <>
                 <Link href="/login">로그인</Link>

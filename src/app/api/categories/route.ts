@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   });
 
   revalidatePath('/');
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   return NextResponse.json({ categories: await getCategories({ fallback: false }) }, { status: 201 });
 }
 
@@ -138,6 +138,6 @@ export async function PUT(request: NextRequest) {
   });
 
   revalidatePath('/');
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   return NextResponse.json({ categories: await getCategories({ fallback: false }) });
 }

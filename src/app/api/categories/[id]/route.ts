@@ -39,6 +39,6 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   });
 
   revalidatePath('/');
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   return NextResponse.json({ categories: await getCategories({ fallback: false }) });
 }

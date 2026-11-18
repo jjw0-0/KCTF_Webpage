@@ -6,14 +6,14 @@ import LoginForm from './LoginForm';
 type LoginPageProps = { searchParams: Promise<{ callbackUrl?: string }> };
 
 function safeCallbackUrl(value?: string) {
-  if (!value) return '/ctf';
+  if (!value) return '/challenges';
   try {
     const base = 'https://kctf.invalid';
     const parsed = new URL(value, base);
-    if (parsed.origin !== base) return '/ctf';
+    if (parsed.origin !== base) return '/challenges';
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
-    return '/ctf';
+    return '/challenges';
   }
 }
 

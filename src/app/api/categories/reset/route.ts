@@ -58,6 +58,6 @@ export async function POST(request: Request) {
   });
 
   revalidatePath('/');
-  revalidatePath('/ctf');
+  revalidatePath('/challenges');
   return NextResponse.json({ categories: await getCategories({ fallback: false }) });
 }
