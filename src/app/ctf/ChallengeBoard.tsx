@@ -35,7 +35,9 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
   const [isClosing, setIsClosing] = useState(false);
   const [flag, setFlag] = useState('');
   const [submission, setSubmission] = useState<{ state: 'idle' | 'submitting' | 'correct' | 'duplicate' | 'wrong' | 'error'; message?: string }>({ state: 'idle' });
+  const [hasMoreDescription, setHasMoreDescription] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
+  const dialogBodyRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const transitionSourceRef = useRef<HTMLElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -111,6 +113,21 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
       previousFocus?.focus();
     };
   }, [closeChallenge, selectedId]);
+
+  useEffect(() => {
+    const body = dialogBodyRef.current;
+    if (!body) return;
+    const update = () => setHasMoreDescription(body.scrollHeight - body.clientHeight - body.scrollTop > 8);
+    const observer = new ResizeObserver(update);
+    observer.observe(body);
+    if (body.firstElementChild) observer.observe(body.firstElementChild);
+    body.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => {
+      observer.disconnect();
+      body.removeEventListener('scroll', update);
+    };
+  }, [selectedId]);
 
   const groups = useMemo(() => {
     return visibleCategories.flatMap((category) => {
@@ -286,8 +303,16 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 </div>
               </div>
             </header>
-            <div className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
-              <ChallengeDescription content={selected.description || selected.summary} />
+            <div className="dialog-description-area">
+              <div ref={dialogBodyRef} className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
+                <ChallengeDescription content={selected.description || selected.summary} />
+              </div>
+              {hasMoreDescription && (
+                <div className="dialog-scroll-hint" aria-hidden="true">
+                  아래로 스크롤하여 설명 계속 읽기
+                  <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
+                </div>
+              )}
             </div>
             <footer className="dialog-dock">
               {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (

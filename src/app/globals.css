@@ -150,13 +150,15 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   top: 0;
   z-index: 30;
   display: grid;
-  width: min(100% - 48px, 1440px);
+  width: 100%;
   height: 84px;
-  margin-inline: auto;
+  padding-inline: clamp(24px, 4vw, 72px);
   grid-template-columns: minmax(170px, 1fr) auto minmax(170px, 1fr);
   align-items: center;
-  border-bottom: 1px solid rgba(170,255,218,.07);
-  background: rgba(2, 4, 3, .92);
+  border-bottom: 1px solid rgba(170,255,218,.12);
+  background: rgba(2, 6, 4, .94);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .16);
+  backdrop-filter: blur(18px);
 }
 
 .header-brand { display: flex; width: fit-content; align-items: center; justify-self: start; }
@@ -220,12 +222,13 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 .site-footer {
   display: flex;
-  width: min(100% - 48px, 1440px);
+  width: 100%;
   min-height: 132px;
-  margin-inline: auto;
+  padding-inline: clamp(24px, 4vw, 72px);
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgba(170,255,218,.1);
+  border-top: 1px solid rgba(170,255,218,.12);
+  background: rgba(2, 6, 4, .72);
 }
 
 .landing-main { display: flex; width: min(100% - 48px, 1440px); flex: 1; margin-inline: auto; }
@@ -370,21 +373,21 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .auth-switch a:hover { color: #79f3c4; }
 
 @media (max-width: 680px) {
-  .site-header, .site-footer, .landing-main { width: min(100% - 30px, 1440px); }
-  .site-header { height: 74px; grid-template-columns: auto 1fr auto; column-gap: 14px; }
+  .landing-main { width: min(100% - 30px, 1440px); }
+  .site-header { height: 74px; grid-template-columns: auto 1fr auto; column-gap: 14px; padding-inline: 15px; }
   .brand-logo { width: 112px; }
   .header-primary { gap: 12px; font-size: 12px; justify-self: end; }
   .header-actions { gap: 8px; }
   .header-login { font-size: 12px; }
   .auth-desktop-actions { display: none; }
   .auth-mobile-menu { display: block; }
-  .site-footer { min-height: 180px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; }
+  .site-footer { min-height: 180px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; padding-inline: 15px; }
   .auth-main { min-height: auto; padding: 48px 15px 72px; }
   .auth-panel { border-radius: 18px; }
 }
 
 @media (max-width: 420px) {
-  .site-header { width: calc(100% - 20px); column-gap: 9px; }
+  .site-header { column-gap: 9px; padding-inline: 10px; }
   .brand-logo { width: 90px; }
   .header-primary { gap: 7px; font-size: 10px; white-space: nowrap; }
   .header-actions { gap: 3px; }
@@ -858,7 +861,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 }
 
 /* Participant challenge board */
-.category-tabs { display: flex; align-items: center; gap: 3px; overflow-x: auto; border: 1px solid rgba(170,255,218,.09); border-radius: 999px; padding: 4px; background: rgba(4,10,7,.64); box-shadow: inset 0 1px rgba(255,255,255,.025), 0 16px 45px rgba(0,0,0,.16); scrollbar-width: none; }
+.category-tabs { display: flex; align-items: center; gap: 3px; overflow-x: auto; border-radius: 999px; padding: 5px; background: rgba(9,20,14,.74); box-shadow: 0 14px 36px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.035); scrollbar-width: none; }
 .category-tabs::-webkit-scrollbar { display: none; }
 .category-tabs button { min-height: 44px; flex: 0 0 auto; border: 1px solid transparent; border-radius: 999px; padding: 8px 14px; background: transparent; color: #849189; font: 500 12px var(--font-mono), monospace; cursor: pointer; transition: color .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .category-tabs button span { margin-left: 4px; color: #5b6861; font-size: 10px; }
@@ -876,7 +879,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .challenge-dialog { position: relative; isolation: isolate; display: flex; flex-direction: column; width: min(100%, 700px); min-height: min(540px, calc(100dvh - 48px)); max-height: min(800px, calc(100dvh - 48px)); overflow: hidden; border: 1px solid color-mix(in srgb, var(--category-accent) 40%, #20312b); border-radius: 10px; background: #090e0d; box-shadow: 0 40px 140px #000c, 0 0 40px #28d89a0b, inset 0 0 0 5px #ffffff02; animation: dialog-in .28s var(--ease-out) both; }
 .challenge-dialog-backdrop:has(.is-shared-transition), .challenge-dialog.is-shared-transition, .challenge-dialog.is-shared-transition::before { animation: none; }
 .challenge-dialog::before { position: absolute; top: 0; left: 0; right: 0; z-index: 3; height: 2px; background: linear-gradient(90deg, transparent, #aaffeb, var(--category-accent), transparent); content: ""; transform-origin: left; animation: panel-power-on .6s ease-out both; pointer-events: none; }
-.dialog-header { position: relative; flex-shrink: 0; border-bottom: 1px solid #aaffda20; padding: 30px 32px 24px; background: linear-gradient(110deg, #1c39332b, transparent 70%), repeating-linear-gradient(90deg, transparent 0 11px, #aaffda05 11px 12px); }
+.dialog-header { position: relative; flex-shrink: 0; padding: 30px 32px 24px; background: linear-gradient(110deg, #1c39332b, transparent 70%), repeating-linear-gradient(90deg, transparent 0 11px, #aaffda05 11px 12px); }
 .dialog-header::after { position: absolute; bottom: -2px; left: 32px; width: 44px; height: 3px; content: ""; background: var(--category-accent); box-shadow: 0 0 14px #4de0a744; }
 .dialog-header-actions { display: flex; align-items: flex-start; justify-content: flex-end; gap: 8px; }
 .dialog-close { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border: 1px solid #aaffda20; border-radius: 5px; background: #ffffff04; color: #a7bcb3; font-size: 24px; transition: border-color .2s, background .2s, color .2s; }
@@ -890,7 +893,10 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .dialog-value { display: flex; min-height: 44px; align-items: center; gap: 5px; padding: 0 6px; }
 .dialog-value strong { color: #8cf5ce; font: 500 21px/1 var(--font-mono), monospace; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
 .dialog-value span { color: #81968c; font: 8px var(--font-mono), monospace; letter-spacing: .1em; }
+.dialog-description-area { position: relative; display: flex; min-height: 0; flex: 1; }
 .dialog-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 28px 32px 32px; scrollbar-color: #355f4c #07100c; scrollbar-width: thin; }
+.dialog-scroll-hint { position: absolute; right: 18px; bottom: 10px; left: 18px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 10px; pointer-events: none; background: linear-gradient(0deg, #07100c 45%, transparent); color: #9eb2a7; font-size: 11px; }
+.dialog-scroll-hint svg { width: 14px; height: 14px; stroke: currentcolor; stroke-width: 1.5; }
 .dialog-body::-webkit-scrollbar { width: 8px; }
 .dialog-body::-webkit-scrollbar-track { background: #07100c; }
 .dialog-body::-webkit-scrollbar-thumb { border: 2px solid #07100c; border-radius: 6px; background: #355f4c; }
@@ -926,10 +932,10 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .description-preview[open] summary svg { transform: rotate(180deg); }
 .description-preview summary:hover { color: #c1f5dd; }
 .description-preview .challenge-description { margin-top: 20px; }
-.dialog-dock { display: flex; flex-shrink: 0; flex-direction: column; gap: 14px; border-top: 1px solid #aaffda20; padding: 14px 24px 18px; background: #0a1410; }
+.dialog-dock { display: flex; flex-shrink: 0; flex-direction: column; gap: 14px; padding: 14px 24px 18px; background: #0c1712; box-shadow: 0 -18px 44px rgba(0,0,0,.16); }
 .dialog-resources { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
-.challenge-file { display: flex; min-height: 50px; align-items: center; gap: 11px; border: 1px solid #aaffda20; border-radius: 5px; padding: 8px 12px; background: rgba(255,255,255,.018); color: #d7e7dd; font-size: 12px; transition: border-color .2s, background .2s; }
-a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
+.challenge-file { display: flex; min-height: 50px; align-items: center; gap: 11px; border-radius: 5px; padding: 8px 12px; background: rgba(255,255,255,.035); color: #d7e7dd; font-size: 12px; transition: background .2s, box-shadow .2s; }
+a.challenge-file:hover { background: #4de0a70d; box-shadow: inset 0 0 0 1px #4de0a75c; }
 .challenge-file > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .challenge-file small { display: block; margin-top: 1px; color: #80968b; font-size: 10px; }
 .challenge-access-link small { max-width: min(56vw, 440px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -937,13 +943,16 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 .file-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid #4de0a72e; border-radius: 4px; background: #4de0a707; color: #7ae3b5; }
 .file-icon svg { width: 16px; height: 16px; fill: none; stroke: currentcolor; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
 .file-icon.is-terminal { font: 600 9px var(--font-mono), monospace; letter-spacing: .04em; }
-.instance-control { display: flex; min-height: 52px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #aaffda23; border-radius: 6px; padding: 9px 14px; background: #ffffff03; }
+.instance-control { display: flex; min-height: 52px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-radius: 6px; padding: 9px 14px; background: rgba(255,255,255,.035); }
 .instance-control > div:first-child { display: flex; flex-direction: column; gap: 4px; }
 .instance-control span { color: #c0d2c8; font: 500 11px var(--font-mono), monospace; letter-spacing: .1em; }
 .instance-control small { color: #83988d; font: 10px var(--font-mono), monospace; }
 .instance-control > button, .instance-control > a, .instance-actions a { border: 1px solid #4de0a74d; border-radius: 4px; padding: 8px 12px; background: #4de0a711; color: #8bf0c4; font: 600 11px var(--font-mono), monospace; }
 .instance-control button:disabled { cursor: wait; opacity: .55; }
 .instance-actions { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+.instance-actions form { margin: 0; }
+.instance-actions form button, .instance-actions > button { border: 1px solid #4de0a74d; border-radius: 4px; padding: 8px 12px; background: #4de0a711; }
+.instance-copy-status { flex-basis: 100%; text-align: right; }
 .instance-command { max-width: min(48vw, 320px); overflow: hidden; color: #9adfbe; font: 11px var(--font-mono), monospace; text-overflow: ellipsis; white-space: nowrap; user-select: all; }
 .instance-actions button { color: #a5b7ad; font: 11px var(--font-mono), monospace; }
 .instance-control > p { flex-basis: 100%; margin: 0; color: #ff989c; font-size: 12px; }
@@ -951,7 +960,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 .instance-control.vm-pending strong { color: #a8b7af; font-size: 12px; font-weight: 600; }
 .instance-control.vm-pending p { margin-top: 5px; color: #718078; }
 .flag-form { margin: 0; }
-.dialog-resources + .flag-form { border-top: 1px solid #aaffda14; padding-top: 14px; }
+.dialog-resources + .flag-form { padding-top: 14px; }
 .flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .flag-form label { display: block; margin: 0; font-size: 11px; letter-spacing: .05em; color: #9bb1a4; }
 .flag-status-badge { display: inline-flex; align-items: center; gap: 7px; color: #92a39a; font: 500 11px var(--font-mono), monospace; }
@@ -1155,22 +1164,22 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 /* Light mode */
 :root[data-theme="light"] {
     color-scheme: light;
-    --background: 143 13% 82%;
+    --background: 140 8% 95%;
     --foreground: 150 29% 10%;
-    --card: 142 17% 91%;
+    --card: 140 14% 98%;
     --card-foreground: 150 29% 10%;
-    --popover: 142 17% 91%;
+    --popover: 140 14% 98%;
     --popover-foreground: 150 29% 10%;
     --primary: 158 92% 15%;
     --primary-foreground: 0 0% 100%;
-    --muted: 143 15% 84%;
+    --muted: 144 10% 89%;
     --muted-foreground: 151 16% 29%;
-    --border: 150 18% 61%;
-    --input: 142 17% 91%;
+    --border: 150 13% 68%;
+    --input: 140 14% 98%;
     --ring: 158 92% 15%;
-    --ink: #cad6cf;
-    --panel: #e6ede9;
-    --panel-raised: #d8e3dd;
+    --ink: #f0f3f1;
+    --panel: #ffffff;
+    --panel-raised: #e5ece8;
     --line: rgba(12, 52, 36, .28);
     --line-strong: rgba(12, 52, 36, .46);
     --muted: #425c4e;
@@ -1188,16 +1197,16 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
 
   .app-shell {
     background:
-      radial-gradient(ellipse at 16% 82%, rgba(3, 76, 54, .17), transparent 38%),
-      radial-gradient(ellipse at 78% 35%, rgba(3, 76, 54, .12), transparent 42%),
+      radial-gradient(ellipse at 16% 82%, rgba(3, 76, 54, .09), transparent 38%),
+      radial-gradient(ellipse at 78% 35%, rgba(3, 76, 54, .07), transparent 42%),
       var(--ink);
   }
   .app-shell::before { opacity: .52; }
   .network-canvas { opacity: .44; mix-blend-mode: multiply; filter: saturate(.82) contrast(1.22); }
 
-  .site-header { border-color: var(--line); background: rgba(202, 214, 207, .93); backdrop-filter: blur(16px); }
+  .site-header { border-color: rgba(12,52,36,.18); background: rgba(255,255,255,.94); box-shadow: 0 14px 38px rgba(24,55,41,.08); }
   .brand-logo { filter: brightness(0) saturate(100%) invert(18%) sepia(22%) saturate(1076%) hue-rotate(105deg) brightness(89%) contrast(95%); }
-  .site-footer { border-color: var(--line); }
+  .site-footer { border-color: rgba(12,52,36,.18); background: rgba(255,255,255,.62); }
   .site-footer p:not(.eyebrow),
   .site-footer a { color: #415a4d; }
   .site-footer p span { color: var(--green); }
@@ -1338,7 +1347,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .profile-avatar-actions label { color: #277358; }
   .profile-avatar-actions label:hover { color: var(--green); }
 
-  .category-tabs { background: rgba(230, 237, 233, .86); box-shadow: inset 0 1px rgba(255,255,255,.5), 0 16px 45px rgba(18, 47, 33, .14); }
+  .category-tabs { background: rgba(255,255,255,.9); box-shadow: 0 14px 34px rgba(18,47,33,.1), inset 0 1px white; }
   .category-tabs button { color: #40594c; }
   .category-tabs button span { color: #586f62; }
   .category-tabs button:hover { color: #173126; }
@@ -1350,7 +1359,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
     background:
       radial-gradient(circle at 14% -12%, rgba(255, 255, 255, .48), transparent 38%),
       linear-gradient(112deg, rgba(3, 76, 54, .13), transparent 37%),
-      rgba(230, 237, 233, .9);
+      rgba(248, 250, 249, .9);
     color: #14241c;
     box-shadow: 0 22px 48px rgba(24, 55, 41, .17), inset 0 1px white, inset 0 -1px rgba(8, 125, 87, .08);
     backdrop-filter: blur(12px);
@@ -1366,7 +1375,7 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .stacked-card.is-solved .stacked-card-surface { background-color: rgba(220, 239, 230, .78); box-shadow: 0 22px 48px rgba(24, 55, 41, .17), 0 0 28px color-mix(in srgb, var(--category-accent) 12%, transparent), inset 0 1px white; }
 
   .challenge-dialog-backdrop { background: rgba(26, 47, 37, .56); backdrop-filter: blur(8px); }
-  .challenge-dialog { background: var(--panel); box-shadow: 0 40px 120px rgba(20, 45, 33, .3); }
+  .challenge-dialog { background: var(--panel); box-shadow: 0 40px 120px rgba(20, 45, 33, .24); }
   .dialog-header { background: linear-gradient(110deg, rgba(8, 125, 87, .09), transparent 70%), repeating-linear-gradient(90deg, transparent 0 11px, rgba(8, 125, 87, .035) 11px 12px); }
   .dialog-close { background: rgba(230, 237, 233, .82); color: #40594c; }
   .dialog-close:hover { color: #14241c; }
@@ -1386,9 +1395,9 @@ a.challenge-file:hover { border-color: #4de0a780; background: #4de0a708; }
   .challenge-description a,
   .challenge-description code { color: var(--green); }
   .challenge-description pre { background: #d7e2dc; }
-  .dialog-dock { background: #d7e2dc; }
+  .dialog-dock { background: #e7ede9; box-shadow: 0 -18px 44px rgba(24,55,41,.08); }
   .challenge-file,
-  .instance-control { background: rgba(230, 237, 233, .86); color: #263f32; }
+  .instance-control { background: rgba(255,255,255,.72); color: #263f32; }
   .instance-control span { color: #30483c; }
   .flag-form .flag-input-box { border-color: #879f92; background: #edf2ef; }
   .flag-form input { color: #14241c; }
