@@ -66,33 +66,9 @@ if (protocol === 'tcp') {
     const startedAt = Date.now();
     const url = new URL(request.url || '/', 'http://instance');
     const cookieToken = request.headers.cookie?.match(/(?:^|;\s*)kctf_instance_token=([^;]+)/)?.[1] || '';
-    if (request.method === 'POST' && url.pathname === '/.kctf/session') {
-      let body = '';
-      request.setEncoding('utf8');
-      request.on('data', (chunk) => {
-        if (body.length <= 4096) body += chunk;
-      });
-      request.on('end', () => {
-        const token = body.length <= 4096 ? new URLSearchParams(body).get('token') || '' : '';
-        if (!validToken(token)) {
-          response.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
-          response.end('Unauthorized\n');
-          void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, status: 401, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
-          return;
-        }
-        response.writeHead(303, {
-          Location: '/',
-          'Set-Cookie': `kctf_instance_token=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/`,
-          'Cache-Control': 'no-store',
-        });
-        response.end();
-        void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, status: 303, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
-      });
-      return;
-    }
     if (!validToken(decodeURIComponent(cookieToken))) {
       response.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
-      response.end('Unauthorized: open the instance from the CTF platform first.\n');
+      response.end('Unauthorized\n');
       void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, query: safeQuery(url), status: 401, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
       return;
     }

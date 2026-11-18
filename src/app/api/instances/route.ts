@@ -10,6 +10,24 @@ import { prisma } from '@/lib/prisma';
 import { consumeRateLimit, getRawConnectingIp, rateLimitHeaders } from '@/lib/rate-limit';
 
 const createSchema = z.object({ challengeId: z.string().min(1).max(64) });
+const instanceCookie = 'kctf_instance_token';
+
+function setInstanceCookie(response: NextResponse, token: string, expiresAt: Date) {
+  response.cookies.set({
+    name: instanceCookie,
+    value: token,
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    expires: expiresAt,
+  });
+  return response;
+}
+
+function clearInstanceCookie(response: NextResponse) {
+  response.cookies.set({ name: instanceCookie, value: '', httpOnly: true, sameSite: 'lax', path: '/', maxAge: 0 });
+  return response;
+}
 
 async function currentUser() {
   const session = await auth();
@@ -28,7 +46,7 @@ export async function GET(request: NextRequest) {
   if (owner instanceof Error) return NextResponse.json({ error: owner.message }, { status: 409 });
 
   const instance = await prisma.challengeInstance.findUnique({ where: { ownerKey: owner.key } });
-  if (!instance) return NextResponse.json({ instance: null });
+  if (!instance) return clearInstanceCookie(NextResponse.json({ instance: null }));
 
   if (instance.expiresAt.getTime() <= Date.now()) {
     await destroyRemoteInstance(instance.token).catch(() => null);
@@ -50,10 +68,10 @@ export async function GET(request: NextRequest) {
         expiresAt: instance.expiresAt.toISOString(),
       },
     });
-    return NextResponse.json({ instance: null });
+    return clearInstanceCookie(NextResponse.json({ instance: null }));
   }
 
-  return NextResponse.json({
+  return setInstanceCookie(NextResponse.json({
     instance: {
       challengeId: instance.challengeId,
       instanceSlug: instance.instanceSlug,
@@ -61,7 +79,7 @@ export async function GET(request: NextRequest) {
       accessToken: instance.accessToken,
       expiresAt: instance.expiresAt.toISOString(),
     },
-  });
+  }), instance.accessToken, instance.expiresAt);
 }
 
 export async function POST(request: NextRequest) {
@@ -221,7 +239,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({
+    return setInstanceCookie(NextResponse.json({
       instance: {
         challengeId: instance.challengeId,
         instanceSlug: instance.instanceSlug,
@@ -229,7 +247,7 @@ export async function POST(request: NextRequest) {
         accessToken: instance.accessToken,
         expiresAt: instance.expiresAt.toISOString(),
       },
-    }, { headers: rateLimitHeaders(limit) });
+    }, { headers: rateLimitHeaders(limit) }), instance.accessToken, instance.expiresAt);
   } catch (error) {
     console.error('Failed to create challenge instance.', error);
     recordServerLog({
@@ -284,7 +302,7 @@ export async function DELETE(request: NextRequest) {
       message: `활성 Instance 없음 상태에서 종료 요청: ${actor}`,
       params: { instancerId: user.instancerId },
     });
-    return NextResponse.json({ instance: null });
+    return clearInstanceCookie(NextResponse.json({ instance: null }));
   }
 
   try {
@@ -329,5 +347,5 @@ export async function DELETE(request: NextRequest) {
       vmUrl: instance.url.split('?')[0],
     },
   });
-  return NextResponse.json({ instance: null });
+  return clearInstanceCookie(NextResponse.json({ instance: null }));
 }
