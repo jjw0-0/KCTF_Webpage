@@ -2,11 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function signIn(page: Page, clientIp: string) {
   await page.setExtraHTTPHeaders({ 'x-real-ip': clientIp });
-  await page.goto('/login?callbackUrl=%2Fctf');
+  await page.goto('/login?callbackUrl=%2Fchallenges');
   await page.getByLabel('이메일').fill('e2e@example.test');
   await page.getByLabel('비밀번호').fill('e2e-password-123');
   await page.getByRole('button', { name: '로그인', exact: true }).click();
-  await expect(page).toHaveURL(/\/ctf$/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/challenges$/, { timeout: 20_000 });
 }
 
 test('desktop navigation and footer span the viewport in both themes', async ({ page }, testInfo) => {

@@ -14,7 +14,7 @@ function close(server) {
   return new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
 
-test('HTTP gateway exchanges a POST token for a cookie and rejects query tokens', async () => {
+test('HTTP gateway accepts the platform cookie and rejects URL tokens', async () => {
   const upstream = http.createServer((_request, response) => response.end('challenge'));
   const targetPort = await listen(upstream);
   const portProbe = http.createServer();
@@ -47,18 +47,9 @@ test('HTTP gateway exchanges a POST token for a cookie and rejects query tokens'
     const queryAttempt = await fetch(`http://127.0.0.1:${listenPort}/?token=${token}`);
     assert.equal(queryAttempt.status, 401);
 
-    const exchange = await fetch(`http://127.0.0.1:${listenPort}/.kctf/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ token }),
-      redirect: 'manual',
+    const authorized = await fetch(`http://127.0.0.1:${listenPort}/`, {
+      headers: { Cookie: `kctf_instance_token=${encodeURIComponent(token)}` },
     });
-    assert.equal(exchange.status, 303);
-    assert.equal(exchange.headers.get('location'), '/');
-    const cookie = exchange.headers.get('set-cookie');
-    assert.match(cookie, /^kctf_instance_token=[^;]+; HttpOnly; SameSite=Lax; Path=\/$/);
-
-    const authorized = await fetch(`http://127.0.0.1:${listenPort}/`, { headers: { Cookie: cookie.split(';')[0] } });
     assert.equal(authorized.status, 200);
     assert.equal(await authorized.text(), 'challenge');
   } finally {

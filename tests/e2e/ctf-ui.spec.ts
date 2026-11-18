@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 let clientCounter = 40;
 
-async function signIn(page: Page, target = '/ctf') {
+async function signIn(page: Page, target = '/challenges') {
   clientCounter += 1;
   await page.setExtraHTTPHeaders({ 'x-real-ip': `198.51.100.${clientCounter}` });
   await page.goto(`/login?callbackUrl=${encodeURIComponent(target)}`);
@@ -27,7 +27,7 @@ test('category filters and the challenge dialog keep the original interaction', 
 });
 
 test('a direct challenge link opens and closes without changing its labels', async ({ page }) => {
-  await signIn(page, '/ctf?challenge=e2e-markdown');
+  await signIn(page, '/challenges?challenge=e2e-markdown');
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Markdown Signal' })).toBeVisible();
   await expect(dialog.getByText('Author')).toBeVisible();
@@ -36,10 +36,24 @@ test('a direct challenge link opens and closes without changing its labels', asy
 
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await signIn(page, '/ctf?challenge=e2e-tcp');
+  await signIn(page, '/challenges?challenge=e2e-tcp');
   const body = page.locator('.dialog-body');
   await expect(page.locator('.dialog-scroll-hint')).toBeVisible();
   await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
   await expect(page.locator('.dialog-scroll-hint')).toHaveCount(0);
   await expect(page.getByLabel('플래그 제출')).toBeInViewport();
+});
+
+test('HTTP Instance exposes a clean address without a session form', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await signIn(page, '/challenges?challenge=e2e-instance');
+  const instance = page.getByRole('region', { name: 'Challenge Instance' });
+  await expect(instance.getByText('http://instance.example.test:10022')).toBeVisible();
+  const open = instance.getByRole('link', { name: '열기' });
+  await expect(open).toHaveAttribute('href', 'http://instance.example.test:10022');
+  await expect(instance.locator('form')).toHaveCount(0);
+  await instance.getByRole('button', { name: 'Instance 주소 복사' }).click();
+  await expect(instance.getByText('클립보드에 복사했습니다.')).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('http://instance.example.test:10022');
+  expect((await context.cookies()).find((cookie) => cookie.name === 'kctf_instance_token')?.value).toBe('e2e-browser-token');
 });

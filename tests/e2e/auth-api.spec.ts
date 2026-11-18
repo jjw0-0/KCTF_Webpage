@@ -19,17 +19,17 @@ test('anonymous users cannot reach the challenge board or submit flags', async (
     data: { flag: 'KCTF{e2e_signal}' },
   });
   expect(submission.status()).toBe(401);
-  await page.goto('/ctf?challenge=e2e-markdown');
+  await page.goto('/challenges?challenge=e2e-markdown');
   await expect(page).toHaveURL(/\/login\?callbackUrl=/);
   await expect(page.getByLabel('이메일')).toBeVisible();
 });
 
 test('a registered user can sign in and open a challenge deep link', async ({ page }) => {
-  await page.goto('/login?callbackUrl=%2Fctf%3Fchallenge%3De2e-markdown');
+  await page.goto('/login?callbackUrl=%2Fchallenges%3Fchallenge%3De2e-markdown');
   await page.getByLabel('이메일').fill('e2e@example.test');
   await page.getByLabel('비밀번호').fill('e2e-password-123');
   await page.getByRole('button', { name: '로그인' }).click();
-  await expect(page).toHaveURL(/\/ctf\?challenge=e2e-markdown/);
+  await expect(page).toHaveURL(/\/challenges\?challenge=e2e-markdown/);
   await expect(page.getByText('Markdown Signal').first()).toBeVisible();
 });
 
@@ -39,7 +39,7 @@ test('wrong credentials fail without granting access', async ({ page }) => {
   await page.getByLabel('비밀번호').fill('wrong-password-123');
   await page.getByRole('button', { name: '로그인' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await page.goto('/ctf');
+  await page.goto('/challenges');
   await expect(page).toHaveURL(/\/login\?callbackUrl=/);
 });
 
@@ -55,7 +55,7 @@ test('authenticated flag flow validates input, scores once, and denies admin wri
   await page.getByLabel('이메일').fill(email);
   await page.getByLabel('비밀번호').fill('api-password-123');
   await page.getByRole('button', { name: '로그인' }).click();
-  await expect(page).toHaveURL(/\/ctf/);
+  await expect(page).toHaveURL(/\/challenges/);
 
   const api = page.context().request;
   const adminWrite = await api.post('/api/admin/challenges', { data: {} });

@@ -44,6 +44,13 @@ try {
         + '\n\n```text\n' + Array.from({ length: 40 }, (_, index) => `TRACE ${String(index + 1).padStart(2, '0')} HELLO relay`).join('\n') + '\n```',
       connectionType: 'TCP' as const, connectionUrl: 'relay.example.com:31337', flag: 'KCTF{e2e_relay}',
     },
+    {
+      id: 'e2e-instance', title: 'HTTP Workshop', categoryId: 'e2e-web', points: 150,
+      summary: 'Start the isolated HTTP service.',
+      description: '# Workshop\n\nOpen the isolated service and inspect its response.',
+      connectionType: 'HTTP' as const, connectionUrl: null, flag: 'KCTF{e2e_instance}',
+      usesVm: true, instanceSlug: 'e2e-http', deploymentStatus: 'READY' as const,
+    },
   ]) {
     await prisma.challenge.upsert({
       where: { id: challenge.id },
@@ -52,13 +59,27 @@ try {
     });
   }
 
-  await prisma.user.upsert({
+  const player = await prisma.user.upsert({
     where: { email: 'e2e@example.test' },
     create: {
       email: 'e2e@example.test', username: 'e2e_player',
       passwordHash: await bcrypt.hash('e2e-password-123', 10), role: 'USER',
     },
     update: { role: 'USER' },
+  });
+  await prisma.challengeInstance.upsert({
+    where: { ownerKey: `user:${player.id}` },
+    create: {
+      id: 'e2e-active-instance', ownerKey: `user:${player.id}`, userId: player.id,
+      challengeId: 'e2e-instance', instanceSlug: 'e2e-http', token: 'e2e-runtime-token',
+      accessToken: 'e2e-browser-token', url: 'http://instance.example.test:10022',
+      expiresAt: new Date(Date.now() + 60 * 60_000),
+    },
+    update: {
+      challengeId: 'e2e-instance', instanceSlug: 'e2e-http', token: 'e2e-runtime-token',
+      accessToken: 'e2e-browser-token', url: 'http://instance.example.test:10022',
+      expiresAt: new Date(Date.now() + 60 * 60_000),
+    },
   });
   await prisma.user.upsert({
     where: { email: 'e2e-admin@example.test' },
