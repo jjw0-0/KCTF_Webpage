@@ -39,7 +39,7 @@ function clientIp(socket) {
 }
 
 function safeQuery(url) {
-  return Object.fromEntries([...url.searchParams].filter(([key]) => key.toLowerCase() !== 'token'));
+  return Object.fromEntries(url.searchParams);
 }
 
 if (protocol === 'tcp') {
@@ -65,26 +65,35 @@ if (protocol === 'tcp') {
   http.createServer((request, response) => {
     const startedAt = Date.now();
     const url = new URL(request.url || '/', 'http://instance');
-    const queryToken = url.searchParams.get('token') || '';
-    const bearer = request.headers.authorization?.replace(/^Bearer\s+/i, '') || '';
-    const headerToken = String(request.headers['x-kctf-token'] || '');
     const cookieToken = request.headers.cookie?.match(/(?:^|;\s*)kctf_instance_token=([^;]+)/)?.[1] || '';
-    const token = queryToken || bearer || headerToken || decodeURIComponent(cookieToken);
-    if (!validToken(token)) {
-      response.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
-      response.end('Unauthorized: open the instance URL issued by the CTF platform.\n');
-      void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, query: safeQuery(url), status: 401, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
+    if (request.method === 'POST' && url.pathname === '/.kctf/session') {
+      let body = '';
+      request.setEncoding('utf8');
+      request.on('data', (chunk) => {
+        if (body.length <= 4096) body += chunk;
+      });
+      request.on('end', () => {
+        const token = body.length <= 4096 ? new URLSearchParams(body).get('token') || '' : '';
+        if (!validToken(token)) {
+          response.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+          response.end('Unauthorized\n');
+          void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, status: 401, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
+          return;
+        }
+        response.writeHead(303, {
+          Location: '/',
+          'Set-Cookie': `kctf_instance_token=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/`,
+          'Cache-Control': 'no-store',
+        });
+        response.end();
+        void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, status: 303, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
+      });
       return;
     }
-    if (queryToken) {
-      url.searchParams.delete('token');
-      response.writeHead(302, {
-        Location: url.pathname + url.search,
-        'Set-Cookie': `kctf_instance_token=${encodeURIComponent(queryToken)}; HttpOnly; SameSite=Lax; Path=/`,
-        'Cache-Control': 'no-store',
-      });
-      response.end();
-      void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, query: safeQuery(url), status: 302, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
+    if (!validToken(decodeURIComponent(cookieToken))) {
+      response.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+      response.end('Unauthorized: open the instance from the CTF platform first.\n');
+      void log({ protocol: 'http', ip: clientIp(request.socket), method: request.method, path: url.pathname, query: safeQuery(url), status: 401, userAgent: request.headers['user-agent'] || '-', durationMs: Date.now() - startedAt });
       return;
     }
 
@@ -97,8 +106,6 @@ if (protocol === 'tcp') {
     request.on('end', () => {
       const body = Buffer.concat(chunks);
       const headers = { ...request.headers, host: `${targetHost}:${targetPort}`, 'x-forwarded-for': clientIp(request.socket) };
-      delete headers.authorization;
-      delete headers['x-kctf-token'];
       delete headers.cookie;
       headers['content-length'] = String(body.length);
       const upstream = http.request({ hostname: targetHost, port: targetPort, method: request.method, path: url.pathname + url.search, headers }, (upstreamResponse) => {

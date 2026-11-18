@@ -854,7 +854,7 @@ app.post('/api/instancer/create', requireBearer, async (request, response) => {
 
       const scheme = deployment.manifest.protocol === 'http' ? 'http' : 'tcp';
       const baseUrl = `${scheme}://${publicHost}:${hostPort}${scheme === 'http' ? '/' : ''}`;
-      const url = scheme === 'http' ? `${baseUrl}?token=${encodeURIComponent(accessToken)}` : baseUrl;
+      const url = baseUrl;
       const instance = {
         token,
         accessToken,

@@ -11,6 +11,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(enabled);
   const [requiresLogin, setRequiresLogin] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
     if (!enabled) return;
@@ -68,6 +69,17 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
   const isCurrent = instance?.challengeId === challengeId;
   const tcpCommand = isCurrent && connectionType === 'TCP' ? getTcpCommand(instance.url) : undefined;
   const authenticatedTcpCommand = tcpCommand && instance ? `(printf 'KCTF_TOKEN ${instance.accessToken}\\n'; cat) | ${tcpCommand}` : undefined;
+  const instanceUrl = instance?.url.split('?')[0];
+
+  const copyAddress = async () => {
+    if (!instanceUrl) return;
+    try {
+      await navigator.clipboard.writeText(instanceUrl);
+      setCopyStatus('주소를 복사했습니다.');
+    } catch {
+      setCopyStatus('주소를 복사하지 못했습니다.');
+    }
+  };
 
   return (
     <section className="instance-control" aria-label="Challenge Instance">
@@ -79,10 +91,19 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
         <Link href={`/login?callbackUrl=/ctf`}>로그인 후 생성</Link>
       ) : isCurrent ? (
         <div className="instance-actions">
-          {authenticatedTcpCommand
-            ? <code className="instance-command">{authenticatedTcpCommand}</code>
-            : <a href={instance.url} target="_blank" rel="noreferrer">Instance 열기</a>}
+          {authenticatedTcpCommand ? (
+            <code className="instance-command">{authenticatedTcpCommand}</code>
+          ) : (
+            <>
+              <form method="post" action={`${instanceUrl}/.kctf/session`} target="_blank">
+                <input type="hidden" name="token" value={instance.accessToken} />
+                <button type="submit">Instance 열기</button>
+              </form>
+              <button type="button" onClick={() => void copyAddress()}>주소 복사</button>
+            </>
+          )}
           <button type="button" onClick={() => void destroy()} disabled={loading}>종료</button>
+          {copyStatus && <span className="instance-copy-status" role="status">{copyStatus}</span>}
         </div>
       ) : (
         <button type="button" onClick={() => void create()} disabled={loading}>
