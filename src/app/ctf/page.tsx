@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { extractHeadersMeta, recordServerLog } from '@/lib/admin-logs';
 import { getCategories } from '@/lib/categories';
 import { getChallenges } from '@/lib/challenges';
+import { getCtfSchedule } from '@/lib/ctf-schedule';
 import ChallengeBoard from './ChallengeBoard';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +16,10 @@ type CtfPageProps = {
 
 export default async function CtfPage({ searchParams }: CtfPageProps) {
   const { category, challenge } = await searchParams;
-  const [session, categories, hdrs] = await Promise.all([
+  const [session, categories, schedule, hdrs] = await Promise.all([
     auth(),
     getCategories(),
+    getCtfSchedule(),
     headers(),
   ]);
   if (!session?.user?.id) {
@@ -53,6 +55,7 @@ export default async function CtfPage({ searchParams }: CtfPageProps) {
       <ChallengeBoard
         initialCategory={category ?? 'all'}
         initialChallengeId={challenge}
+        schedule={schedule}
         isAuthenticated
         categories={categories}
         challenges={challenges}

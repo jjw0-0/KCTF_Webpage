@@ -25,18 +25,11 @@ export default function ChallengeDescription({ content }: { content: string }) {
             );
             return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
           },
-          img: ({ src, alt, title }) => {
-            if (!src) return <span>{alt}</span>;
-            const dimensions = /^(\d{1,5})x(\d{1,5})$/.exec(title ?? '');
-            const width = dimensions ? Number(dimensions[1]) : 0;
-            const height = dimensions ? Number(dimensions[2]) : 0;
-            const hasDimensions = width > 0 && width <= 10_000 && height > 0 && height <= 10_000;
-            return (
-              // Challenge media can come from author-provided hosts and does not use the image optimizer.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={src} alt={alt ?? ''} title={hasDimensions ? undefined : title ?? undefined} width={hasDimensions ? width : undefined} height={hasDimensions ? height : undefined} loading="lazy" />
-            );
-          },
+          img: ({ src, alt }) => src ? (
+            // Challenge media can come from author-provided hosts and does not use the image optimizer.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt={alt ?? ''} loading="lazy" />
+          ) : <span>{alt}</span>,
         }}
       >{content}</Markdown>
     </div>

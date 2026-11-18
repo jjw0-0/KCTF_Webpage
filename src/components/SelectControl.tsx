@@ -22,8 +22,6 @@ export default function SelectControl<T extends string>({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const listboxId = useId();
-  const valueId = useId();
-  const searchRef = useRef({ text: '', time: 0 });
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
 
   useEffect(() => {
@@ -40,35 +38,13 @@ export default function SelectControl<T extends string>({
   }, [open, selectedIndex]);
 
   const onOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    if (event.key === 'Tab') {
-      // Return to the trigger before the browser chooses the adjacent tab stop.
-      triggerRef.current?.focus();
-      setOpen(false);
-      return;
-    }
     if (event.key === 'Escape') {
       event.preventDefault();
       setOpen(false);
       triggerRef.current?.focus();
       return;
     }
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
-      if (event.key.length !== 1 || event.key === ' ' || event.ctrlKey || event.altKey || event.metaKey || event.nativeEvent.isComposing) return;
-      event.preventDefault();
-      const now = event.timeStamp;
-      const letter = event.key.toLocaleLowerCase();
-      const previous = now - searchRef.current.time < 700 ? searchRef.current.text : '';
-      const text = previous === letter ? letter : previous + letter;
-      searchRef.current = { text, time: now };
-      for (let offset = text.length === 1 ? 1 : 0; offset < options.length + 1; offset++) {
-        const candidate = (index + offset) % options.length;
-        if (options[candidate].label.toLocaleLowerCase().startsWith(text)) {
-          optionRefs.current[candidate]?.focus();
-          break;
-        }
-      }
-      return;
-    }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
     const nextIndex = event.key === 'Home'
       ? 0
@@ -82,9 +58,6 @@ export default function SelectControl<T extends string>({
     <div
       className="ui-select"
       ref={rootRef}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
       onKeyDown={(event) => {
         if (open && event.key === 'Escape') {
           event.preventDefault();
@@ -98,21 +71,19 @@ export default function SelectControl<T extends string>({
         type="button"
         className="ui-select-trigger"
         aria-label={ariaLabel}
-        aria-describedby={valueId}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        disabled={disabled || options.length === 0}
-        onClick={() => { searchRef.current = { text: '', time: 0 }; setOpen((current) => !current); }}
+        disabled={disabled}
+        onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
           if (['ArrowDown', 'ArrowUp'].includes(event.key) && !open) {
             event.preventDefault();
-            searchRef.current = { text: '', time: 0 };
             setOpen(true);
           }
         }}
       >
-        <span id={valueId}>{options[selectedIndex]?.label}</span>
+        <span>{options[selectedIndex]?.label}</span>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
       </button>
       {open && (
@@ -123,7 +94,6 @@ export default function SelectControl<T extends string>({
               ref={(element) => { optionRefs.current[index] = element; }}
               type="button"
               role="option"
-              tabIndex={-1}
               aria-selected={option.value === value}
               onKeyDown={(event) => onOptionKeyDown(event, index)}
               onClick={() => {
