@@ -143,7 +143,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
   mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
 }
 
-.network-canvas { opacity: .5; mask-image: radial-gradient(ellipse at center, black 28%, transparent 86%); }
+.network-canvas { opacity: .68; mask-image: radial-gradient(ellipse at center, black 34%, transparent 94%); }
 
 .site-header {
   position: sticky;
@@ -1202,7 +1202,7 @@ a.challenge-file:hover { background: #4de0a70d; box-shadow: inset 0 0 0 1px #4de
       var(--ink);
   }
   .app-shell::before { opacity: .52; }
-  .network-canvas { opacity: .44; mix-blend-mode: multiply; filter: saturate(.82) contrast(1.22); }
+  .network-canvas { opacity: .58; mix-blend-mode: multiply; filter: saturate(1.02) contrast(1.28); }
 
   .site-header { border-color: rgba(12,52,36,.18); background: rgba(255,255,255,.94); box-shadow: 0 14px 38px rgba(24,55,41,.08); }
   .brand-logo { filter: brightness(0) saturate(100%) invert(18%) sepia(22%) saturate(1076%) hue-rotate(105deg) brightness(89%) contrast(95%); }
