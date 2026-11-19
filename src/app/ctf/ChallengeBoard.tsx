@@ -11,6 +11,7 @@ import { getTcpCommand, safeResourceUrl } from '@/lib/challenge-media';
 type ChallengeBoardProps = {
   initialCategory: string;
   initialChallengeId?: string;
+  modalLayout?: 'console' | 'single';
   schedule?: CtfSchedule;
   isAuthenticated: boolean;
   categories: Category[];
@@ -21,7 +22,7 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (update: () => void) => { finished: Promise<void> };
 };
 
-export default function ChallengeBoard({ initialCategory, initialChallengeId, isAuthenticated, categories, challenges: initialChallenges }: ChallengeBoardProps) {
+export default function ChallengeBoard({ initialCategory, initialChallengeId, modalLayout = 'console', isAuthenticated, categories, challenges: initialChallenges }: ChallengeBoardProps) {
   const visibleCategories = useMemo(() => categories.filter((category) => category.visible), [categories]);
   const [challenges, setChallenges] = useState(initialChallenges);
   const [activeCategory, setActiveCategory] = useState(
@@ -97,7 +98,10 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!dialogRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -241,6 +245,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={(event) => openChallenge(challenge, event.currentTarget.querySelector<HTMLElement>('.stacked-card-surface') ?? event.currentTarget)}
                 >
+                  <span className="stacked-card-depth is-back" aria-hidden="true" />
                   <span className="stacked-card-surface">
                     <svg className="card-circuit" viewBox="0 0 350 184" fill="none" aria-hidden="true">
                       <path d="M236 0v23l20 20h94M267 0v12l20 20h63M350 65h-37l-14 14h-40M0 142h20l12 12h50M350 129h-26l-16 16v39" />
@@ -281,7 +286,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
         <div className={`challenge-dialog-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={closeChallenge}>
           <section
             ref={dialogRef}
-            className={`challenge-dialog ${transitionChallengeId === selected.id ? 'is-shared-transition' : ''}`}
+            className={`challenge-dialog is-${modalLayout}-layout ${transitionChallengeId === selected.id ? 'is-shared-transition' : ''}`}
             style={{ '--category-accent': visibleCategories.find((category) => category.slug === selected.category)?.color ?? '#34b27b', viewTransitionName: transitionChallengeId === selected.id ? 'challenge-panel' : undefined } as React.CSSProperties}
             role="dialog"
             aria-modal="true"
@@ -303,18 +308,19 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 </div>
               </div>
             </header>
-            <div className="dialog-description-area">
-              <div ref={dialogBodyRef} className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
-                <ChallengeDescription content={selected.description || selected.summary} />
-              </div>
-              {hasMoreDescription && (
-                <div className="dialog-scroll-hint" aria-hidden="true">
-                  아래로 스크롤하여 설명 계속 읽기
-                  <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
+            <div className="dialog-workspace">
+              <div className="dialog-description-area">
+                <div ref={dialogBodyRef} className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
+                  <ChallengeDescription content={selected.description || selected.summary} />
                 </div>
-              )}
-            </div>
-            <footer className="dialog-dock">
+                {hasMoreDescription && (
+                  <div className="dialog-scroll-hint" aria-hidden="true">
+                    아래로 스크롤하여 설명 계속 읽기
+                    <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
+                  </div>
+                )}
+              </div>
+              <aside className="dialog-dock" aria-label="문제 작업">
               {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
                 <div className="dialog-resources">
                   {selectedFileUrl && (
@@ -378,11 +384,12 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 </div>
                 {!isAuthenticated && selected && (
                   <p className="submission-message error" role="status">
-                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/challenges?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
+                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/challenges?category=${activeCategory}&challenge=${selected.id}${modalLayout === 'single' ? '&modalLayout=single' : ''}`)}`}>로그인해 주세요.</a>
                   </p>
                 )}
               </form>
-            </footer>
+              </aside>
+            </div>
           </section>
         </div>
       )}

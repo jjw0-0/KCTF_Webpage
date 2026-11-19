@@ -11,11 +11,12 @@ import ChallengeBoard from '@/app/ctf/ChallengeBoard';
 export const dynamic = 'force-dynamic';
 
 type ChallengesPageProps = {
-  searchParams: Promise<{ category?: string; challenge?: string }>;
+  searchParams: Promise<{ category?: string; challenge?: string; modalLayout?: string }>;
 };
 
 export default async function ChallengesPage({ searchParams }: ChallengesPageProps) {
-  const { category, challenge } = await searchParams;
+  const { category, challenge, modalLayout: requestedModalLayout } = await searchParams;
+  const modalLayout = requestedModalLayout === 'single' ? 'single' : 'console';
   const [session, categories, schedule, hdrs] = await Promise.all([
     auth(),
     getCategories(),
@@ -26,6 +27,7 @@ export default async function ChallengesPage({ searchParams }: ChallengesPagePro
     const params = new URLSearchParams();
     if (category) params.set('category', category);
     if (challenge) params.set('challenge', challenge);
+    if (modalLayout === 'single') params.set('modalLayout', modalLayout);
     const callbackUrl = params.size ? `/challenges?${params.toString()}` : '/challenges';
     const meta = extractHeadersMeta(hdrs, 'GET', callbackUrl);
     recordServerLog({
@@ -55,6 +57,7 @@ export default async function ChallengesPage({ searchParams }: ChallengesPagePro
       <ChallengeBoard
         initialCategory={category ?? 'all'}
         initialChallengeId={challenge}
+        modalLayout={modalLayout}
         schedule={schedule}
         isAuthenticated
         categories={categories}

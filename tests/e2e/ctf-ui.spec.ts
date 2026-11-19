@@ -34,6 +34,31 @@ test('a direct challenge link opens and closes without changing its labels', asy
   await expect(dialog.getByText('PTS')).toBeVisible();
 });
 
+test('the console dialog is default and the single-column comparison stays URL-selectable', async ({ page }) => {
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await signIn(page, '/challenges?challenge=e2e-markdown');
+  await expect(page.getByRole('dialog')).toHaveClass(/is-console-layout/);
+
+  await page.goto('/challenges?challenge=e2e-markdown&modalLayout=single');
+  await expect(page.getByRole('dialog')).toHaveClass(/is-single-layout/);
+  await expect(page).toHaveURL(/modalLayout=single/);
+});
+
+test('card depth remains decorative and short dialogs keep every action reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await signIn(page);
+  const card = page.getByRole('button', { name: /^Socket Relay,/ });
+  await expect(card.locator('.stacked-card-depth')).toHaveCount(1);
+  await expect(card.locator('.stacked-card-depth').first()).toHaveCSS('pointer-events', 'none');
+  await card.click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeInViewport();
+  const flag = dialog.getByLabel('플래그 제출');
+  await flag.scrollIntoViewIfNeeded();
+  await expect(flag).toBeInViewport();
+});
+
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/challenges?challenge=e2e-tcp');
