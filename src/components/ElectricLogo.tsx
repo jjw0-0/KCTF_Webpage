@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
+import NextImage from 'next/image';
 import { Renderer, Program, Mesh, Triangle, Texture } from 'ogl';
 
 export const KCTF_LOGO_SVG = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
@@ -776,7 +777,6 @@ const ElectricLogo = ({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     container.appendChild(canvas);
-    container.classList.add('is-rendered');
 
     const makeSlot = (): Slot => ({
       shape: null,
@@ -849,6 +849,7 @@ const ElectricLogo = ({
       geometry: new Triangle(gl),
       program: new Program(gl, { vertex, fragment, uniforms, depthTest: false, depthWrite: false })
     });
+    container.classList.add('is-rendered');
 
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const pointer = { x: 0, y: 0, over: false };
@@ -1112,7 +1113,8 @@ const ElectricLogo = ({
 
   return (
     <div ref={containerRef} className={`electric-logo ${className}`.trim()} style={style}>
-      <span className="electric-logo-fallback" aria-hidden="true">KCTF</span>
+      {/* Graphic-only fallback for browsers where WebGL2 is unavailable. */}
+      <NextImage className="electric-logo-static" src={src || KCTF_LOGO_SVG} alt="" width={660} height={170} unoptimized aria-hidden="true" />
     </div>
   );
 };
