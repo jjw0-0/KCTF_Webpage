@@ -2,6 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 
 let clientCounter = 40;
 
+test('public profiles resolve readable usernames and exclude administrators', async ({ page }) => {
+  const response = await page.goto('/users/name/e2e_player');
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole('heading', { name: 'e2e_player', exact: true })).toBeVisible();
+  const admin = await page.goto('/users/name/e2e_admin');
+  expect(admin?.status()).toBe(404);
+});
+
 async function signIn(page: Page, target = '/challenges') {
   clientCounter += 1;
   await page.setExtraHTTPHeaders({ 'x-real-ip': `198.51.100.${clientCounter}` });
@@ -34,14 +42,15 @@ test('a direct challenge link opens and closes without changing its labels', asy
   await expect(dialog.getByText('PTS')).toBeVisible();
 });
 
-test('the console dialog is default and the single-column comparison stays URL-selectable', async ({ page }) => {
+test('the dialog stays single-column even with a legacy layout parameter', async ({ page }) => {
   await page.setViewportSize({ width: 1180, height: 820 });
   await signIn(page, '/challenges?challenge=e2e-markdown');
-  await expect(page.getByRole('dialog')).toHaveClass(/is-console-layout/);
+  await expect(page.locator('.dialog-workspace')).toHaveCSS('flex-direction', 'column');
+  await expect(page.locator('.dialog-body')).toHaveCSS('overflow-y', 'visible');
 
-  await page.goto('/challenges?challenge=e2e-markdown&modalLayout=single');
-  await expect(page.getByRole('dialog')).toHaveClass(/is-single-layout/);
-  await expect(page).toHaveURL(/modalLayout=single/);
+  await page.goto('/challenges?challenge=e2e-markdown&modalLayout=console');
+  await expect(page.locator('.dialog-workspace')).toHaveCSS('flex-direction', 'column');
+  await expect(page.getByRole('dialog')).not.toHaveClass(/is-console-layout/);
 });
 
 test('card depth remains decorative and short dialogs keep every action reachable', async ({ page }) => {
@@ -62,7 +71,7 @@ test('card depth remains decorative and short dialogs keep every action reachabl
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/challenges?challenge=e2e-tcp');
-  const body = page.locator('.dialog-body');
+  const body = page.locator('.dialog-workspace');
   await expect(page.locator('.dialog-scroll-hint')).toBeVisible();
   await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
   await expect(page.locator('.dialog-scroll-hint')).toHaveCount(0);

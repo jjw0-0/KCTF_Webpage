@@ -29,3 +29,24 @@ test('desktop navigation and footer span the viewport in both themes', async ({ 
   const toggledColor = await page.locator('.site-header').evaluate((element) => getComputedStyle(element).backgroundColor);
   expect(toggledColor).not.toBe(initialColor);
 });
+
+test('admin editor controls follow the active theme after switching both ways', async ({ page }) => {
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.91' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('button', { name: '문제 추가하기', exact: true }).click();
+  await expect(page.locator('.challenge-admin-form')).toBeVisible();
+  for (const theme of ['light', 'dark', 'light']) {
+    if (await page.locator('html').getAttribute('data-theme') !== theme) {
+      await page.getByRole('button', { name: '화면 모드 전환' }).click();
+    }
+    const field = page.locator('.challenge-admin-form input[type="number"]').first();
+    await expect(field).toHaveCSS('background-color', theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(7, 12, 10)');
+    await expect(field).toHaveCSS('color', theme === 'light' ? 'rgb(32, 39, 51)' : 'rgb(237, 243, 240)');
+    await expect(page.locator('.scoring-mode-options label').nth(1).locator('strong')).toHaveCSS('color', theme === 'light' ? 'rgb(32, 39, 51)' : 'rgb(237, 243, 240)');
+  }
+});

@@ -11,7 +11,6 @@ import { getTcpCommand, safeResourceUrl } from '@/lib/challenge-media';
 type ChallengeBoardProps = {
   initialCategory: string;
   initialChallengeId?: string;
-  modalLayout?: 'console' | 'single';
   schedule?: CtfSchedule;
   isAuthenticated: boolean;
   categories: Category[];
@@ -22,7 +21,7 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (update: () => void) => { finished: Promise<void> };
 };
 
-export default function ChallengeBoard({ initialCategory, initialChallengeId, modalLayout = 'console', isAuthenticated, categories, challenges: initialChallenges }: ChallengeBoardProps) {
+export default function ChallengeBoard({ initialCategory, initialChallengeId, isAuthenticated, categories, challenges: initialChallenges }: ChallengeBoardProps) {
   const visibleCategories = useMemo(() => categories.filter((category) => category.visible), [categories]);
   const [challenges, setChallenges] = useState(initialChallenges);
   const [activeCategory, setActiveCategory] = useState(
@@ -121,7 +120,10 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, mo
   useEffect(() => {
     const body = dialogBodyRef.current;
     if (!body) return;
-    const update = () => setHasMoreDescription(body.scrollHeight - body.clientHeight - body.scrollTop > 8);
+    const update = () => {
+      const description = body.querySelector('.dialog-description-area');
+      setHasMoreDescription(Boolean(description && description.getBoundingClientRect().bottom > body.getBoundingClientRect().bottom + 8));
+    };
     const observer = new ResizeObserver(update);
     observer.observe(body);
     if (body.firstElementChild) observer.observe(body.firstElementChild);
@@ -247,11 +249,6 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, mo
                 >
                   <span className="stacked-card-depth is-back" aria-hidden="true" />
                   <span className="stacked-card-surface">
-                    <svg className="card-circuit" viewBox="0 0 350 184" fill="none" aria-hidden="true">
-                      <path d="M236 0v23l20 20h94M267 0v12l20 20h63M350 65h-37l-14 14h-40M0 142h20l12 12h50M350 129h-26l-16 16v39" />
-                      <circle cx="259" cy="79" r="3" /><circle cx="82" cy="154" r="3" />
-                      <path className="circuit-ticks" d="M48 16h18m-18 5h9M320 161h-18m18 5h-9" />
-                    </svg>
                     <span className="card-beam" aria-hidden="true" />
                     <span className="card-id">
                       <span>{category.shortName} / {String(index + 1).padStart(3, '0')}</span>
@@ -286,7 +283,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, mo
         <div className={`challenge-dialog-backdrop ${isClosing ? 'is-closing' : ''}`} role="presentation" onMouseDown={closeChallenge}>
           <section
             ref={dialogRef}
-            className={`challenge-dialog is-${modalLayout}-layout ${transitionChallengeId === selected.id ? 'is-shared-transition' : ''}`}
+            className={`challenge-dialog ${transitionChallengeId === selected.id ? 'is-shared-transition' : ''}`}
             style={{ '--category-accent': visibleCategories.find((category) => category.slug === selected.category)?.color ?? '#34b27b', viewTransitionName: transitionChallengeId === selected.id ? 'challenge-panel' : undefined } as React.CSSProperties}
             role="dialog"
             aria-modal="true"
@@ -298,27 +295,23 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, mo
               <div className="dialog-hero">
                 <div className="dialog-title-group">
                   <h2 id="challenge-dialog-title">{selected.title}</h2>
-                  <p className="dialog-author"><span>Author</span> {selected.author || '-'}</p>
+                  <div className="dialog-meta">
+                    <p className="dialog-author"><span>Author</span> {selected.author || '-'}</p>
+                    <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
+                  </div>
                 </div>
                 <div className="dialog-header-actions">
-                  <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
                   <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
                     <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
                   </button>
                 </div>
               </div>
             </header>
-            <div className="dialog-workspace">
+            <div ref={dialogBodyRef} className="dialog-workspace" tabIndex={0} role="region" aria-label="문제 내용 및 제출">
               <div className="dialog-description-area">
-                <div ref={dialogBodyRef} className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
+                <div className="dialog-body">
                   <ChallengeDescription content={selected.description || selected.summary} />
                 </div>
-                {hasMoreDescription && (
-                  <div className="dialog-scroll-hint" aria-hidden="true">
-                    아래로 스크롤하여 설명 계속 읽기
-                    <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
-                  </div>
-                )}
               </div>
               <aside className="dialog-dock" aria-label="문제 작업">
               {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
@@ -384,12 +377,18 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, mo
                 </div>
                 {!isAuthenticated && selected && (
                   <p className="submission-message error" role="status">
-                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/challenges?category=${activeCategory}&challenge=${selected.id}${modalLayout === 'single' ? '&modalLayout=single' : ''}`)}`}>로그인해 주세요.</a>
+                    플래그를 제출하려면 <a href={`/login?callbackUrl=${encodeURIComponent(`/challenges?category=${activeCategory}&challenge=${selected.id}`)}`}>로그인해 주세요.</a>
                   </p>
                 )}
               </form>
               </aside>
             </div>
+            {hasMoreDescription && (
+              <div className="dialog-scroll-hint" aria-hidden="true">
+                아래로 스크롤하여 설명 계속 읽기
+                <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
+              </div>
+            )}
           </section>
         </div>
       )}
