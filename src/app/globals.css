@@ -738,9 +738,18 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 /* Scoreboard and participant profile */
 .scoreboard-main, .profile-main { width: min(100% - 48px, 1180px); margin: 0 auto 130px; }
-.scoreboard-heading { padding: 72px 0 42px; }
-.scoreboard-heading h1 { margin: 0; font-size: clamp(46px, 7vw, 72px); font-weight: 600; line-height: .95; letter-spacing: -.04em; }
-.score-history { margin-bottom: 72px; border-block: 1px solid var(--line); padding: 30px 0 24px; }
+.scoreboard-heading { padding: 64px 0 32px; }
+.scoreboard-heading h1 { margin: 0; font-size: clamp(44px, 6vw, 64px); font-weight: 600; line-height: 1; letter-spacing: -.04em; }
+.score-history,
+.score-table-wrap,
+.profile-card,
+.recent-solves {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .12), inset 0 1px rgba(255, 255, 255, .025);
+}
+.score-history { margin-bottom: 28px; padding: 24px 20px 18px; }
 .score-history > header { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; margin: 0 18px 22px; }
 .score-history h2 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.025em; }
 .score-history header p { color: #718078; font-size: 12px; }
@@ -763,7 +772,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .score-chart-tooltip li i { width: 8px; height: 8px; border-radius: 2px; }
 .score-chart-tooltip li span { color: #dce6e1; font-weight: 500; }
 .score-chart-tooltip li strong { color: var(--green); font: 500 11px var(--font-mono), monospace; font-variant-numeric: tabular-nums; }
-.score-legend { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 12px 18px 0; padding: 0; list-style: none; }
+.score-legend { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 12px 0 0; padding: 0; list-style: none; }
 .score-legend li { min-width: 150px; }
 .score-legend button { display: grid; width: 100%; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 4px; padding: 5px 8px; color: #a7b3ad; font-size: 12px; cursor: pointer; text-align: left; transition: opacity .15s, border-color .15s, background .15s, color .15s; }
 .score-legend button:hover, .score-legend button.is-active { border-color: rgba(170,255,218,.18); background: rgba(77,224,167,.05); color: #eef7f2; }
@@ -771,9 +780,10 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .score-legend i { width: 10px; height: 3px; border-radius: 999px; }
 .score-legend strong { color: #75837b; font: 10px var(--font-mono), monospace; font-variant-numeric: tabular-nums; }
 .score-history-empty { display: grid; min-height: 250px; place-items: center; color: #64716a; font-size: 13px; }
-.score-table-wrap { overflow-x: auto; border-block: 1px solid var(--line); }
+.score-table-wrap { overflow-x: auto; }
 .score-table { width: 100%; min-width: 620px; border-collapse: collapse; }
 .score-table th, .score-table td { border-bottom: 1px solid var(--line); padding: 19px 22px; text-align: left; }
+.score-table tbody tr:last-child > * { border-bottom: 0; }
 .score-table thead th { color: #68756e; font: 10px var(--font-mono), monospace; letter-spacing: .11em; text-transform: uppercase; }
 .score-table tbody td { color: #7d8a83; font: 12px var(--font-mono), monospace; }
 .score-table tbody th { font-size: 15px; font-weight: 500; }
@@ -790,7 +800,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .scoreboard-empty { margin: 0; border-block: 1px solid var(--line); padding: 28px 18px; color: #718078; font-size: 13px; }
 
 .profile-main { max-width: 1080px; padding-top: 64px; }
-.profile-card { display: grid; grid-template: "avatar identity record" auto "avatar actions record" auto "avatar status record" auto / 136px minmax(220px, 1fr) minmax(340px, .9fr); align-items: center; gap: 6px 26px; border-block: 1px solid var(--line); padding: 36px 20px; }
+.profile-card { display: grid; grid-template: "avatar identity record" auto "avatar actions record" auto "avatar status record" auto / 136px minmax(220px, 1fr) minmax(340px, .9fr); align-items: center; gap: 6px 26px; padding: 32px; }
 .profile-avatar { position: relative; grid-area: avatar; display: grid; width: 128px; height: 128px; overflow: hidden; place-items: center; border: 1px solid rgba(77,224,167,.45); border-radius: 8px; background: rgba(5,18,12,.72); color: var(--green); font: 500 28px var(--font-mono), monospace; }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile-avatar-editor { display: contents; }
@@ -817,12 +827,11 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .profile-record dd span { color: #6d7b74; font-size: 11px; font-weight: 400; }
 .profile-empty { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-block: 1px solid var(--line); padding: 24px 16px; color: #75837b; }
 .profile-empty a { color: var(--green); text-decoration: underline; text-underline-offset: 5px; }
-.recent-solves { margin-top: 54px; }
-.recent-solves > div { margin-bottom: 24px; }
+.recent-solves { margin-top: 28px; overflow: hidden; }
+.recent-solves > div { margin: 0; padding: 24px 24px 18px; }
 .recent-solves h2 { margin: 0 0 7px; font-size: 32px; font-weight: 600; letter-spacing: -.035em; }
 .recent-solves > div > p { color: #718078; font-size: 13px; }
-.recent-solves article { display: grid; grid-template-columns: minmax(0, 1fr) 96px 190px; align-items: center; gap: 16px; border-top: 1px solid var(--line); padding: 20px 16px; }
-.recent-solves article:last-child { border-bottom: 1px solid var(--line); }
+.recent-solves article { display: grid; grid-template-columns: minmax(0, 1fr) 96px 190px; align-items: center; gap: 16px; border-top: 1px solid var(--line); padding: 20px 24px; }
 .recent-solves article > div { display: flex; flex-direction: column; gap: 4px; }
 .recent-solves article strong { font-weight: 500; }
 .recent-solves article small, .recent-solves article time { font: 10px var(--font-mono), monospace; letter-spacing: .1em; color: #6f7c75; font-variant-numeric: tabular-nums; }
@@ -841,26 +850,33 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 
 @media (max-width: 680px) {
   .scoreboard-main, .profile-main { width: min(100% - 30px, 1180px); }
-  .scoreboard-heading { padding: 58px 0 36px; }
-  .score-history { margin-bottom: 52px; }
+  .scoreboard-heading { padding: 48px 0 26px; }
+  .score-history { margin-bottom: 20px; padding: 18px 14px 14px; }
   .score-chart-wrap { direction: rtl; }
   .score-chart, .score-chart-tooltip { direction: ltr; }
   .score-history > header { align-items: flex-start; flex-direction: column; gap: 5px; margin-inline: 0; }
   .score-history header p { margin: 0; }
+  .score-table { min-width: 0; table-layout: fixed; }
   .score-table th, .score-table td { padding-inline: 14px; }
+  .score-table th:first-child, .score-table td:first-child { width: 64px; }
+  .score-table th:last-child, .score-table td:last-child { width: 72px; }
+  .score-table tbody th { overflow: hidden; }
+  .scoreboard-player { width: 100%; gap: 10px; }
+  .scoreboard-player span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .profile-main { padding-top: 42px; }
-  .profile-card { grid-template: "avatar identity" auto "avatar actions" auto "status status" auto "record record" auto / 96px minmax(0, 1fr); gap: 4px 16px; padding: 24px 0 0; }
+  .profile-card { grid-template: "avatar identity" auto "avatar actions" auto "status status" auto "record record" auto / 96px minmax(0, 1fr); gap: 4px 16px; padding: 22px 18px 0; }
   .profile-avatar { width: 92px; height: 92px; font-size: 20px; }
   .profile-avatar-actions { gap: 0; }
   .profile-avatar-actions label, .profile-avatar-actions button { min-height: 40px; padding-inline: 8px; font-size: 10px; }
   .profile-avatar-actions label { margin-left: -8px; }
   .profile-avatar-editor > p { margin-top: 11px; padding-bottom: 18px; }
   .profile-card h1 { font-size: clamp(28px, 10vw, 36px); }
-  .profile-record { grid-template-columns: repeat(3, 1fr); }
-  .profile-record { border-top: 1px solid var(--line); border-left: 0; }
+  .profile-record { grid-template-columns: repeat(3, 1fr); margin-inline: -18px; border-top: 1px solid var(--line); border-left: 0; }
   .profile-record div { min-height: 86px; padding-inline: 12px; }
   .profile-empty { align-items: flex-start; flex-direction: column; }
-  .recent-solves article { grid-template-columns: 1fr auto; gap: 7px 16px; }
+  .recent-solves > div { padding: 20px 18px 14px; }
+  .recent-solves h2 { font-size: 27px; }
+  .recent-solves article { grid-template-columns: 1fr auto; gap: 7px 16px; padding-inline: 18px; }
   .recent-solves article time { grid-column: 1 / -1; justify-self: start; text-align: left; }
 }
 
