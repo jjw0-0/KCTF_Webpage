@@ -70,7 +70,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           <ul>
             {team.members.map((member) => (
               <li key={member.user.id}>
-                <Link href={`/users/${member.user.id}`}>{member.user.username}</Link>
+                <Link href={`/users/name/${encodeURIComponent(member.user.username)}`}>{member.user.username}</Link>
                 {member.isLeader && <span>Leader</span>}
               </li>
             ))}
@@ -90,7 +90,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             <article key={solve.id}>
               <div>
                 <strong>{solve.challenge.title}</strong>
-                <small>{solve.challenge.category.slug.toUpperCase()} · <Link href={`/users/${solve.user.id}`}>{solve.user.username}</Link></small>
+                <small>{solve.challenge.category.slug.toUpperCase()} · <Link href={`/users/name/${encodeURIComponent(solve.user.username)}`}>{solve.user.username}</Link></small>
               </div>
               <b>+{solve.points}</b>
               <time dateTime={solve.solvedAt.toISOString()}>{dateFormatter.format(solve.solvedAt)}</time>
