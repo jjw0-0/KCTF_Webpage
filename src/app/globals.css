@@ -968,7 +968,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 .description-preview[open] summary svg { transform: rotate(180deg); }
 .description-preview summary:hover { color: #c1f5dd; }
 .description-preview .challenge-description { margin-top: 20px; }
-.dialog-dock { display: flex; min-width: 0; flex: 0 0 auto; flex-direction: column; gap: 20px; margin: 0 12px 12px; border: 1px solid var(--line); border-radius: 10px; padding: 22px 20px max(24px, env(safe-area-inset-bottom)); background: #0c1712; }
+.dialog-dock { display: flex; min-width: 0; flex: 0 0 auto; flex-direction: column; gap: 20px; border-top: 1px solid var(--line); padding: 22px 32px max(24px, env(safe-area-inset-bottom)); background: #0b1511; }
 .dialog-resources { display: grid; grid-template-columns: 1fr; gap: 0; }
 .challenge-file { display: flex; min-height: 54px; align-items: center; gap: 11px; border-bottom: 0; padding: 9px 2px; background: transparent; color: #d7e7dd; font-size: 12px; transition: color .2s, background .2s; }
 a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07), transparent); color: #f0fff7; }
@@ -980,7 +980,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .file-icon svg { width: 16px; height: 16px; fill: none; stroke: currentcolor; stroke-width: 1.5; stroke-linecap: square; stroke-linejoin: miter; }
 .file-icon.is-terminal { font: 600 9px var(--font-mono), monospace; letter-spacing: .04em; }
 .instance-control { grid-column: 1 / -1; overflow: hidden; border-bottom: 0; background: transparent; }
-.instance-head { display: flex; min-height: 48px; align-items: flex-start; flex-direction: column; gap: 6px; padding: 10px 0; }
+.instance-head { display: flex; align-items: flex-start; flex-direction: column; gap: 6px; padding: 0 0 14px; }
 .instance-head > div { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; }
 .instance-head strong { color: #e3eee8; font-size: 13px; font-weight: 600; }
 .instance-head span { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
@@ -988,14 +988,14 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .instance-head span.is-online { color: #8eddb9; }
 .instance-head span.is-online::before { background: #4de0a7; box-shadow: 0 0 10px rgba(77,224,167,.55); }
 .instance-head small { color: #7f9589; font: 10px var(--font-mono), monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.instance-body { min-height: 140px; padding: 0 0 14px; }
+.instance-body { padding: 0 0 2px; }
 .instance-address { display: flex; min-width: 0; overflow: hidden; border: 1px solid rgba(170,255,218,.18); border-radius: 5px; background: rgba(2,8,5,.76); }
 .instance-address code { min-width: 0; flex: 1; overflow: hidden; padding: 11px 12px; color: #b7cec2; font: 13px var(--font-mono), monospace; text-overflow: ellipsis; white-space: nowrap; user-select: all; }
 .instance-address button { display: inline-flex; min-width: 80px; min-height: 44px; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; border-left: 1px solid rgba(170,255,218,.18); padding: 0 12px; color: #91c8ae; font-size: 11px; font-weight: 600; }
 .instance-address button:hover, .instance-address button:focus-visible { background: rgba(77,224,167,.08); color: #d7fae9; }
 .instance-address button svg, .instance-primary svg { width: 15px; height: 15px; fill: none; stroke: currentcolor; stroke-width: 1.35; stroke-linecap: square; stroke-linejoin: miter; }
-.instance-footer { display: flex; min-height: 48px; align-items: stretch; justify-content: space-between; flex-direction: column; gap: 10px; padding-top: 10px; }
-.instance-actions { display: flex; width: 100%; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; }
+.instance-footer { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; }
+.instance-actions { display: flex; width: auto; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; }
 .instance-actions > * { flex: 0 0 auto; }
 .instance-primary, .instance-stop { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; border-radius: 4px; padding: 9px 14px; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .instance-primary { background: #3bcf96; color: #02100a; }
@@ -1003,13 +1003,13 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .instance-stop { color: #8fa299; }
 .instance-stop:hover, .instance-stop:focus-visible { background: rgba(255,255,255,.045); color: #e1ebe6; }
 .instance-control button:disabled { cursor: wait; opacity: .55; }
-.instance-feedback { min-height: 16px; flex: 1; padding-bottom: 2px; }
+.instance-feedback { min-width: 0; min-height: 16px; flex: 1; padding-bottom: 2px; }
 .instance-feedback p, .instance-feedback span { margin: 0; color: #879d91; font-size: 10px; }
 .instance-feedback p, .instance-empty p { color: #ff989c; }
-.instance-empty { display: flex; min-height: 140px; align-items: flex-start; justify-content: space-between; flex-direction: column; gap: 12px; padding: 8px 0 14px; }
-.instance-empty .instance-primary { align-self: flex-end; min-width: 148px; }
+.instance-empty { display: grid; min-height: 82px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 20px; padding: 2px 0 12px; }
+.instance-empty .instance-primary { min-width: 148px; }
 .instance-empty > span { color: #83978c; font-size: 11px; }
-.instance-empty p { flex-basis: 100%; margin: 0; font-size: 10px; }
+.instance-empty p { grid-column: 1 / -1; margin: 0; font-size: 10px; }
 .instance-control.vm-pending { display: block; }
 .instance-control.vm-pending strong { color: #a8b7af; font-size: 12px; font-weight: 600; }
 .instance-control.vm-pending p { margin-top: 5px; color: #718078; }
@@ -1044,7 +1044,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .challenge-tools { display: flex; max-width: 760px; min-width: 0; flex: 1; flex-direction: column; align-items: flex-end; justify-content: center; gap: 12px; }
 .challenge-tools .category-tabs { max-width: 100%; justify-content: flex-end; }
 
-.challenge-groups { display: flex; flex-direction: column; gap: 52px; padding: 20px 4vw 0; }
+.challenge-groups { display: flex; flex-direction: column; gap: 44px; padding: 20px 4vw 0; }
 .challenge-group { min-width: 0; }
 .challenge-group-title { display: flex; align-items: center; gap: 18px; }
 .challenge-group-title::after { height: 1px; flex: 1; content: ""; background: linear-gradient(90deg, rgba(170,255,218,.16), transparent); }
@@ -1052,20 +1052,19 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .challenge-group-title span { order: 3; padding-inline: 4px; background: #020403; color: #87988f; font: 11px var(--font-mono), monospace; }
 
 
-.challenge-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(262px, 300px)); gap: 38px 34px; overflow: visible; padding: 48px 30px 30px; }
-.challenge-group:has(.challenge-card-slot:only-child) .challenge-stack { padding-block: 42px 24px; }
-.challenge-card-slot { position: relative; z-index: calc(30 - var(--stack-index)); width: 100%; height: 180px; perspective: 1400px; }
-.challenge-card-slot::before { position: absolute; inset: -36px -12px -32px; content: ""; }
+.challenge-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 312px)); gap: 30px; overflow: visible; padding: 40px 16px 24px; }
+.challenge-group:has(.challenge-card-slot:only-child) .challenge-stack { padding-block: 36px 20px; }
+.challenge-card-slot { position: relative; z-index: calc(30 - var(--stack-index)); width: 100%; height: 184px; perspective: 1400px; }
+.challenge-card-slot::before { position: absolute; inset: -24px -10px -22px; content: ""; }
 .challenge-card-slot.is-active, .challenge-card-slot:focus-within { z-index: 40; }
 .stacked-card {
-  --card-tilt: -2.4deg;
-  --card-pose: translate3d(0, calc(var(--stack-step) * -2px), calc(var(--stack-step) * -4px)) rotateX(4deg) rotateY(-6deg) rotateZ(var(--card-tilt));
+  --card-pose: translate3d(0, 0, 0) rotateX(1.4deg) rotateY(-2.2deg);
   position: absolute;
-  top: -50px;
-  left: -14px;
+  top: -28px;
+  left: -8px;
   z-index: calc(30 - var(--stack-index));
-  width: calc(100% + 28px);
-  height: 280px;
+  width: calc(100% + 16px);
+  height: 240px;
   cursor: pointer;
   border: 0;
   padding: 0;
@@ -1073,22 +1072,21 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   color: inherit;
   text-align: left;
 }
-.challenge-card-slot:nth-child(even) .stacked-card { --card-tilt: 2.4deg; }
 .stacked-card-depth,
 .stacked-card-surface {
   position: absolute;
-  top: 50px;
-  left: 14px;
-  width: calc(100% - 28px);
+  top: 28px;
+  left: 8px;
+  width: calc(100% - 16px);
   min-width: 0;
-  height: 180px;
+  height: 184px;
   border-radius: 12px;
   transform: var(--card-pose);
-  transform-origin: 50% 76%;
-  transition: transform .72s cubic-bezier(.16, 1, .3, 1), border-color .3s, box-shadow .55s, opacity .35s;
+  transform-origin: 50% 50%;
+  transition: transform .46s cubic-bezier(.16, 1, .3, 1), border-color .25s, box-shadow .4s, opacity .25s;
 }
-.stacked-card-depth { pointer-events: none; border: 0; background: color-mix(in srgb, var(--category-accent) 16%, rgba(5, 20, 14, .78)); box-shadow: 0 16px 30px rgba(0,0,0,.16); }
-.stacked-card-depth.is-back { z-index: 1; opacity: .72; transform: var(--card-pose) translate3d(8px, 10px, -12px); }
+.stacked-card-depth { pointer-events: none; border: 1px solid color-mix(in srgb, var(--category-accent) 28%, #263c32); background: color-mix(in srgb, var(--category-accent) 11%, rgba(5, 20, 14, .82)); box-shadow: 0 12px 24px rgba(0,0,0,.13); }
+.stacked-card-depth.is-back { z-index: 1; opacity: .74; transform: var(--card-pose) translate3d(7px, 8px, -12px); }
 .stacked-card-surface {
   z-index: 2;
   isolation: isolate;
@@ -1099,22 +1097,23 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   border-radius: 12px;
   padding: 21px 25px;
   background:
-    radial-gradient(circle at 14% -12%, rgba(225, 255, 242, .055), transparent 38%),
-    linear-gradient(112deg, rgba(103, 237, 181, .03), transparent 37%),
-    linear-gradient(145deg, rgba(19, 39, 31, .7), rgba(6, 16, 11, .48) 72%);
+    radial-gradient(circle at 12% -14%, rgba(225, 255, 242, .045), transparent 38%),
+    linear-gradient(145deg, rgba(17, 35, 28, .74), rgba(6, 15, 11, .62) 72%);
   opacity: 1;
   color: #f4f6f5;
   text-align: left;
-  box-shadow: 0 16px 32px rgba(0,0,0,.24), inset 0 1px rgba(235,255,247,.18);
-  animation: card-in .85s cubic-bezier(.22, 1, .36, 1) backwards;
-  animation-delay: calc(var(--stack-index) * 75ms);
+  box-shadow: 0 14px 30px rgba(0,0,0,.2), inset 0 1px rgba(235,255,247,.14);
+  animation: card-in .56s cubic-bezier(.22, 1, .36, 1) backwards;
+  animation-delay: calc(var(--stack-index) * 55ms);
 }
-.stacked-card-surface::before { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 27%, rgba(221,255,243,.15) 48%, transparent 68%); content: ""; transform: translateX(-100%); transition: transform .7s; }
+.stacked-card-surface::before { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 29%, rgba(221,255,243,.09) 49%, transparent 69%); content: ""; transform: translateX(-100%); transition: transform .7s; }
 .stacked-card-surface > * { position: relative; z-index: 1; }
 .stacked-card .card-beam, .dialog-beam { position: absolute; inset: 0; z-index: 4; overflow: hidden; border-radius: inherit; pointer-events: none; }
 /* The beam follows the actual border, including its corner radii. */
 .card-beam::before { position: absolute; top: 0; left: 0; width: 84px; height: 84px; content: ""; offset-path: border-box; offset-anchor: 50% 50%; background: radial-gradient(ellipse, #e3fff6 0, #8affd9 10%, #4de0a788 30%, transparent 68%); animation: border-orbit 5s linear infinite; animation-delay: calc(var(--stack-index) * -1.3s); }
 .card-beam { padding: 1.5px; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; opacity: .72; transition: opacity .2s ease; }
+.stacked-card .card-beam { opacity: .14; }
+.stacked-card .card-beam::before { animation-play-state: paused; }
 .dialog-beam { --stack-index: 0; padding: 2px; opacity: 1; }
 .dialog-beam::before { width: 180px; height: 180px; animation-duration: 7s; }
 .card-id { display: flex; justify-content: space-between; align-items: center; color: #a4b9ad; font: 11px var(--font-mono), monospace; letter-spacing: .14em; }
@@ -1129,16 +1128,17 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .stacked-card-points { color: #99f5ce; font-size: 18px; font-weight: 500; }
 .stacked-card-meta { color: #aec9ba; font-size: 12px; }
 .stacked-card-points small, .stacked-card-meta small { color: #7a9c89; font-size: 11px; font-weight: 400; letter-spacing: .02em; }
-.challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card { --card-pose: translate3d(0, 6px, -24px) rotateX(4deg) rotateY(-6deg) rotateZ(var(--card-tilt)) scale(.985); }
-.challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: .82; }
+.challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card { --card-pose: translate3d(0, 1px, -8px) rotateX(1.4deg) rotateY(-2.2deg) scale(.995); }
+.challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: .92; }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) { z-index: 40; outline: none; }
-.stacked-card:is(.is-hovered, :hover, :focus-visible) { --card-pose: translate3d(0, -34px, 70px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1.035); }
-.stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface { border-color: #a6ffdc; box-shadow: 0 28px 54px #0008, inset 0 1px rgba(255,255,255,.22); }
+.stacked-card:is(.is-hovered, :hover, :focus-visible) { --card-pose: translate3d(0, -12px, 32px) rotateX(0deg) rotateY(0deg) scale(1.018); }
+.stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface { border-color: #a6ffdc; box-shadow: 0 24px 48px #0007, inset 0 1px rgba(255,255,255,.2); }
 .stacked-card:focus-visible .stacked-card-surface { outline: 2px solid #d1ffe9; outline-offset: 5px; }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface::before { transform: translateX(100%); }
 .stacked-card:is(.is-hovered, :hover, :focus-visible) .card-beam { opacity: 1; }
-.stacked-card.is-hovered:active { --card-pose: translate3d(0, -25px, 30px) rotate(0deg) scale(1.03); }
-.stacked-card.is-solved .stacked-card-surface { border-color: color-mix(in srgb, var(--category-accent) 78%, #dfffee); background-color: rgba(13, 53, 34, .025); box-shadow: 0 22px 48px rgba(0,0,0,.28), 0 0 28px color-mix(in srgb, var(--category-accent) 12%, transparent), inset 0 1px rgba(235,255,247,.22); }
+.stacked-card:is(.is-hovered, :hover, :focus-visible) .card-beam::before { animation-play-state: running; }
+.stacked-card.is-hovered:active { --card-pose: translate3d(0, -7px, 18px) rotateX(0deg) rotateY(0deg) scale(1.012); }
+.stacked-card.is-solved .stacked-card-surface { border-color: color-mix(in srgb, var(--category-accent) 72%, #dfffee); background-color: rgba(13, 53, 34, .025); box-shadow: 0 16px 34px rgba(0,0,0,.24), 0 0 24px color-mix(in srgb, var(--category-accent) 9%, transparent), inset 0 1px rgba(235,255,247,.18); }
 .stacked-card.is-solved strong { color: #f4fff9; }
 
 :root:is(.challenge-opening, .challenge-closing) .card-beam::before,
@@ -1166,7 +1166,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 @keyframes backdrop-out { to { opacity: 0; } }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.98); } }
 @keyframes dialog-out { to { opacity: 0; transform: translateY(8px) scale(.985); } }
-@keyframes card-in { from { opacity: 0; transform: translate3d(24px, 75px, -100px) rotateX(16deg) rotateY(-24deg) rotateZ(-15deg) scale(.94); } }
+@keyframes card-in { from { opacity: 0; transform: translate3d(0, 14px, -24px) rotateX(3deg) rotateY(-5deg) scale(.985); } }
 @keyframes challenge-panel-orbit {
   from { transform: perspective(1400px) rotateY(0deg) scale(.95); }
   to { transform: perspective(1400px) rotateY(180deg) scale(1); }
@@ -1217,7 +1217,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .dialog-value strong { font-size: 18px; }
   .dialog-close { width: 40px; height: 40px; }
   .dialog-body { padding: 24px 20px; }
-  .dialog-dock { gap: 16px; margin: 0 10px 10px; padding: 18px 10px max(18px, env(safe-area-inset-bottom)); }
+  .dialog-dock { gap: 16px; padding: 18px 20px max(18px, env(safe-area-inset-bottom)); }
   .dialog-resources { grid-template-columns: 1fr; }
   .instance-head { padding-inline: 0; }
   .instance-body { padding-inline: 0; }
@@ -1225,8 +1225,10 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .instance-address code { width: auto; padding-inline: 10px; }
   .instance-address button { width: auto; min-width: 72px; border-left: 1px solid var(--line); }
   .instance-footer, .instance-empty { align-items: stretch; flex-direction: column; }
+  .instance-footer { gap: 10px; }
   .instance-actions { width: 100%; }
   .instance-actions > * { flex: 1; }
+  .instance-empty { display: flex; min-height: 0; padding-block: 2px 8px; }
   .instance-empty .instance-primary { width: 100%; }
   .dialog-resources + .flag-form { padding-top: 12px; }
   .flag-form input { font-size: 16px; padding: 12px; }

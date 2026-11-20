@@ -234,7 +234,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 <div
                   key={challenge.id}
                   className={`challenge-card-slot ${hoveredChallengeId === challenge.id ? 'is-active' : ''}`}
-                  style={{ '--stack-index': index, '--stack-step': Math.min(index, 4) } as React.CSSProperties}
+                  style={{ '--stack-index': index } as React.CSSProperties}
                   onPointerEnter={(event) => { if (event.pointerType !== 'touch') setHoveredChallengeId(challenge.id); }}
                   onPointerLeave={() => setHoveredChallengeId(null)}
                   onPointerCancel={() => setHoveredChallengeId(null)}
