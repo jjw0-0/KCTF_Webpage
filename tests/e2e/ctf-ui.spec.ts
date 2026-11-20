@@ -47,7 +47,8 @@ test('the dialog stays single-column even with a legacy layout parameter', async
   await signIn(page, '/challenges?challenge=e2e-markdown');
   const descriptionDialog = await page.getByRole('dialog').boundingBox();
   await expect(page.locator('.dialog-workspace')).toHaveCSS('flex-direction', 'column');
-  await expect(page.locator('.dialog-body')).toHaveCSS('overflow-y', 'visible');
+  await expect(page.locator('.dialog-workspace')).toHaveCSS('overflow', 'hidden');
+  await expect(page.locator('.dialog-body')).toHaveCSS('overflow-y', 'auto');
 
   await page.goto('/challenges?challenge=e2e-instance&modalLayout=console');
   await expect(page.locator('.dialog-workspace')).toHaveCSS('flex-direction', 'column');
@@ -75,7 +76,7 @@ test('card depth remains decorative and short dialogs keep every action reachabl
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/challenges?challenge=e2e-tcp');
-  const body = page.locator('.dialog-workspace');
+  const body = page.locator('.dialog-body');
   await expect(page.locator('.dialog-scroll-hint')).toBeVisible();
   await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
   await expect(page.locator('.dialog-scroll-hint')).toHaveCount(0);

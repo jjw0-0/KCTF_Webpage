@@ -122,8 +122,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
     const body = dialogBodyRef.current;
     if (!body) return;
     const update = () => {
-      const description = body.querySelector('.dialog-description-area');
-      setHasMoreDescription(Boolean(description && description.getBoundingClientRect().bottom > body.getBoundingClientRect().bottom + 8));
+      setHasMoreDescription(body.scrollTop + body.clientHeight < body.scrollHeight - 8);
     };
     const observer = new ResizeObserver(update);
     observer.observe(body);
@@ -248,21 +247,27 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={(event) => openChallenge(challenge, event.currentTarget.querySelector<HTMLElement>('.stacked-card-surface') ?? event.currentTarget)}
                 >
-                  <span className="stacked-card-depth is-back" aria-hidden="true" />
-                  <span className="stacked-card-surface">
-                    <span className="card-beam" aria-hidden="true" />
-                    <span className="card-id">
-                      <span>{category.shortName} / {String(index + 1).padStart(3, '0')}</span>
-                      <span className={`card-state ${challenge.solved ? 'is-cleared' : ''}`}>
-                        {challenge.solved
-                          ? <><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.2 2.8 2.8 6.2-6.2" /></svg><span>SOLVED</span></>
-                          : <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M7 4h5v5" /></svg>}
+                  <span className="stacked-card-volume">
+                    <span className="stacked-card-depth is-back" aria-hidden="true" />
+                    <span className="stacked-card-edge is-top" aria-hidden="true" />
+                    <span className="stacked-card-edge is-right" aria-hidden="true" />
+                    <span className="stacked-card-edge is-bottom" aria-hidden="true" />
+                    <span className="stacked-card-edge is-left" aria-hidden="true" />
+                    <span className="stacked-card-surface">
+                      <span className="card-beam" aria-hidden="true" />
+                      <span className="card-id">
+                        <span>{category.shortName} / {String(index + 1).padStart(3, '0')}</span>
+                        <span className={`card-state ${challenge.solved ? 'is-cleared' : ''}`}>
+                          {challenge.solved
+                            ? <><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.2 2.8 2.8 6.2-6.2" /></svg><span>SOLVED</span></>
+                            : <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M7 4h5v5" /></svg>}
+                        </span>
                       </span>
-                    </span>
-                    <strong>{challenge.title}</strong>
-                    <span className="stacked-card-footer">
-                      <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
-                      <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
+                      <strong>{challenge.title}</strong>
+                      <span className="stacked-card-footer">
+                        <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
+                        <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
+                      </span>
                     </span>
                   </span>
                 </button>
@@ -309,11 +314,17 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 </div>
               </div>
             </header>
-            <div ref={dialogBodyRef} className="dialog-workspace" tabIndex={0} role="region" aria-label="문제 내용 및 제출">
+            <div className="dialog-workspace">
               <div className="dialog-description-area">
-                <div className="dialog-body">
+                <div ref={dialogBodyRef} className="dialog-body" tabIndex={0} role="region" aria-label="문제 설명">
                   <ChallengeDescription content={selected.description || selected.summary} />
                 </div>
+                {hasMoreDescription && (
+                  <div className="dialog-scroll-hint" aria-hidden="true">
+                    아래로 스크롤하여 설명 계속 읽기
+                    <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
+                  </div>
+                )}
               </div>
               <aside className="dialog-dock" aria-label="문제 작업">
               {(selectedFileUrl || selectedConnectionUrl || selectedTcpCommand || selected.usesVm || selected.instanceSlug) && (
@@ -385,12 +396,6 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
               </form>
               </aside>
             </div>
-            {hasMoreDescription && (
-              <div className="dialog-scroll-hint" aria-hidden="true">
-                아래로 스크롤하여 설명 계속 읽기
-                <svg viewBox="0 0 16 16" fill="none"><path d="m3 6 5 5 5-5" /></svg>
-              </div>
-            )}
           </section>
         </div>
       )}
