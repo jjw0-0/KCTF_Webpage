@@ -7,6 +7,9 @@
     "node": "^22.12.0 || >=24.0.0",
     "npm": ">=10.0.0"
   },
+  "overrides": {
+    "effect": "3.22.5"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
