@@ -263,7 +263,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
       rank: index + 1,
       userId: score.userId,
       name: user?.username ?? 'unknown',
-      profileUrl: user ? `/users/name/${encodeURIComponent(user.username)}` : `/users/${score.userId}`,
+      profileUrl: user ? `/users/${encodeURIComponent(user.username)}` : `/users/${score.userId}`,
       avatarUrl: avatarMap.has(score.userId)
         ? `/api/users/${score.userId}/avatar?v=${avatarMap.get(score.userId)}`
         : undefined,

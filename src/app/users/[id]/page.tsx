@@ -12,7 +12,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const [user, leaderboard, challengeCount] = await Promise.all([
     prisma.user.findFirst({
-      where: { ...(id.startsWith('@') ? { username: id.slice(1) } : { id }), role: 'USER' },
+      where: { role: 'USER', OR: [{ username: id }, { id }] },
       select: {
         id: true,
         username: true,
