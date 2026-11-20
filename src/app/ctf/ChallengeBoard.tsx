@@ -90,6 +90,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
     if (!selectedId) return;
     const previousOverflow = document.body.style.overflow;
     const previousFocus = returnFocusRef.current;
+    dialogRef.current?.focus({ preventScroll: true });
     const handleDialogKeys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeChallenge();
       if (event.key !== 'Tab') return;
@@ -288,6 +289,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
             role="dialog"
             aria-modal="true"
             aria-labelledby="challenge-dialog-title"
+            tabIndex={-1}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <span className="card-beam dialog-beam" aria-hidden="true" />
@@ -301,7 +303,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                   </div>
                 </div>
                 <div className="dialog-header-actions">
-                  <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기" autoFocus>
+                  <button className="dialog-close" type="button" onClick={closeChallenge} aria-label="닫기">
                     <svg viewBox="0 0 18 18" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg>
                   </button>
                 </div>
