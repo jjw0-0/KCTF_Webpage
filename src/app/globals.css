@@ -144,18 +144,6 @@ html::-webkit-scrollbar { display: none; }
     #020403;
 }
 
-.app-shell::before {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  content: "";
-  opacity: .18;
-  background-image: linear-gradient(rgba(118, 194, 160, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(118, 194, 160, .035) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
-}
-
 .network-canvas { opacity: .68; mask-image: radial-gradient(ellipse at center, black 34%, transparent 94%); }
 
 .site-header {
@@ -1299,7 +1287,6 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
       radial-gradient(ellipse at 78% 35%, rgba(3, 76, 54, .07), transparent 42%),
       var(--ink);
   }
-  .app-shell::before { opacity: .52; }
   .network-canvas { opacity: .58; mix-blend-mode: multiply; filter: saturate(1.02) contrast(1.28); }
 
   .site-header { border-color: var(--line); background: rgba(255,255,255,.94); box-shadow: 0 4px 24px rgba(28,36,48,.04); }
