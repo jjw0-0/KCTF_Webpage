@@ -390,11 +390,12 @@ html::-webkit-scrollbar { display: none; }
   .header-primary { gap: 4px; font-size: 12px; justify-self: end; }
   .header-primary .header-link { display: inline-flex; min-height: 44px; align-items: center; padding-inline: 6px; }
   .header-actions { gap: 8px; }
-  .header-login { font-size: 12px; }
+  .header-login { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; padding-inline: 4px; font-size: 12px; }
   .auth-desktop-actions { display: none; }
   .auth-mobile-menu { display: block; }
   .auth-mobile-menu summary { display: grid; min-width: 44px; min-height: 44px; place-items: center; padding: 0; }
-  .site-footer { min-height: 180px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; padding-inline: 15px; }
+  .site-footer { min-height: 180px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px; padding-inline: 15px; }
+  .site-footer a { display: inline-flex; min-height: 44px; align-items: center; }
   .auth-main { min-height: auto; padding: 48px 15px 72px; }
   .auth-panel { border-radius: 18px; }
 }
@@ -698,8 +699,9 @@ html::-webkit-scrollbar { display: none; }
   .admin-sidebar { position: static; height: auto; min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); padding: 18px 0 14px; }
   .admin-sidebar h1 { margin: 0; }
   .admin-scope { margin: 5px 0 16px; }
-  .admin-sidebar nav { flex-direction: row; overflow-x: auto; padding-right: 28px; mask-image: linear-gradient(90deg, #000 88%, transparent); }
-  .admin-sidebar nav button { flex: 0 0 auto; padding-inline: 15px; }
+  .admin-sidebar nav { flex-direction: row; overflow-x: auto; padding-right: 15px; scroll-padding-inline: 15px; scrollbar-width: none; }
+  .admin-sidebar nav::-webkit-scrollbar { display: none; }
+  .admin-sidebar nav button { flex: 0 0 auto; padding-inline: 15px; scroll-snap-align: center; }
   .admin-system-state { display: none; }
   .admin-heading { align-items: flex-start; flex-direction: column; }
   .admin-heading h2 { font-size: 40px; }

@@ -125,6 +125,7 @@ export default function AdminDashboard({
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const { confirm, confirmation } = useConfirmDialog();
   const challengeEditorRef = useRef<HTMLElement>(null);
+  const adminNavRef = useRef<HTMLElement>(null);
 
   const setNotice = (message: string, tone: 'neutral' | 'error' = 'neutral') => {
     setNoticeMessage(message);
@@ -145,6 +146,12 @@ export default function AdminDashboard({
     window.addEventListener('beforeunload', warnAboutUnsavedChanges);
     return () => window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
   }, [isDirty]);
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 760px)').matches) return;
+    const activeItem = adminNavRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+    activeItem?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [activeNav]);
 
   const patchCategory = (id: string, patch: Partial<Category>) => {
     setCategories(categories.map((category) => category.id === id ? { ...category, ...patch } : category));
@@ -549,7 +556,7 @@ export default function AdminDashboard({
     <main className="admin-main">
       <aside className="admin-sidebar">
         <div><h1>KCTF</h1><p className="admin-scope">관리자 페이지</p></div>
-        <nav aria-label="관리자 메뉴">
+        <nav ref={adminNavRef} aria-label="관리자 메뉴">
           {navItems.map((item) => (
             <button type="button" key={item.id} aria-pressed={activeNav === item.id} className={activeNav === item.id ? 'active' : ''} onClick={() => setActiveNav(item.id)}>
               {item.label}

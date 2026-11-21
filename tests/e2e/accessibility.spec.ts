@@ -46,6 +46,40 @@ test('mobile navigation keeps full touch targets without horizontal overflow', a
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
+test('anonymous mobile header and footer links keep full touch targets', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/login');
+  const targets = page.locator('.header-login, .site-footer a');
+  await expect(targets).toHaveCount(3);
+  const sizes = await targets.evaluateAll((elements) => elements.map((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { width: bounds.width, height: bounds.height };
+  }));
+  for (const size of sizes) {
+    expect(size.height).toBeGreaterThanOrEqual(44);
+    expect(size.width).toBeGreaterThanOrEqual(44);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('mobile admin navigation keeps the active section fully visible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.92' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  const activeItem = page.getByRole('button', { name: '문제 관리', exact: true });
+  await expect(activeItem).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => activeItem.evaluate((element) => {
+    const item = element.getBoundingClientRect();
+    const nav = element.parentElement!.getBoundingClientRect();
+    return item.left >= nav.left && item.right <= nav.right;
+  })).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
 test('admin editor controls follow the active theme after switching both ways', async ({ page }) => {
   await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.91' });
   await page.goto('/login?callbackUrl=%2Fadmin');
