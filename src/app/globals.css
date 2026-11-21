@@ -125,8 +125,7 @@ button:not(.stacked-card):not(:disabled):active { transform: translateY(1px); }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: var(--line-strong); background-clip: padding-box; }
 *::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--green) 62%, transparent); background-clip: padding-box; }
-html { scrollbar-width: none; }
-html::-webkit-scrollbar { display: none; }
+html { scrollbar-gutter: stable; }
 
 @media (pointer: fine) {
   html { overscroll-behavior-y: none; }
@@ -1232,21 +1231,23 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 @media (max-height: 520px) and (min-width: 681px) {
   .challenge-dialog-backdrop { padding: 10px; }
   .challenge-dialog { height: calc(100dvh - 20px); max-height: calc(100dvh - 20px); }
-  .dialog-header { min-height: 82px; padding: 14px 24px 12px; }
+  .dialog-header { min-height: 0; padding: 8px 24px 7px; }
   .challenge-dialog h2 { font-size: 27px; }
   .dialog-meta { gap: 14px; margin-top: 7px; }
   .dialog-close { width: 44px; height: 44px; }
-  .dialog-description-area { min-height: 74px; }
-  .dialog-body { padding: 16px 24px 18px; }
-  .dialog-dock { gap: 9px; padding: 9px 24px 11px; }
+  .dialog-description-area { min-height: 54px; }
+  .dialog-body { padding: 9px 24px 11px; }
+  .dialog-scroll-hint { min-height: 42px; padding: 12px 16px 7px; font-size: 10px; }
+  .dialog-dock { gap: 8px; padding: 8px 24px; }
   .dialog-resources { gap: 7px; }
-  .challenge-file { min-height: 42px; padding-block: 5px; }
+  .challenge-file { min-height: 44px; padding-block: 4px; }
   .instance-control { padding: 9px 10px; }
   .instance-head { padding-bottom: 7px; }
   .instance-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+  .instance-empty { min-height: 44px; padding-block: 0; }
   .instance-footer { min-height: 44px; padding-top: 0; }
   .instance-feedback:empty { display: none; }
-  .flag-form-head { margin-bottom: 5px; }
+  .flag-form-head { margin-bottom: 3px; }
   .flag-form input { padding-block: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1397,6 +1398,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .load-panel { background: #ffffff; }
   .challenge-editor-heading,
   .challenge-list-notice { background: rgba(8, 125, 87, .05); }
+  .challenge-list-notice { color: var(--green); }
   .challenge-editor-heading h4,
   .challenge-admin-table article strong,
   .participant-identity strong { color: #202733; }
@@ -1443,7 +1445,6 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .log-actor-inline { color: #21372c; }
 
   .score-history header p,
-  .score-chart text,
   .score-table thead th,
   .score-table tbody td,
   .score-legend strong,
@@ -1452,11 +1453,13 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .recent-solves > div > p,
   .recent-solves article small,
   .recent-solves article time { color: #425b4e; }
+  .score-chart text { fill: #354f42; }
   .score-grid-line { stroke: rgba(12, 52, 36, .23); }
   .score-grid-line.is-vertical { stroke: rgba(12, 52, 36, .13); }
   .score-player-point { fill: var(--ink); }
   .score-endpoint-dot { stroke: var(--ink); }
   .score-chart-tooltip { background: rgba(230, 237, 233, .98); box-shadow: 0 14px 36px rgba(18, 47, 33, .23); }
+  .score-chart-tooltip time { color: #354f42; }
   .score-chart-tooltip li span,
   .score-legend button,
   .team-members a { color: #2b4136; }
@@ -1466,6 +1469,10 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .profile-avatar { background: #e1eee7; }
   .profile-avatar-actions label { color: #277358; }
   .profile-avatar-actions label:hover { color: var(--green); }
+  .profile-avatar-actions button { color: #526071; }
+  .profile-avatar-actions button:hover { color: var(--danger); }
+  .profile-identity a,
+  .recent-solves small a { color: var(--green); }
 
   .category-tabs { background: rgba(255,255,255,.9); box-shadow: 0 14px 34px rgba(18,47,33,.1), inset 0 1px white; }
   .category-tabs button { color: #465160; }

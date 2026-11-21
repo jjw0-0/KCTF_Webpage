@@ -92,7 +92,10 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
     const previousFocus = returnFocusRef.current;
     dialogRef.current?.focus({ preventScroll: true });
     const handleDialogKeys = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeChallenge();
+      if (event.key === 'Escape') {
+        if (dialogRef.current?.querySelector('dialog[open]')) return;
+        closeChallenge();
+      }
       if (event.key !== 'Tab') return;
       const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), video[controls], iframe, [tabindex="0"]') ?? [])];
       if (!focusable.length) return;

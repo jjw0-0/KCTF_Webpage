@@ -49,6 +49,7 @@ try {
       summary: 'Start the isolated HTTP service.',
       description: '# Workshop\n\nOpen the isolated service and inspect its response.',
       connectionType: 'HTTP' as const, connectionUrl: null, flag: 'KCTF{e2e_instance}',
+      fileUrl: 'https://example.com/workshop.zip', attachmentName: 'workshop.zip',
       usesVm: true, instanceSlug: 'e2e-http', deploymentStatus: 'READY' as const,
     },
   ]) {

@@ -58,20 +58,28 @@ test('the dialog stays single-column even with a legacy layout parameter', async
   expect(instanceDialog?.height).toBe(descriptionDialog?.height);
 });
 
-test('challenge cards use one cyberpunk surface and short dialogs keep every action reachable', async ({ page }) => {
+test('challenge cards use one cyberpunk surface and short dialogs keep every fixed action reachable', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await signIn(page);
   const card = page.getByRole('button', { name: /^Socket Relay,/ });
   await expect(card.locator('.stacked-card-surface')).toHaveCount(1);
   await expect(card.locator('.stacked-card-depth')).toHaveCount(0);
   await expect(card.locator('.card-circuit')).toHaveCount(1);
-  await card.click();
+  await page.goto('/challenges?challenge=e2e-instance');
 
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('dialog', { name: 'HTTP Workshop' });
   await expect(dialog).toBeInViewport();
+  await expect(dialog.getByRole('link', { name: /workshop\.zip/ })).toBeInViewport();
+  await expect(dialog.getByRole('region', { name: 'Challenge Instance' })).toBeInViewport();
   const flag = dialog.getByLabel('플래그 제출');
-  await flag.scrollIntoViewIfNeeded();
   await expect(flag).toBeInViewport();
+  const [dialogBox, dockBox] = await Promise.all([
+    dialog.boundingBox(),
+    page.locator('.dialog-dock').boundingBox(),
+  ]);
+  expect(dialogBox).not.toBeNull();
+  expect(dockBox).not.toBeNull();
+  expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
 });
 
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {
@@ -130,6 +138,13 @@ test('Instance replacement and termination require explicit confirmation', async
   await replace.click();
   let confirmation = page.getByRole('dialog', { name: 'Instance 교체' });
   await expect(confirmation).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(confirmation).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'HTTP Workshop' })).toBeVisible();
+  await expect(replace).toBeFocused();
+
+  await replace.click();
+  confirmation = page.getByRole('dialog', { name: 'Instance 교체' });
   await confirmation.getByRole('button', { name: '취소' }).click();
   await expect(replace).toBeFocused();
   expect(postCount).toBe(0);
