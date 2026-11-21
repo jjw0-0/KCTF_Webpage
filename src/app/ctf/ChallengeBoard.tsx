@@ -234,7 +234,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 <div
                   key={challenge.id}
                   className={`challenge-card-slot ${hoveredChallengeId === challenge.id ? 'is-active' : ''}`}
-                  style={{ '--stack-index': index } as React.CSSProperties}
+                  style={{ '--stack-index': index, '--stack-step': Math.min(index, 4) } as React.CSSProperties}
                   onPointerEnter={(event) => { if (event.pointerType !== 'touch') setHoveredChallengeId(challenge.id); }}
                   onPointerLeave={() => setHoveredChallengeId(null)}
                   onPointerCancel={() => setHoveredChallengeId(null)}
@@ -247,27 +247,21 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={(event) => openChallenge(challenge, event.currentTarget.querySelector<HTMLElement>('.stacked-card-surface') ?? event.currentTarget)}
                 >
-                  <span className="stacked-card-volume">
-                    <span className="stacked-card-depth is-back" aria-hidden="true" />
-                    <span className="stacked-card-edge is-top" aria-hidden="true" />
-                    <span className="stacked-card-edge is-right" aria-hidden="true" />
-                    <span className="stacked-card-edge is-bottom" aria-hidden="true" />
-                    <span className="stacked-card-edge is-left" aria-hidden="true" />
-                    <span className="stacked-card-surface">
-                      <span className="card-beam" aria-hidden="true" />
-                      <span className="card-id">
-                        <span>{category.shortName} / {String(index + 1).padStart(3, '0')}</span>
-                        <span className={`card-state ${challenge.solved ? 'is-cleared' : ''}`}>
-                          {challenge.solved
-                            ? <><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.2 2.8 2.8 6.2-6.2" /></svg><span>SOLVED</span></>
-                            : <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M7 4h5v5" /></svg>}
-                        </span>
+                  <span className="stacked-card-depth is-back" aria-hidden="true" />
+                  <span className="stacked-card-surface">
+                    <span className="card-beam" aria-hidden="true" />
+                    <span className="card-id">
+                      <span>{category.shortName} / {String(index + 1).padStart(3, '0')}</span>
+                      <span className={`card-state ${challenge.solved ? 'is-cleared' : ''}`}>
+                        {challenge.solved
+                          ? <><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.2 2.8 2.8 6.2-6.2" /></svg><span>SOLVED</span></>
+                          : <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M7 4h5v5" /></svg>}
                       </span>
-                      <strong>{challenge.title}</strong>
-                      <span className="stacked-card-footer">
-                        <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
-                        <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
-                      </span>
+                    </span>
+                    <strong>{challenge.title}</strong>
+                    <span className="stacked-card-footer">
+                      <span className="stacked-card-points">{challenge.points}<small>PTS</small></span>
+                      <span className="stacked-card-meta">{challenge.solves}<small>SOLVERS</small></span>
                     </span>
                   </span>
                 </button>
