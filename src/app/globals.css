@@ -387,22 +387,25 @@ html::-webkit-scrollbar { display: none; }
   .landing-main { width: min(100% - 30px, 1440px); }
   .site-header { height: 74px; grid-template-columns: auto 1fr auto; column-gap: 14px; padding-inline: 15px; }
   .brand-logo { width: 112px; }
-  .header-primary { gap: 12px; font-size: 12px; justify-self: end; }
+  .header-primary { gap: 4px; font-size: 12px; justify-self: end; }
+  .header-primary .header-link { display: inline-flex; min-height: 44px; align-items: center; padding-inline: 6px; }
   .header-actions { gap: 8px; }
   .header-login { font-size: 12px; }
   .auth-desktop-actions { display: none; }
   .auth-mobile-menu { display: block; }
+  .auth-mobile-menu summary { display: grid; min-width: 44px; min-height: 44px; place-items: center; padding: 0; }
   .site-footer { min-height: 180px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 28px; padding-inline: 15px; }
   .auth-main { min-height: auto; padding: 48px 15px 72px; }
   .auth-panel { border-radius: 18px; }
 }
 
 @media (max-width: 420px) {
-  .site-header { column-gap: 9px; padding-inline: 10px; }
-  .brand-logo { width: 90px; }
-  .header-primary { gap: 7px; font-size: 10px; white-space: nowrap; }
-  .header-actions { gap: 3px; }
-  .theme-toggle { width: 36px; height: 36px; }
+  .site-header { column-gap: 5px; padding-inline: 10px; }
+  .brand-logo { width: 86px; }
+  .header-primary { gap: 0; font-size: 11px; white-space: nowrap; }
+  .header-primary .header-link { padding-inline: 4px; }
+  .header-actions { gap: 2px; }
+  .theme-toggle { width: 44px; height: 44px; }
   .header-login { font-size: 11px; }
 }
 
@@ -624,7 +627,7 @@ html::-webkit-scrollbar { display: none; }
 .challenge-admin-table button:hover:not(:disabled) { border-color: rgba(77,224,167,.52); background: rgba(77,224,167,.09); }
 .challenge-admin-table button:active:not(:disabled) { transform: translateY(1px); }
 .challenge-admin-table button:disabled { cursor: not-allowed; opacity: .4; }
-.challenge-admin-table button.danger { color: #895c5f; }
+.challenge-admin-table button.danger { border-color: rgba(255,107,113,.2); background: rgba(255,107,113,.025); color: #c17b80; }
 .challenge-admin-table button.danger:hover { border-color: rgba(255,107,113,.42); background: rgba(255,107,113,.08); color: var(--danger); }
 .auth-error { border: 1px solid rgba(255,107,113,.28); border-radius: 5px; padding: 11px 13px; background: rgba(255,107,113,.055); color: var(--danger); font-size: 13px; }
 
@@ -1391,7 +1394,8 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .admin-main { color: #202733; }
   .admin-main :is(.event-admin-form input, .event-admin-form select, .file-picker, .connection-type-options, .vm-runtime-option) { border-color: var(--line-strong); background: var(--panel); color: #202733; color-scheme: light; }
   .admin-main :is(.event-admin-form label, .event-admin-form > .form-field, .admin-file-field, .vm-runtime-grid > label, .file-picker span, .connection-type-options span, .admin-notice, .category-order strong, .log-ip-inline) { color: #465160; }
-  .admin-main :is(.challenge-add-button, .challenge-admin-table button, .connection-type-options input:checked + span) { border-color: var(--line-strong); background: #edf6f1; color: var(--green); }
+  .admin-main :is(.challenge-add-button, .challenge-admin-table button:not(.danger), .connection-type-options input:checked + span) { border-color: var(--line-strong); background: #edf6f1; color: var(--green); }
+  .admin-main .challenge-admin-table button.danger { border-color: rgba(189,52,59,.28); background: rgba(189,52,59,.045); color: #9e3439; }
   .admin-main .file-picker .deployment-file-status.is-failed { color: #a62b32; }
   .admin-main .file-picker .deployment-file-status.is-pending { color: #855b09; }
   .admin-main .file-picker .deployment-file-status.is-success { color: var(--green); }

@@ -30,6 +30,22 @@ test('desktop navigation and footer span the viewport in both themes', async ({ 
   expect(toggledColor).not.toBe(initialColor);
 });
 
+test('mobile navigation keeps full touch targets without horizontal overflow', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, `198.51.100.${40 + testInfo.workerIndex}`);
+  const targets = page.locator('.header-primary .header-link, .theme-toggle, .auth-mobile-menu summary');
+  await expect(targets).toHaveCount(4);
+  const sizes = await targets.evaluateAll((elements) => elements.map((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { width: bounds.width, height: bounds.height };
+  }));
+  for (const size of sizes) {
+    expect(size.height).toBeGreaterThanOrEqual(44);
+    expect(size.width).toBeGreaterThanOrEqual(44);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
 test('admin editor controls follow the active theme after switching both ways', async ({ page }) => {
   await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.91' });
   await page.goto('/login?callbackUrl=%2Fadmin');
@@ -48,5 +64,6 @@ test('admin editor controls follow the active theme after switching both ways', 
     await expect(field).toHaveCSS('background-color', theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(7, 12, 10)');
     await expect(field).toHaveCSS('color', theme === 'light' ? 'rgb(32, 39, 51)' : 'rgb(237, 243, 240)');
     await expect(page.locator('.scoring-mode-options label').nth(1).locator('strong')).toHaveCSS('color', theme === 'light' ? 'rgb(32, 39, 51)' : 'rgb(237, 243, 240)');
+    await expect(page.locator('.challenge-admin-table button.danger').first()).toHaveCSS('color', theme === 'light' ? 'rgb(158, 52, 57)' : 'rgb(193, 123, 128)');
   }
 });
