@@ -13,7 +13,7 @@ export default async function HomePage() {
 
   return (
     <PageLayout>
-      <main className="landing-main">
+      <main id="main-content" className="landing-main" tabIndex={-1}>
         <section className="landing-stage" aria-labelledby="landing-title">
           <div className="landing-grid">
             <div className="landing-mark">

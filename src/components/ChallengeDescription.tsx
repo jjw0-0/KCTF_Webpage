@@ -1,6 +1,14 @@
 import Markdown from 'react-markdown';
 import { getVideoSource, safeResourceUrl } from '@/lib/challenge-media';
 
+const imageDimensions = (title?: string) => {
+  const match = title?.match(/^(\d{1,4})x(\d{1,4})$/);
+  if (!match) return undefined;
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  return width && height ? { width, height } : undefined;
+};
+
 export default function ChallengeDescription({ content }: { content: string }) {
   return (
     <div className="challenge-description">
@@ -25,11 +33,15 @@ export default function ChallengeDescription({ content }: { content: string }) {
             );
             return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
           },
-          img: ({ src, alt }) => src ? (
-            // Challenge media can come from author-provided hosts and does not use the image optimizer.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt={alt ?? ''} loading="lazy" />
-          ) : <span>{alt}</span>,
+          img: ({ src, alt, title }) => {
+            if (!src) return <span>{alt}</span>;
+            const dimensions = imageDimensions(title);
+            return (
+              // Challenge media can come from author-provided hosts and does not use the image optimizer.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={src} alt={alt ?? ''} loading="lazy" decoding="async" {...dimensions} title={dimensions ? undefined : title} />
+            );
+          },
         }}
       >{content}</Markdown>
     </div>

@@ -12,6 +12,7 @@ interface PageLayoutProps {
 export default function PageLayout({ children }: PageLayoutProps) {
   return (
     <>
+      <a className="skip-link" href="#main-content">본문으로 건너뛰기</a>
       <Header />
       {children}
       <Footer />

@@ -13,7 +13,7 @@ export default async function ScoreboardPage() {
 
   return (
     <PageLayout>
-      <main className="scoreboard-main">
+      <main id="main-content" className="scoreboard-main" tabIndex={-1}>
         <header className="scoreboard-heading">
           <h1>Scoreboard</h1>
         </header>

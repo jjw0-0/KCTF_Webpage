@@ -121,7 +121,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
           </div>
           <div className="instance-footer">
             <div className="instance-feedback" aria-live="polite">
-              {message && <p role="alert">{message}</p>}
+              {message && <p role="alert" title={message}>{message}</p>}
               {!message && copyStatus && <span>{copyStatus === '복사됨' ? '클립보드에 복사했습니다.' : '복사하지 못했습니다. 주소를 직접 선택해 주세요.'}</span>}
             </div>
             <div className="instance-actions">
@@ -141,7 +141,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
           <button className="instance-primary" type="button" onClick={() => void create()} disabled={loading}>
             {loading ? '준비 중…' : instance ? '이 문제로 교체' : 'Instance 생성'}
           </button>
-          {message && <p role="alert">{message}</p>}
+          {message && <p role="alert" title={message}>{message}</p>}
         </div>
       )}
       {confirmation}

@@ -553,7 +553,7 @@ export default function AdminDashboard({
   }, [logs.instanceLogs, logSearch]);
 
   return (
-    <main className="admin-main">
+    <main id="main-content" className="admin-main" tabIndex={-1}>
       <aside className="admin-sidebar">
         <div><h1>KCTF</h1><p className="admin-scope">관리자 페이지</p></div>
         <nav ref={adminNavRef} aria-label="관리자 메뉴">

@@ -51,7 +51,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
 
   return (
     <PageLayout>
-      <main className="profile-main team-page">
+      <main id="main-content" className="profile-main team-page" tabIndex={-1}>
         <section className="profile-card" aria-labelledby="team-title">
           <ProfileImage src={leaderAvatar} name={team.name} />
           <div className="profile-identity">

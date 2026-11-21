@@ -21,3 +21,11 @@ test('description HTML and executable URLs cannot create active content', () => 
   assert.doesNotMatch(html, /<script|<img|onerror=|href="javascript:|src="data:/);
   assert.match(html, /click/);
 });
+
+test('description images reserve a valid author-provided aspect ratio', () => {
+  const html = render('![회로도](/diagram.png "800x600")\n\n![일반 이미지](/plain.png)\n\n![잘못된 크기](/invalid.png "0x600")');
+  assert.match(html, /<img[^>]+src="\/diagram\.png"[^>]+width="800"[^>]+height="600"/);
+  assert.match(html, /<img[^>]+src="\/plain\.png"/);
+  assert.doesNotMatch(html, /src="\/plain\.png"[^>]+width=/);
+  assert.doesNotMatch(html, /src="\/invalid\.png"[^>]+width=/);
+});

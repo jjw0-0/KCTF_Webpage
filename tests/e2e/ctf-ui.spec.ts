@@ -82,6 +82,25 @@ test('challenge cards use one cyberpunk surface and short dialogs keep every fix
   expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
 });
 
+test('short landscape dialogs contain long submission errors without moving fixed actions', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.route('**/api/challenges/e2e-instance/submit', async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: '플래그를 제출하지 못했습니다. 네트워크 연결을 확인한 뒤 잠시 후 다시 시도해 주세요. 문제가 계속되면 운영진에게 문의해 주세요.' }),
+    });
+  });
+  await signIn(page, '/challenges?challenge=e2e-instance');
+  const dialog = page.getByRole('dialog', { name: 'HTTP Workshop' });
+  await dialog.getByLabel('플래그 제출').fill('KCTF{retry}');
+  await dialog.getByRole('button', { name: '제출', exact: true }).click();
+  await expect(dialog.getByRole('status')).toContainText('플래그를 제출하지 못했습니다.');
+  await expect(dialog.getByLabel('플래그 제출')).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: '제출', exact: true })).toBeInViewport();
+  await expect(dialog.getByRole('link', { name: /workshop\.zip/ })).toBeInViewport();
+});
+
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, '/challenges?challenge=e2e-tcp');

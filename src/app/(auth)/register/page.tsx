@@ -8,7 +8,7 @@ export default async function RegisterPage() {
 
   return (
     <PageLayout>
-      <main className="auth-main">
+      <main id="main-content" className="auth-main" tabIndex={-1}>
         <section className="auth-panel">
           <header className="auth-heading">
             <p className="eyebrow">KCTF 2026 / REGISTER</p>

@@ -9,6 +9,16 @@ async function signIn(page: Page, clientIp: string) {
   await expect(page).toHaveURL(/\/challenges$/, { timeout: 20_000 });
 }
 
+test('keyboard users can skip shared navigation and focus the page content', async ({ page }) => {
+  await page.goto('/login');
+  await page.keyboard.press('Tab');
+  const skipLink = page.getByRole('link', { name: '본문으로 건너뛰기' });
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toBeInViewport();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main#main-content')).toBeFocused();
+});
+
 test('desktop navigation and footer span the viewport in both themes', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await signIn(page, `198.51.100.${20 + testInfo.workerIndex}`);

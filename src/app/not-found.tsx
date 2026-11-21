@@ -7,7 +7,7 @@ import PageLayout from '@/components/PageLayout';
 export default function NotFoundPage() {
   return (
     <PageLayout>
-      <main className="flex-1 flex items-center justify-center">
+      <main id="main-content" className="flex-1 flex items-center justify-center" tabIndex={-1}>
         <p className="text-lg">페이지를 찾을 수 없습니다.</p>
       </main>
     </PageLayout>

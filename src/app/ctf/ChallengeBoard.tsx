@@ -208,7 +208,8 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
   };
 
   return (
-    <main className="challenge-main">
+    <main id="main-content" className="challenge-main" tabIndex={-1}>
+      <h1 className="sr-only">Challenges</h1>
       <header className="challenge-heading">
         <div className="challenge-tools">
           <div className="category-tabs" role="group" aria-label="카테고리 필터">
@@ -302,7 +303,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
             <header className="dialog-header">
               <div className="dialog-hero">
                 <div className="dialog-title-group">
-                  <h2 id="challenge-dialog-title">{selected.title}</h2>
+                  <h2 id="challenge-dialog-title" title={selected.title}>{selected.title}</h2>
                   <div className="dialog-meta">
                     <p className="dialog-author"><span>Author</span> {selected.author || '-'}</p>
                     <div className="dialog-value"><strong>{selected.points}</strong><span>PTS</span></div>
@@ -357,7 +358,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                 <div className="flag-form-head">
                   <label htmlFor="flag-input">플래그 제출</label>
                   {isAuthenticated && submission.message && (
-                    <span className={`flag-status-badge is-${submission.state}`} role="status">
+                    <span className={`flag-status-badge is-${submission.state}`} role="status" title={submission.message}>
                       <svg viewBox="0 0 16 16" aria-hidden="true">
                         {submission.state === 'correct'
                           ? <path d="m3 8.2 3.1 3.1L13 4.5" />
@@ -365,7 +366,7 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                             ? <><path d="M8 2.1 14 13H2L8 2.1Z" /><path d="M8 5.7v3.5M8 11.4v.1" /></>
                             : <path d="m4 4 8 8m0-8-8 8" />}
                       </svg>
-                      {submission.message}
+                      <span>{submission.message}</span>
                     </span>
                   )}
                 </div>

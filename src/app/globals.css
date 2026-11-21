@@ -105,6 +105,24 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  transform: translateY(calc(-100% - 20px));
+  transition: transform .18s var(--ease-out);
+}
+.skip-link:focus-visible { transform: translateY(0); }
+#main-content:focus { outline: none; }
+
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button:not(:disabled), a { cursor: pointer; }
@@ -1019,7 +1037,8 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .dialog-resources + .flag-form { padding-top: 0; }
 .flag-form-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .flag-form label { display: block; margin: 0; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-.flag-status-badge { display: inline-flex; align-items: center; gap: 7px; color: #92a39a; font: 500 11px var(--font-mono), monospace; }
+.flag-status-badge { display: inline-flex; min-width: 0; max-width: 70%; align-items: center; gap: 7px; color: #92a39a; font: 500 11px var(--font-mono), monospace; }
+.flag-status-badge > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .flag-status-badge svg { width: 14px; height: 14px; fill: none; stroke: currentcolor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
 .flag-status-badge.is-correct { color: #63d9a4; }
 .flag-status-badge.is-duplicate { color: #d9b96f; }
@@ -1233,7 +1252,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .challenge-dialog-backdrop { padding: 10px; }
   .challenge-dialog { height: calc(100dvh - 20px); max-height: calc(100dvh - 20px); }
   .dialog-header { min-height: 0; padding: 8px 24px 7px; }
-  .challenge-dialog h2 { font-size: 27px; }
+  .challenge-dialog h2 { overflow: hidden; font-size: 27px; text-overflow: ellipsis; white-space: nowrap; }
   .dialog-meta { gap: 14px; margin-top: 7px; }
   .dialog-close { width: 44px; height: 44px; }
   .dialog-description-area { min-height: 54px; }
@@ -1248,6 +1267,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .instance-empty { min-height: 44px; padding-block: 0; }
   .instance-footer { min-height: 44px; padding-top: 0; }
   .instance-feedback:empty { display: none; }
+  .instance-feedback p, .instance-empty p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .flag-form-head { margin-bottom: 3px; }
   .flag-form input { padding-block: 10px; }
 }

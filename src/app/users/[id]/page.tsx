@@ -47,7 +47,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
 
   return (
     <PageLayout>
-      <main className="profile-main">
+      <main id="main-content" className="profile-main" tabIndex={-1}>
         <section className="profile-card" aria-labelledby="profile-title">
           <ProfileImage src={avatarUrl} name={user.username} />
           <div className="profile-identity">

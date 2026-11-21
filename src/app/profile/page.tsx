@@ -33,7 +33,7 @@ export default async function ProfilePage() {
 
   return (
     <PageLayout>
-      <main className="profile-main">
+      <main id="main-content" className="profile-main" tabIndex={-1}>
         <section className="profile-card" aria-labelledby="profile-title">
           <ProfileAvatar avatarData={user?.avatarData ?? undefined} initials={initials} />
           <div className="profile-identity">
