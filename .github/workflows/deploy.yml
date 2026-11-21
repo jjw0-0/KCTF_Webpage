@@ -19,7 +19,7 @@ jobs:
       group: production-deploy
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Deploy approved revision
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
