@@ -82,6 +82,53 @@ test('challenge cards use one cyberpunk surface and short dialogs keep every fix
   expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
 });
 
+test('mobile challenge cards stay angled and overlapping without clipping', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.getByRole('group', { name: '카테고리 필터' }).getByRole('button', { name: 'WEB', exact: true }).click();
+
+  const cards = page.locator('.challenge-card-slot');
+  await expect(cards).toHaveCount(2);
+  await cards.first().locator('.stacked-card-surface').evaluate(async (surface) => {
+    await Promise.all(surface.getAnimations().map((animation) => animation.finished));
+  });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
+    await page.setViewportSize(viewport);
+    const layout = await cards.evaluateAll((slots) => slots.map((slot) => {
+      const button = slot.querySelector<HTMLButtonElement>('.stacked-card');
+      const surface = slot.querySelector<HTMLElement>('.stacked-card-surface');
+      if (!button || !surface) throw new Error('Challenge card surface is missing');
+      const rect = surface.getBoundingClientRect();
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(surface).transform);
+      const target = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return {
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        angle: Math.atan2(matrix.b, matrix.a),
+        centerHitsButton: target?.closest('button') === button,
+      };
+    }));
+
+    expect(layout[0].bottom - layout[1].top).toBeGreaterThan(10);
+    expect(layout[0].bottom - layout[1].top).toBeLessThan(32);
+    expect(layout[0].angle * layout[1].angle).toBeLessThan(0);
+    expect(layout.every((card) => card.left >= 0 && card.right <= viewport.width)).toBe(true);
+    expect(layout.every((card) => card.centerHitsButton)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+  }
+
+  const secondCard = cards.nth(1).getByRole('button');
+  await secondCard.focus();
+  await expect(secondCard).toHaveClass(/is-hovered/);
+  await expect.poll(async () => Math.abs(await secondCard.locator('.stacked-card-surface').evaluate((surface) => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(surface).transform);
+    return Math.atan2(matrix.b, matrix.a);
+  }))).toBeLessThan(0.001);
+});
+
 test('short landscape dialogs contain long submission errors without moving fixed actions', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await page.route('**/api/challenges/e2e-instance/submit', async (route) => {

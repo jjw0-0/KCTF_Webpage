@@ -1207,16 +1207,17 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .challenge-groups { gap: 36px; padding-inline: 0; }
   .challenge-tools .category-tabs { width: 100%; flex-wrap: nowrap; padding-right: 24px; mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%); }
   .challenge-progress { padding-left: 8px; font-size: 9px; }
-  .challenge-stack { min-height: 0; align-items: stretch; flex-direction: column; gap: 16px; overflow: visible; padding: 22px 0 0; }
-  .challenge-group:has(.challenge-card-slot:only-child) .challenge-stack { min-height: 0; padding-block: 22px 0; }
-  .challenge-card-slot { width: 100%; height: 174px; flex-basis: auto; }
+  .challenge-stack { min-height: 0; align-items: stretch; flex-direction: column; gap: 0; overflow: visible; padding: 27px 0 8px; }
+  .challenge-group:has(.challenge-card-slot:only-child) .challenge-stack { min-height: 0; padding-block: 27px 8px; }
+  .challenge-card-slot { --mobile-card-tilt: -2deg; width: 100%; height: 174px; flex-basis: auto; }
+  .challenge-card-slot:nth-child(even) { --mobile-card-tilt: 2deg; }
   .challenge-card-slot::before { display: none; }
-  .challenge-card-slot + .challenge-card-slot { margin-left: 0; }
-  .stacked-card { inset: 0; width: 100%; height: 174px; }
-  .stacked-card-surface { inset: 0; width: 100%; min-width: 0; height: 174px; padding: 22px 26px; transform: none; }
+  .challenge-card-slot + .challenge-card-slot { margin-top: -18px; margin-left: 0; }
+  .stacked-card { inset: 0 8px; width: auto; height: 174px; }
+  .stacked-card-surface { inset: 0; width: 100%; min-width: 0; height: 174px; padding: 22px 26px; transform: rotateZ(var(--mobile-card-tilt)); }
   .stacked-card strong { font-size: 23px; }
   .stacked-card:is(.is-hovered, :hover, :focus-visible) .stacked-card-surface { transform: translateY(-8px) rotate(0deg) scale(1.015); }
-  .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: 1; transform: none; }
+  .challenge-stack.is-engaged .challenge-card-slot:not(.is-active) .stacked-card-surface { opacity: 1; transform: rotateZ(var(--mobile-card-tilt)); }
   .challenge-dialog-backdrop { padding: 10px; }
   .challenge-dialog { height: min(720px, calc(100dvh - 20px)); max-height: calc(100dvh - 20px); border-radius: 10px; }
   .dialog-header { min-height: 0; padding: 22px 18px 18px; }
