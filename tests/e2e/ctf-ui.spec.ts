@@ -58,12 +58,13 @@ test('the dialog stays single-column even with a legacy layout parameter', async
   expect(instanceDialog?.height).toBe(descriptionDialog?.height);
 });
 
-test('card depth remains decorative and short dialogs keep every action reachable', async ({ page }) => {
+test('challenge cards use one cyberpunk surface and short dialogs keep every action reachable', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await signIn(page);
   const card = page.getByRole('button', { name: /^Socket Relay,/ });
-  await expect(card.locator('.stacked-card-depth')).toHaveCount(1);
-  await expect(card.locator('.stacked-card-depth').first()).toHaveCSS('pointer-events', 'none');
+  await expect(card.locator('.stacked-card-surface')).toHaveCount(1);
+  await expect(card.locator('.stacked-card-depth')).toHaveCount(0);
+  await expect(card.locator('.card-circuit')).toHaveCount(1);
   await card.click();
 
   const dialog = page.getByRole('dialog');

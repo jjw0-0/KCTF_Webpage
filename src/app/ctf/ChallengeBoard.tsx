@@ -247,8 +247,12 @@ export default function ChallengeBoard({ initialCategory, initialChallengeId, is
                   aria-label={`${challenge.title}, ${challenge.points} 포인트, ${challenge.solves}명 해결${challenge.solved ? ', 해결 완료' : ''}`}
                   onClick={(event) => openChallenge(challenge, event.currentTarget.querySelector<HTMLElement>('.stacked-card-surface') ?? event.currentTarget)}
                 >
-                  <span className="stacked-card-depth is-back" aria-hidden="true" />
                   <span className="stacked-card-surface">
+                    <svg className="card-circuit" viewBox="0 0 350 184" fill="none" aria-hidden="true">
+                      <path d="M236 0v23l20 20h94M267 0v12l20 20h63M350 65h-37l-14 14h-40M0 142h20l12 12h50M350 129h-26l-16 16v39" />
+                      <circle cx="259" cy="79" r="3" /><circle cx="82" cy="154" r="3" />
+                      <path className="circuit-ticks" d="M48 16h18m-18 5h9M320 161h-18m18 5h-9" />
+                    </svg>
                     <span className="card-beam" aria-hidden="true" />
                     <span className="card-id">
                       <span>{category.shortName} / {String(index + 1).padStart(3, '0')}</span>
