@@ -106,7 +106,7 @@ body {
 }
 
 button, input, select, textarea { font: inherit; }
-button, a { -webkit-tap-highlight-color: transparent; }
+button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button:not(:disabled), a { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .48; }
 input, textarea { caret-color: var(--green); }
@@ -869,7 +869,7 @@ html::-webkit-scrollbar { display: none; }
   .profile-card { grid-template: "avatar identity" auto "avatar actions" auto "status status" auto "record record" auto / 96px minmax(0, 1fr); gap: 4px 16px; padding: 22px 18px 0; }
   .profile-avatar { width: 92px; height: 92px; font-size: 20px; }
   .profile-avatar-actions { gap: 0; }
-  .profile-avatar-actions label, .profile-avatar-actions button { min-height: 40px; padding-inline: 8px; font-size: 10px; }
+  .profile-avatar-actions label, .profile-avatar-actions button { min-height: 44px; padding-inline: 8px; font-size: 10px; }
   .profile-avatar-actions label { margin-left: -8px; }
   .profile-avatar-editor > p { margin-top: 11px; padding-bottom: 18px; }
   .profile-card h1 { font-size: clamp(28px, 10vw, 36px); }
@@ -999,7 +999,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
 .instance-footer { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; }
 .instance-actions { display: flex; width: auto; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; }
 .instance-actions > * { flex: 0 0 auto; }
-.instance-primary, .instance-stop { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; border-radius: 6px; padding: 9px 14px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.instance-primary, .instance-stop { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; border-radius: 6px; padding: 9px 14px; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .instance-primary { background: #3bcf96; color: #02100a; }
 .instance-primary:hover, .instance-primary:focus-visible { background: #80edc0; color: #02100a; }
 .instance-stop { color: #8fa299; }
@@ -1208,7 +1208,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .dialog-header-actions { gap: 5px; }
   .dialog-value { min-height: 40px; padding-inline: 2px; }
   .dialog-value strong { font-size: 18px; }
-  .dialog-close { width: 40px; height: 40px; }
+  .dialog-close { width: 44px; height: 44px; }
   .dialog-body { padding: 24px 20px; }
   .dialog-dock { gap: 14px; padding: 16px 20px max(16px, env(safe-area-inset-bottom)); }
   .dialog-resources { grid-template-columns: 1fr; }
@@ -1235,7 +1235,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .dialog-header { min-height: 82px; padding: 14px 24px 12px; }
   .challenge-dialog h2 { font-size: 27px; }
   .dialog-meta { gap: 14px; margin-top: 7px; }
-  .dialog-close { width: 38px; height: 38px; }
+  .dialog-close { width: 44px; height: 44px; }
   .dialog-description-area { min-height: 74px; }
   .dialog-body { padding: 16px 24px 18px; }
   .dialog-dock { gap: 9px; padding: 9px 24px 11px; }

@@ -97,3 +97,59 @@ test('HTTP Instance exposes a clean address without a session form', async ({ pa
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('http://instance.example.test:10022');
   expect((await context.cookies()).find((cookie) => cookie.name === 'kctf_instance_token')?.value).toBe('e2e-browser-token');
 });
+
+test('Instance replacement and termination require explicit confirmation', async ({ page }) => {
+  let postCount = 0;
+  let deleteCount = 0;
+  const previousInstance = {
+    challengeId: 'another-challenge',
+    url: 'http://previous.example.test:10022',
+    accessToken: 'previous-token',
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  };
+  const nextInstance = { ...previousInstance, challengeId: 'e2e-instance', url: 'http://next.example.test:10022' };
+
+  await page.route('**/api/instances', async (route) => {
+    const method = route.request().method();
+    if (method === 'POST') {
+      postCount += 1;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ instance: nextInstance }) });
+      return;
+    }
+    if (method === 'DELETE') {
+      deleteCount += 1;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ instance: previousInstance }) });
+  });
+
+  await signIn(page, '/challenges?challenge=e2e-instance');
+  const instance = page.getByRole('region', { name: 'Challenge Instance' });
+  const replace = instance.getByRole('button', { name: '이 문제로 교체' });
+  await replace.click();
+  let confirmation = page.getByRole('dialog', { name: 'Instance 교체' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: '취소' }).click();
+  await expect(replace).toBeFocused();
+  expect(postCount).toBe(0);
+
+  await replace.click();
+  confirmation = page.getByRole('dialog', { name: 'Instance 교체' });
+  await confirmation.getByRole('button', { name: 'Instance 교체' }).click();
+  await expect(instance.getByRole('button', { name: 'Instance 종료' })).toBeVisible();
+  expect(postCount).toBe(1);
+
+  const stop = instance.getByRole('button', { name: 'Instance 종료' });
+  await stop.click();
+  confirmation = page.getByRole('dialog', { name: 'Instance 종료' });
+  await confirmation.getByRole('button', { name: '취소' }).click();
+  await expect(stop).toBeFocused();
+  expect(deleteCount).toBe(0);
+
+  await stop.click();
+  confirmation = page.getByRole('dialog', { name: 'Instance 종료' });
+  await confirmation.getByRole('button', { name: 'Instance 종료' }).click();
+  await expect(instance.getByRole('button', { name: 'Instance 생성' })).toBeVisible();
+  expect(deleteCount).toBe(1);
+});

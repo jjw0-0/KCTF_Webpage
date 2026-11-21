@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { getTcpCommand } from '@/lib/challenge-media';
 
 type Instance = { challengeId: string; url: string; accessToken: string; expiresAt: string };
@@ -12,6 +13,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
   const [loading, setLoading] = useState(enabled);
   const [requiresLogin, setRequiresLogin] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
+  const { confirm, confirmation } = useConfirmDialog();
 
   useEffect(() => {
     if (!enabled) return;
@@ -29,6 +31,13 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
   if (!enabled) return null;
 
   const create = async () => {
+    if (instance && !(await confirm({
+      title: 'Instance 교체',
+      description: '현재 실행 중인 Instance를 종료하고 이 문제 환경을 시작합니다. 기존 환경의 진행 상태는 사라집니다.',
+      confirmLabel: 'Instance 교체',
+      danger: true,
+    }))) return;
+
     setLoading(true);
     setMessage('');
     try {
@@ -52,6 +61,13 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
   };
 
   const destroy = async () => {
+    if (!(await confirm({
+      title: 'Instance 종료',
+      description: '실행 중인 Instance와 저장되지 않은 진행 상태가 사라집니다.',
+      confirmLabel: 'Instance 종료',
+      danger: true,
+    }))) return;
+
     setLoading(true);
     setMessage('');
     try {
@@ -128,6 +144,7 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
           {message && <p role="alert">{message}</p>}
         </div>
       )}
+      {confirmation}
     </section>
   );
 }

@@ -18,6 +18,10 @@ function ConfirmDialog({ open, title, description, confirmLabel = '확인', dang
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const answer = (confirmed: boolean) => {
+    dialogRef.current?.close();
+    onAnswer(confirmed);
+  };
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -32,16 +36,16 @@ function ConfirmDialog({ open, title, description, confirmLabel = '확인', dang
       className="confirm-dialog"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
-      onCancel={(event) => { event.preventDefault(); onAnswer(false); }}
-      onClick={(event) => { if (event.target === event.currentTarget) onAnswer(false); }}
+      onCancel={(event) => { event.preventDefault(); answer(false); }}
+      onClick={(event) => { if (event.target === event.currentTarget) answer(false); }}
     >
       <div className="confirm-dialog-panel">
         <span className="confirm-dialog-signal" aria-hidden="true" />
         <h2 id={titleId}>{title}</h2>
         <p id={descriptionId}>{description}</p>
         <div className="confirm-dialog-actions">
-          <button type="button" className="button button-ghost" autoFocus onClick={() => onAnswer(false)}>취소</button>
-          <button type="button" className={`button ${danger ? 'button-danger' : 'button-primary'}`} onClick={() => onAnswer(true)}>{confirmLabel}</button>
+          <button type="button" className="button button-ghost" autoFocus onClick={() => answer(false)}>취소</button>
+          <button type="button" className={`button ${danger ? 'button-danger' : 'button-primary'}`} onClick={() => answer(true)}>{confirmLabel}</button>
         </div>
       </div>
     </dialog>

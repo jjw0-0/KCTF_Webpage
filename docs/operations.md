@@ -74,4 +74,4 @@ The separate [Release images workflow](../.github/workflows/release.yml) calls C
 
 ## Instance confirmation
 
-In the participant challenge dialog, `종료` and `현재 Instance 교체` can discard work inside the active challenge VM. An action-specific confirmation dialog before either action is **deferred UI work**; operators should account for that current behavior when preparing an event. This guide does not imply that confirmation already exists.
+In the participant challenge dialog, `Instance 종료` and `이 문제로 교체` can discard work inside the active challenge VM. Both actions require an action-specific confirmation before the API request is sent. Cancelling the dialog preserves the current Instance and does not call the mutation endpoint.
