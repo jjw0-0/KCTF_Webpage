@@ -56,6 +56,7 @@ export default function AdminUsers({ users, teams, currentAdminId }: { users: Us
       </div>
       {error && <p className="admin-notice error" role="alert">{error}</p>}
       <div className="participant-list" role="list">
+        {userList.length === 0 && <p className="admin-empty-state">등록된 사용자가 없습니다.</p>}
         {userList.map((user) => (
           <article key={user.id} role="listitem">
             <div className="participant-identity">

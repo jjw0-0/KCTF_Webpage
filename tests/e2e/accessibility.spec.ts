@@ -111,3 +111,52 @@ test('admin editor controls follow the active theme after switching both ways', 
     await expect(page.locator('.challenge-admin-table button.danger').first()).toHaveCSS('color', theme === 'light' ? 'rgb(158, 52, 57)' : 'rgb(193, 123, 128)');
   }
 });
+
+test('admin management panels reflow cleanly at intermediate desktop widths', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 820 });
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.93' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+
+  await page.getByRole('button', { name: 'CTF 관리', exact: true }).click();
+  await expect(page.locator('.event-admin-form')).toHaveCSS('grid-template-columns', /\d+px/);
+  await expect.poll(async () => page.locator('.event-time-range').evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const panel = element.closest('.admin-panel')!.getBoundingClientRect();
+    return bounds.left >= panel.left && bounds.right <= panel.right;
+  })).toBe(true);
+
+  await page.getByRole('button', { name: '카테고리 관리', exact: true }).click();
+  await expect(page.locator('.delete-category').first()).toBeInViewport();
+
+  await page.getByRole('button', { name: '로그', exact: true }).click();
+  await expect(page.locator('.admin-server-log-head')).toBeHidden();
+  const firstLog = page.locator('.admin-server-log-row').first();
+  await expect(firstLog).toBeVisible();
+  await expect.poll(async () => firstLog.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const panel = element.closest('.admin-panel')!.getBoundingClientRect();
+    return bounds.left >= panel.left && bounds.right <= panel.right;
+  })).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(900);
+});
+
+test('admin log refresh failures are visible instead of silently leaving stale data', async ({ page }) => {
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.94' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('button', { name: '로그', exact: true }).click();
+  await page.route('**/api/admin/logs', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: '로그 서버 연결 실패' }) });
+  });
+  await page.getByRole('button', { name: '새로고침', exact: true }).click();
+  await expect(page.locator('.admin-log-notice')).toContainText('로그 서버 연결 실패');
+});

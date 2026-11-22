@@ -123,6 +123,7 @@ export default function AdminDashboard({
   const [submissionResultFilter, setSubmissionResultFilter] = useState<'ALL' | 'CORRECT' | 'WRONG'>('ALL');
   const [logSearch, setLogSearch] = useState('');
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [logNotice, setLogNotice] = useState('');
   const { confirm, confirmation } = useConfirmDialog();
   const challengeEditorRef = useRef<HTMLElement>(null);
   const adminNavRef = useRef<HTMLElement>(null);
@@ -459,8 +460,9 @@ export default function AdminDashboard({
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? '로그를 불러오지 못했습니다.');
       setLogs(payload);
+      setLogNotice('');
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : '로그를 불러오지 못했습니다.', 'error');
+      setLogNotice(error instanceof Error ? error.message : '로그를 불러오지 못했습니다.');
     } finally {
       setIsLoadingLogs(false);
     }
@@ -487,8 +489,6 @@ export default function AdminDashboard({
         await refreshLogs();
       })();
     }
-  // Only tab changes should trigger the automatic external-IP/log refresh.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeNav]);
 
   const logTimestampFormatter = useMemo(
@@ -607,6 +607,7 @@ export default function AdminDashboard({
 
             <div className="category-admin-table" role="table" aria-label="카테고리 관리">
               <div className="category-admin-row table-head" role="row"><span role="columnheader">순서</span><span role="columnheader">이름 / 주소</span><span role="columnheader">문제</span><span role="columnheader">공개</span><span role="columnheader">작업</span></div>
+              {categories.length === 0 && <p className="admin-empty-state">등록된 카테고리가 없습니다.</p>}
               {categories.map((category, index) => (
                 <div className="category-admin-row" role="row" key={category.id}>
                   <div className="category-order" role="cell">
@@ -903,6 +904,8 @@ export default function AdminDashboard({
                 </button>
               </div>
             </div>
+
+            {logNotice && <p className="admin-log-notice admin-notice error" role="alert">{logNotice}</p>}
 
             {logTab === 'server' ? (
               <div className="admin-server-log-list" role="region" aria-label="HTTP 로그 목록">

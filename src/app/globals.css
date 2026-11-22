@@ -472,7 +472,7 @@ html { scrollbar-gutter: stable; }
 .add-category-form input { width: 180px; border: 0; outline: 0; padding: 11px 12px; background: var(--field-surface); color: var(--text-primary); font-size: 13px; }
 .add-category-form button { min-height: 44px; padding: 0 16px; background: rgba(77,224,167,.1); color: var(--green); font-size: 12px; font-weight: 600; }
 
-.category-admin-table { width: 100%; overflow-x: auto; scrollbar-width: none; }
+.category-admin-table { width: 100%; overflow-x: auto; scrollbar-color: var(--line-strong) transparent; scrollbar-width: thin; }
 .table-scroll-hint { display: none; }
 .category-admin-row { display: grid; min-width: 710px; grid-template-columns: 115px minmax(210px, 1.4fr) 100px 150px 80px; align-items: center; border-bottom: 1px solid rgba(170,255,218,.08); padding: 15px 25px; font-size: 12px; }
 .category-admin-row.table-head { padding-block: 12px; background: rgba(255,255,255,.018); font: 10px var(--font-mono), monospace; letter-spacing: .1em; color: #64716a; }
@@ -495,8 +495,8 @@ html { scrollbar-gutter: stable; }
 .visibility-toggle input:checked + span::after { background: var(--green); transform: translateX(13px); box-shadow: 0 0 8px rgba(77,224,167,.6); }
 .visibility-toggle:focus-within { outline: 2px solid var(--green); outline-offset: 5px; }
 .visibility-toggle b { font: 10px var(--font-mono), monospace; color: #7b8881; }
-.delete-category { justify-self: start; color: #9a6d6f; font: 10px var(--font-mono), monospace; }
-.delete-category:hover { color: var(--danger); }
+.delete-category { display: inline-flex; min-width: 56px; min-height: 36px; align-items: center; justify-content: center; justify-self: start; border: 1px solid rgba(255,107,113,.24); border-radius: 5px; padding: 0 10px; background: rgba(255,107,113,.045); color: #d9878a; font: 600 11px var(--font-sans), sans-serif; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.delete-category:hover:not(:disabled), .delete-category:focus-visible { border-color: rgba(255,107,113,.58); background: rgba(255,107,113,.11); color: var(--danger); }
 .category-action-cell { display: flex; align-items: center; }
 .admin-panel-footer { display: flex; min-height: 65px; align-items: center; justify-content: space-between; gap: 20px; padding: 15px 27px; }
 .admin-panel-footer p { color: #64716a; font-size: 11px; }
@@ -585,11 +585,11 @@ html { scrollbar-gutter: stable; }
 .connection-type-options input:checked + span { border-color: rgba(77,224,167,.48); background: rgba(77,224,167,.1); color: #7aebbb; }
 .connection-type-options label:focus-within span { outline: 2px solid var(--green); outline-offset: 2px; }
 .challenge-access .direct-url.is-disabled { opacity: .42; }
-.event-admin-form { display: grid; grid-template-columns: minmax(180px, .42fr) minmax(420px, 1.58fr); gap: 24px 32px; padding: 28px; }
+.event-admin-form { display: grid; grid-template-columns: minmax(180px, .42fr) minmax(260px, 1.58fr); gap: 24px 32px; padding: 28px; }
 .event-admin-form label, .event-admin-form > .form-field { display: flex; flex-direction: column; gap: 9px; color: var(--text-secondary); font-size: 12px; }
 .event-admin-form input, .event-admin-form select { width: 100%; min-height: 46px; border: 1px solid var(--line-strong); border-radius: 5px; outline: none; padding: 0 13px; background: var(--field-surface); color: var(--text-primary); color-scheme: inherit; font-size: 14px; }
 .event-admin-form input:focus, .event-admin-form select:focus { border-color: rgba(77,224,167,.7); box-shadow: 0 0 0 3px rgba(77,224,167,.08); }
-.event-time-range { display: grid; grid-template-columns: 1fr 28px 1fr; align-items: end; }
+.event-time-range { display: grid; width: min(100%, 620px); grid-column: 1 / -1; grid-template-columns: 1fr 28px 1fr; align-items: end; }
 .event-time-range > span { height: 1px; margin: 0 8px 23px; background: #3b4c43; }
 .event-schedule-note { grid-column: 1 / -1; margin: 0; border-top: 1px solid var(--line); padding-top: 17px; color: var(--text-secondary); font-size: 11px; line-height: 1.7; }
 .event-admin-form .challenge-form-actions { grid-column: 1 / -1; }
@@ -617,7 +617,7 @@ html { scrollbar-gutter: stable; }
 .inline-check input:checked + span::before { transform: scale(1); }
 .inline-check:focus-within > span { box-shadow: 0 0 0 3px rgba(77,224,167,.12); }
 .challenge-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-top: 20px; }
-.challenge-form-actions p { color: #87948d; font: 12px var(--font-mono), monospace; }
+.challenge-form-actions p { color: var(--text-secondary); font: 12px var(--font-mono), monospace; }
 .challenge-form-actions > div { display: flex; flex: 0 0 auto; gap: 10px; }
 .challenge-form-actions .button { min-height: 42px; }
 .admin-notice { position: relative; min-height: 22px; margin: 0; padding-left: 15px; }
@@ -638,7 +638,7 @@ html { scrollbar-gutter: stable; }
 .challenge-list-meta .deployment-status.is-success { color: var(--green); }
 .challenge-list-meta .deployment-status.is-pending { color: var(--warning); }
 .challenge-list-meta .deployment-status.is-failed { color: var(--danger); }
-.challenge-list-meta .deployment-status.is-idle { color: #809087 !important; }
+.challenge-list-meta .deployment-status.is-idle { color: var(--text-secondary) !important; }
 .challenge-admin-table article small.deployment-error { max-width: 720px; overflow: hidden; color: var(--danger); text-overflow: ellipsis; white-space: nowrap; }
 .challenge-admin-table article strong { overflow: hidden; color: var(--text-primary); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .challenge-list-actions { display: flex; flex: 0 0 auto; gap: 16px; }
@@ -674,8 +674,10 @@ html { scrollbar-gutter: stable; }
 .admin-log-filters button.active { background: rgba(77,224,167,.14); color: var(--green); }
 .admin-log-search { min-width: 210px; min-height: 38px; border: 1px solid var(--line-strong); border-radius: 5px; outline: none; padding: 0 12px; background: var(--field-surface); color: var(--text-primary); font-size: 12px; }
 .admin-log-search:focus { border-color: rgba(77,224,167,.7); box-shadow: 0 0 0 3px rgba(77,224,167,.08); }
-.admin-server-log-list, .admin-submission-log-list { max-height: 620px; overflow: auto; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; scrollbar-width: none; }
-.admin-server-log-head, .admin-server-log-row { display: grid; min-width: 1060px; grid-template-columns: 146px 112px 96px 64px 64px minmax(300px, 1.35fr) minmax(220px, 1fr); align-items: center; gap: 12px; padding: 11px 22px; }
+.admin-log-notice { border-bottom: 1px solid var(--line); padding: 12px 28px 12px 43px; background: rgba(255,107,113,.055); font-size: 12px; }
+.admin-log-notice::before { left: 28px; }
+.admin-server-log-list, .admin-submission-log-list { max-height: 620px; overflow: auto; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; scrollbar-color: var(--line-strong) transparent; scrollbar-width: thin; }
+.admin-server-log-head, .admin-server-log-row { display: grid; min-width: 920px; grid-template-columns: 132px 102px 90px 58px 62px minmax(180px, 1.2fr) minmax(150px, .85fr); align-items: center; gap: 12px; padding: 11px 22px; }
 .admin-submission-log-head, .admin-submission-log-row { display: grid; grid-template-columns: 165px 84px minmax(120px, .7fr) minmax(150px, .9fr) minmax(180px, 1.2fr); align-items: center; gap: 14px; padding: 13px 24px; }
 .admin-server-log-head, .admin-submission-log-head { position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--line); background: #070e0b; color: #6c7b73; font: 500 10px var(--font-mono), monospace; letter-spacing: .1em; text-transform: uppercase; }
 .admin-server-log-row, .admin-submission-log-row { border-bottom: 1px solid rgba(170,255,218,.07); font-size: 12px; transition: background .15s; }
@@ -703,12 +705,34 @@ html { scrollbar-gutter: stable; }
 .log-badge.level-error, .log-badge.is-wrong { border-color: rgba(255,107,113,.34); background: rgba(255,107,113,.09); color: var(--danger); }
 .log-user, .log-challenge { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .log-user strong, .log-challenge strong { overflow: hidden; color: var(--text-primary); font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-.log-user small, .log-challenge span { overflow: hidden; color: #72827a; font: 10px var(--font-mono), monospace; text-overflow: ellipsis; white-space: nowrap; }
+.log-user small, .log-challenge span { overflow: hidden; color: var(--text-secondary); font: 10px var(--font-mono), monospace; text-overflow: ellipsis; white-space: nowrap; }
 .log-submitted-flag { overflow-wrap: anywhere; color: var(--text-primary); font: 12px/1.5 var(--font-mono), monospace; }
-.admin-log-empty { padding: 48px 24px; color: #6c7a73; font-size: 13px; text-align: center; }
+.admin-log-empty { padding: 48px 24px; color: var(--text-secondary); font-size: 13px; text-align: center; }
 
 @media (max-width: 1100px) {
   .admin-main { grid-template-columns: 190px minmax(0,1fr); gap: 30px; }
+}
+
+@media (max-width: 980px) {
+  .category-admin-row { min-width: 600px; grid-template-columns: 120px minmax(150px, 1.35fr) 64px 100px 64px; padding-inline: 18px; }
+  .category-order { gap: 8px; }
+  .event-admin-form { grid-template-columns: 1fr; }
+  .event-time-range,
+  .event-admin-form .challenge-form-actions { grid-column: auto; }
+  .admin-log-controls { width: 100%; }
+  .admin-log-search { flex: 1; min-width: 0; }
+  .admin-server-log-head, .admin-submission-log-head { display: none; }
+  .admin-server-log-row, .admin-submission-log-row { width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 12px; padding: 14px 18px; }
+  .admin-server-log-row time, .admin-submission-log-row time,
+  .admin-server-log-row code,
+  .admin-server-log-row .log-ua-inline { grid-column: 1 / -1; }
+  .admin-server-log-row .log-actor-inline { justify-self: end; }
+  .admin-server-log-row .log-expanded-detail { grid-column: 1 / -1; }
+  .log-submitted-flag { grid-column: 1 / -1; justify-self: start; }
+}
+
+@media (max-width: 640px) {
+  .table-scroll-hint { display: block; margin: 0; border-bottom: 1px solid var(--line); padding: 10px 27px; color: var(--text-secondary); font-size: 11px; }
 }
 
 @media (max-width: 760px) {
@@ -727,7 +751,6 @@ html { scrollbar-gutter: stable; }
   .admin-panel-heading { align-items: flex-start; flex-direction: column; }
   .challenge-list-heading .challenge-add-button { width: 100%; justify-content: center; }
   .challenge-editor-heading { padding-inline: 20px; }
-  .table-scroll-hint { display: block; margin: 0; border-bottom: 1px solid var(--line); padding: 10px 27px; color: var(--text-secondary); font-size: 11px; }
   .add-category-form { width: 100%; }
   .add-category-form input { flex: 1; width: auto; }
   .admin-panel-footer { align-items: flex-start; flex-direction: column; }
@@ -748,12 +771,6 @@ html { scrollbar-gutter: stable; }
   .challenge-list-actions button { flex: 1; }
   .load-panel { grid-template-columns: 1fr; }
   .load-chart, .load-legend { grid-column: 1; }
-  .admin-log-controls { width: 100%; }
-  .admin-log-search { flex: 1; min-width: 0; }
-  .admin-server-log-head, .admin-submission-log-head { display: none; }
-  .admin-server-log-row, .admin-submission-log-row { grid-template-columns: 1fr auto; gap: 8px 12px; padding: 14px 18px; }
-  .admin-server-log-row code { grid-column: 1 / -1; }
-  .log-submitted-flag { grid-column: 1 / -1; justify-self: start; }
 }
 
 /* Scoreboard and participant profile */
@@ -1449,6 +1466,9 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .participant-delete { border-color: rgba(189,52,59,.3); background: rgba(189,52,59,.055); color: #9e3439; }
   .participant-delete:hover:not(:disabled),
   .participant-delete:focus-visible { border-color: rgba(189,52,59,.58); background: rgba(189,52,59,.11); color: #7e1f25; }
+  .delete-category { border-color: rgba(189,52,59,.3); background: rgba(189,52,59,.055); color: #9e3439; }
+  .delete-category:hover:not(:disabled),
+  .delete-category:focus-visible { border-color: rgba(189,52,59,.58); background: rgba(189,52,59,.11); color: #7e1f25; }
   .challenge-admin-form > label,
   .challenge-admin-form > .form-field,
   .field-label-row strong { color: #465160; }
