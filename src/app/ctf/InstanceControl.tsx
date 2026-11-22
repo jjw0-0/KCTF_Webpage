@@ -1,31 +1,62 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { getTcpCommand } from '@/lib/challenge-media';
 
 type Instance = { challengeId: string; url: string; accessToken: string; expiresAt: string };
+type InstanceStatus = { instance: Instance | null; requiresLogin: boolean };
+
+async function requestInstanceStatus(): Promise<InstanceStatus> {
+  const response = await fetch('/api/instances');
+  if (response.status === 401) return { instance: null, requiresLogin: true };
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error ?? 'Instance 상태를 불러오지 못했습니다.');
+  return { instance: payload.instance, requiresLogin: false };
+}
 
 export default function InstanceControl({ challengeId, connectionType, enabled }: { challengeId: string; connectionType: 'HTTP' | 'TCP'; enabled: boolean }) {
   const [instance, setInstance] = useState<Instance | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(enabled);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [requiresLogin, setRequiresLogin] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
   const { confirm, confirmation } = useConfirmDialog();
 
+  const loadInstance = useCallback(async () => {
+    if (!enabled) return;
+    setLoading(true);
+    setLoadFailed(false);
+    setMessage('');
+    try {
+      const status = await requestInstanceStatus();
+      setRequiresLogin(status.requiresLogin);
+      setInstance(status.instance);
+    } catch (error) {
+      setLoadFailed(true);
+      setMessage(error instanceof Error ? error.message : 'Instance 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setLoading(false);
+    }
+  }, [enabled]);
+
   useEffect(() => {
     if (!enabled) return;
-    fetch('/api/instances').then(async (response) => {
-      if (response.status === 401) {
-        setRequiresLogin(true);
-        return;
-      }
-      const payload = await response.json();
-      if (response.ok) setInstance(payload.instance);
-    }).catch(() => setMessage('Instance 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    requestInstanceStatus().then((status) => {
+      if (cancelled) return;
+      setRequiresLogin(status.requiresLogin);
+      setInstance(status.instance);
+    }).catch((error) => {
+      if (cancelled) return;
+      setLoadFailed(true);
+      setMessage(error instanceof Error ? error.message : 'Instance 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
   }, [enabled]);
 
   if (!enabled) return null;
@@ -110,6 +141,13 @@ export default function InstanceControl({ challengeId, connectionType, enabled }
 
       {requiresLogin ? (
         <div className="instance-empty"><Link className="instance-primary" href="/login?callbackUrl=/challenges">로그인 후 생성</Link></div>
+      ) : loadFailed ? (
+        <div className="instance-empty">
+          <span role="alert">{message}</span>
+          <button className="instance-primary" type="button" onClick={() => void loadInstance()} disabled={loading}>
+            {loading ? '확인 중…' : '다시 확인'}
+          </button>
+        </div>
       ) : isCurrent ? (
         <div className="instance-body">
           <div className="instance-address">

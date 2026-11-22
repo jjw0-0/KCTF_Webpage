@@ -42,6 +42,19 @@ test('a direct challenge link opens and closes without changing its labels', asy
   await expect(dialog.getByText('PTS')).toBeVisible();
 });
 
+test('challenge dialog traps focus from its initial focus target', async ({ page }) => {
+  await signIn(page, '/challenges');
+  await page.getByRole('button', { name: /^Markdown Signal,/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Markdown Signal' });
+  await expect(dialog).toBeFocused();
+
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByLabel('플래그 제출')).toBeFocused();
+
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button', { name: '닫기' })).toBeFocused();
+});
+
 test('the dialog stays single-column even with a legacy layout parameter', async ({ page }) => {
   await page.setViewportSize({ width: 1180, height: 820 });
   await signIn(page, '/challenges?challenge=e2e-markdown');
@@ -207,6 +220,29 @@ test('HTTP Instance exposes a clean address without a session form', async ({ pa
   await expect(instance.getByText('클립보드에 복사했습니다.')).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('http://instance.example.test:10022');
   expect((await context.cookies()).find((cookie) => cookie.name === 'kctf_instance_token')?.value).toBe('e2e-browser-token');
+});
+
+test('Instance status failures require a retry before creation', async ({ page }) => {
+  let allowRecovery = false;
+  await page.route('**/api/instances', async (route) => {
+    if (!allowRecovery) {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Instance 상태를 불러오지 못했습니다.' }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ instance: null }) });
+  });
+
+  await signIn(page, '/challenges?challenge=e2e-instance');
+  const instance = page.getByRole('region', { name: 'Challenge Instance' });
+  await expect(instance.getByRole('alert')).toContainText('Instance 상태를 불러오지 못했습니다.');
+  await expect(instance.getByRole('button', { name: 'Instance 생성' })).toHaveCount(0);
+  allowRecovery = true;
+  await instance.getByRole('button', { name: '다시 확인' }).click();
+  await expect(instance.getByRole('button', { name: 'Instance 생성' })).toBeVisible();
 });
 
 test('Instance replacement and termination require explicit confirmation', async ({ page }) => {
