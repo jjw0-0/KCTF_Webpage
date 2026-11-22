@@ -116,6 +116,7 @@ test('admin management panels reflow cleanly at intermediate desktop widths', as
   await page.setViewportSize({ width: 900, height: 820 });
   await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.93' });
   await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.waitForLoadState('networkidle');
   await page.getByLabel('이메일').fill('e2e-admin@example.test');
   await page.getByLabel('비밀번호').fill('e2e-password-123');
   await page.getByRole('button', { name: '로그인', exact: true }).click();
@@ -148,6 +149,7 @@ test('admin management panels reflow cleanly at intermediate desktop widths', as
 test('admin log refresh failures are visible instead of silently leaving stale data', async ({ page }) => {
   await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.94' });
   await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.waitForLoadState('networkidle');
   await page.getByLabel('이메일').fill('e2e-admin@example.test');
   await page.getByLabel('비밀번호').fill('e2e-password-123');
   await page.getByRole('button', { name: '로그인', exact: true }).click();
