@@ -1371,7 +1371,11 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .network-canvas { opacity: .58; mix-blend-mode: multiply; filter: saturate(1.02) contrast(1.28); }
 
   .site-header { border-color: var(--line); background: rgba(255,255,255,.94); box-shadow: 0 4px 24px rgba(28,36,48,.04); }
-  .brand-logo { filter: none; }
+  .brand-logo {
+    filter:
+      drop-shadow(0 1px 0 rgba(18, 41, 29, .32))
+      drop-shadow(0 0 1px rgba(18, 41, 29, .2));
+  }
   .site-footer { border-color: rgba(12,52,36,.18); background: rgba(255,255,255,.62); }
   .site-footer p:not(.eyebrow),
   .site-footer a { color: #465160; }

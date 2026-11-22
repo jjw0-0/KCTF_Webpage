@@ -34,10 +34,14 @@ test('desktop navigation and footer span the viewport in both themes', async ({ 
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(dark|light)$/);
   const initialTheme = await page.locator('html').getAttribute('data-theme');
   const initialColor = await page.locator('.site-header').evaluate((element) => getComputedStyle(element).backgroundColor);
+  const initialLogoFilter = await page.locator('.brand-logo').evaluate((element) => getComputedStyle(element).filter);
+  expect(initialLogoFilter === 'none').toBe(initialTheme === 'dark');
   await page.getByRole('button', { name: '화면 모드 전환' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', initialTheme === 'light' ? 'dark' : 'light');
   const toggledColor = await page.locator('.site-header').evaluate((element) => getComputedStyle(element).backgroundColor);
+  const toggledLogoFilter = await page.locator('.brand-logo').evaluate((element) => getComputedStyle(element).filter);
   expect(toggledColor).not.toBe(initialColor);
+  expect(toggledLogoFilter === 'none').toBe(initialTheme === 'light');
 });
 
 test('mobile navigation keeps full touch targets without horizontal overflow', async ({ page }, testInfo) => {
