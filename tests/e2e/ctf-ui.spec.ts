@@ -80,6 +80,20 @@ test('challenge cards use one cyberpunk surface and short dialogs keep every fix
   expect(dialogBox).not.toBeNull();
   expect(dockBox).not.toBeNull();
   expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
+
+  const firstLine = dialog.getByText('Open the isolated service and inspect its response.');
+  await expect(firstLine).toBeInViewport();
+  const firstLineBox = await firstLine.boundingBox();
+  const hint = page.locator('.dialog-scroll-hint');
+  const hintBox = await hint.count() ? await hint.boundingBox() : null;
+  expect(firstLineBox).not.toBeNull();
+  if (hintBox) {
+    expect(firstLineBox!.y + Math.min(firstLineBox!.height, 16)).toBeLessThanOrEqual(hintBox.y);
+  }
+
+  await page.goto('/challenges?challenge=e2e-tcp');
+  await expect(page.locator('.dialog-scroll-hint')).toBeVisible();
+  await expect(page.getByLabel('플래그 제출')).toBeInViewport();
 });
 
 test('compact mobile instance dialogs keep resources and flag actions inside the modal', async ({ page }) => {

@@ -1292,17 +1292,17 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .flag-form input { padding-block: 9px; }
 }
 @media (max-height: 520px) and (min-width: 681px) {
-  .challenge-dialog-backdrop { padding: 10px; }
-  .challenge-dialog { height: calc(100dvh - 20px); max-height: calc(100dvh - 20px); }
+  .challenge-dialog-backdrop { padding: 4px; }
+  .challenge-dialog { height: calc(100dvh - 8px); max-height: calc(100dvh - 8px); }
   .dialog-header { min-height: 0; padding: 8px 24px 7px; }
   .challenge-dialog h2 { overflow: hidden; font-size: 27px; text-overflow: ellipsis; white-space: nowrap; }
   .dialog-meta { gap: 14px; margin-top: 7px; }
   .dialog-close { width: 44px; height: 44px; }
-  .dialog-description-area { min-height: 54px; }
-  .dialog-body { padding: 9px 24px 11px; }
-  .dialog-scroll-hint { min-height: 42px; padding: 12px 16px 7px; font-size: 10px; }
-  .dialog-dock { gap: 8px; padding: 8px 24px; }
-  .dialog-resources { gap: 7px; }
+  .dialog-description-area { min-height: 76px; }
+  .dialog-body { padding: 7px 24px 9px; }
+  .dialog-scroll-hint { min-height: 30px; padding: 8px 16px 4px; font-size: 10px; }
+  .dialog-dock { gap: 6px; padding: 6px 24px; }
+  .dialog-resources { gap: 4px; }
   .challenge-file { min-height: 44px; padding-block: 4px; }
   .instance-control { padding: 9px 10px; }
   .instance-head { padding-bottom: 7px; }
