@@ -82,6 +82,29 @@ test('challenge cards use one cyberpunk surface and short dialogs keep every fix
   expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
 });
 
+test('compact mobile instance dialogs keep resources and flag actions inside the modal', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await signIn(page, '/challenges?challenge=e2e-instance');
+
+  const dialog = page.getByRole('dialog', { name: 'HTTP Workshop' });
+  const dock = page.locator('.dialog-dock');
+  await expect(dialog).toBeInViewport();
+  await expect(dialog.getByRole('link', { name: /workshop\.zip/ })).toBeInViewport();
+  await expect(dialog.getByRole('region', { name: 'Challenge Instance' })).toBeInViewport();
+  await expect(dialog.getByLabel('플래그 제출')).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: '제출', exact: true })).toBeInViewport();
+
+  const [dialogBox, dockBox] = await Promise.all([dialog.boundingBox(), dock.boundingBox()]);
+  expect(dialogBox).not.toBeNull();
+  expect(dockBox).not.toBeNull();
+  expect(dockBox!.y).toBeGreaterThanOrEqual(dialogBox!.y);
+  expect(dockBox!.y + dockBox!.height).toBeLessThanOrEqual(dialogBox!.y + dialogBox!.height);
+
+  await page.goto('/challenges?challenge=e2e-tcp');
+  await expect(page.locator('.dialog-scroll-hint')).toBeVisible();
+  await expect(page.getByLabel('플래그 제출')).toBeInViewport();
+});
+
 test('mobile challenge cards stay angled and overlapping without clipping', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);
