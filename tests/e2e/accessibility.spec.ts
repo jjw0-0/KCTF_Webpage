@@ -116,6 +116,57 @@ test('admin editor controls follow the active theme after switching both ways', 
   }
 });
 
+test('admin challenge editor confirms before discarding unsaved work', async ({ page }) => {
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.95' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('button', { name: '문제 추가하기', exact: true }).click();
+
+  const form = page.locator('.challenge-admin-form');
+  const title = form.getByPlaceholder('문제 제목');
+  await title.fill('저장 전 문제');
+  await expect(form.getByText('저장되지 않은 변경사항이 있습니다.')).toBeVisible();
+  await page.getByRole('button', { name: '문제 추가 닫기' }).click();
+
+  let confirmation = page.getByRole('dialog', { name: '저장하지 않은 변경사항' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: '취소' }).click();
+  await expect(title).toHaveValue('저장 전 문제');
+
+  await page.getByRole('button', { name: 'CTF 관리', exact: true }).click();
+  confirmation = page.getByRole('dialog', { name: '저장하지 않은 변경사항' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: '변경사항 버리기' }).click();
+  await expect(page.getByRole('heading', { name: '대회 일정' })).toBeVisible();
+  await expect(form).toHaveCount(0);
+});
+
+test('admin errors retain danger contrast in light mode', async ({ page }) => {
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.96' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+  if (await page.locator('html').getAttribute('data-theme') !== 'light') {
+    await page.getByRole('button', { name: '화면 모드 전환' }).click();
+  }
+  await page.getByRole('button', { name: '카테고리 관리', exact: true }).click();
+  await page.route('**/api/categories', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: '카테고리 서버 연결 실패' }) });
+  });
+  await page.getByLabel('새 카테고리명').fill('새 카테고리');
+  await page.getByRole('button', { name: '추가', exact: true }).click();
+  const notice = page.locator('.admin-panel-footer .admin-notice.error');
+  await expect(notice).toContainText('카테고리 서버 연결 실패');
+  await expect(notice).toHaveCSS('color', 'rgb(166, 43, 50)');
+});
+
 test('admin management panels reflow cleanly at intermediate desktop widths', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 820 });
   await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.93' });

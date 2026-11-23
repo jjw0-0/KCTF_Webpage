@@ -1451,6 +1451,7 @@ a.challenge-file:hover { background: linear-gradient(90deg, rgba(77,224,167,.07)
   .admin-main { color: #202733; }
   .admin-main :is(.event-admin-form input, .event-admin-form select, .file-picker, .connection-type-options, .vm-runtime-option) { border-color: var(--line-strong); background: var(--panel); color: #202733; color-scheme: light; }
   .admin-main :is(.event-admin-form label, .event-admin-form > .form-field, .admin-file-field, .vm-runtime-grid > label, .file-picker span, .connection-type-options span, .admin-notice, .category-order strong, .log-ip-inline) { color: #465160; }
+  .admin-main .admin-notice.error { color: #a62b32; }
   .admin-main :is(.challenge-add-button, .challenge-admin-table button:not(.danger), .connection-type-options input:checked + span) { border-color: var(--line-strong); background: #edf6f1; color: var(--green); }
   .admin-main .challenge-admin-table button.danger { border-color: rgba(189,52,59,.28); background: rgba(189,52,59,.045); color: #9e3439; }
   .admin-main .file-picker .deployment-file-status.is-failed { color: #a62b32; }

@@ -114,6 +114,7 @@ export default function AdminDashboard({
   const [isChallengeEditorOpen, setIsChallengeEditorOpen] = useState(false);
   const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
   const [challengeForm, setChallengeForm] = useState<ChallengeForm>(() => emptyChallenge(initialCategories[0]?.id));
+  const [initialChallengeForm, setInitialChallengeForm] = useState<ChallengeForm>(() => emptyChallenge(initialCategories[0]?.id));
   const [challengeFile, setChallengeFile] = useState<File | null>(null);
   const [deploymentFile, setDeploymentFile] = useState<File | null>(null);
   const [schedule, setSchedule] = useState(initialSchedule);
@@ -138,15 +139,20 @@ export default function AdminDashboard({
     challenges.filter((challenge) => challenge.categoryId === category.id).length,
   ])), [categories, challenges]);
   const editingChallenge = challenges.find((challenge) => challenge.id === editingChallengeId);
+  const isChallengeDirty = useMemo(() => isChallengeEditorOpen && (
+    (Object.keys(challengeForm) as (keyof ChallengeForm)[]).some((key) => challengeForm[key] !== initialChallengeForm[key])
+    || challengeFile !== null
+    || deploymentFile !== null
+  ), [challengeFile, challengeForm, deploymentFile, initialChallengeForm, isChallengeEditorOpen]);
 
   useEffect(() => {
     const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
-      if (!isDirty) return;
+      if (!isDirty && !isChallengeDirty) return;
       event.preventDefault();
     };
     window.addEventListener('beforeunload', warnAboutUnsavedChanges);
     return () => window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
-  }, [isDirty]);
+  }, [isChallengeDirty, isDirty]);
 
   useEffect(() => {
     if (!window.matchMedia('(max-width: 760px)').matches) return;
@@ -263,10 +269,16 @@ export default function AdminDashboard({
     }
   };
 
-  const editChallenge = (challenge: AdminChallenge) => {
-    setIsChallengeEditorOpen(true);
-    setEditingChallengeId(challenge.id);
-    setChallengeForm({
+  const confirmDiscardChallengeChanges = async () => !isChallengeDirty || confirm({
+    title: '저장하지 않은 변경사항',
+    description: '문제 편집 내용을 저장하지 않고 닫으면 입력한 내용과 선택한 파일이 사라집니다.',
+    confirmLabel: '변경사항 버리기',
+    danger: true,
+  });
+
+  const editChallenge = async (challenge: AdminChallenge) => {
+    if (!(await confirmDiscardChallengeChanges())) return;
+    const nextForm: ChallengeForm = {
       title: challenge.title,
       description: challenge.description,
       author: challenge.author,
@@ -283,7 +295,11 @@ export default function AdminDashboard({
       instancePort: challenge.instancePort ? String(challenge.instancePort) : '',
       connectionType: challenge.connectionType,
       connectionUrl: challenge.connectionUrl,
-    });
+    };
+    setIsChallengeEditorOpen(true);
+    setEditingChallengeId(challenge.id);
+    setChallengeForm(nextForm);
+    setInitialChallengeForm(nextForm);
     setChallengeFile(null);
     setDeploymentFile(null);
     setNotice('');
@@ -296,14 +312,22 @@ export default function AdminDashboard({
   };
 
   const resetChallengeForm = () => {
+    const nextForm = emptyChallenge(categories[0]?.id);
     setIsChallengeEditorOpen(false);
     setEditingChallengeId(null);
-    setChallengeForm(emptyChallenge(categories[0]?.id));
+    setChallengeForm(nextForm);
+    setInitialChallengeForm(nextForm);
     setChallengeFile(null);
     setDeploymentFile(null);
   };
 
-  const addChallenge = () => {
+  const closeChallengeEditor = async () => {
+    if (!(await confirmDiscardChallengeChanges())) return;
+    resetChallengeForm();
+  };
+
+  const addChallenge = async () => {
+    if (!(await confirmDiscardChallengeChanges())) return;
     resetChallengeForm();
     setNotice('');
     setIsChallengeEditorOpen(true);
@@ -313,6 +337,14 @@ export default function AdminDashboard({
         block: 'start',
       });
     });
+  };
+
+  const selectNav = async (nextNav: NavItem) => {
+    if (nextNav === activeNav) return;
+    if (!(await confirmDiscardChallengeChanges())) return;
+    resetChallengeForm();
+    setNotice('');
+    setActiveNav(nextNav);
   };
 
   const watchDeployment = async (challengeId: string) => {
@@ -558,7 +590,7 @@ export default function AdminDashboard({
         <div><h1>KCTF</h1><p className="admin-scope">관리자 페이지</p></div>
         <nav ref={adminNavRef} aria-label="관리자 메뉴">
           {navItems.map((item) => (
-            <button type="button" key={item.id} aria-pressed={activeNav === item.id} className={activeNav === item.id ? 'active' : ''} onClick={() => setActiveNav(item.id)}>
+            <button type="button" key={item.id} aria-pressed={activeNav === item.id} className={activeNav === item.id ? 'active' : ''} onClick={() => void selectNav(item.id)}>
               {item.label}
             </button>
           ))}
@@ -635,7 +667,7 @@ export default function AdminDashboard({
           <section ref={challengeEditorRef} className="admin-panel challenge-admin-panel">
             <div className="admin-panel-heading challenge-list-heading">
               <div><h3>문제 목록</h3><p>{challenges.length}개 문제</p></div>
-              <button type="button" className="challenge-add-button" aria-expanded={isChallengeEditorOpen} aria-controls="challenge-editor" onClick={addChallenge}>
+              <button type="button" className="challenge-add-button" aria-expanded={isChallengeEditorOpen} aria-controls="challenge-editor" onClick={() => void addChallenge()}>
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
                 문제 추가하기
               </button>
@@ -646,7 +678,7 @@ export default function AdminDashboard({
               <div id="challenge-editor" className="challenge-editor">
                 <div className="challenge-editor-heading">
                   <div><h4>{editingChallengeId ? '문제 수정' : '문제 추가'}</h4><p>{editingChallengeId ? '문제 설정을 수정합니다.' : '새 문제의 설정을 입력합니다.'}</p></div>
-                  <button type="button" className="challenge-editor-close" onClick={resetChallengeForm} aria-label={`${editingChallengeId ? '문제 수정' : '문제 추가'} 닫기`}>
+                  <button type="button" className="challenge-editor-close" onClick={() => void closeChallengeEditor()} aria-label={`${editingChallengeId ? '문제 수정' : '문제 추가'} 닫기`}>
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8m0-8-8 8" /></svg>
                   </button>
                 </div>
@@ -802,7 +834,7 @@ export default function AdminDashboard({
                 <textarea name="description" autoComplete="off" required maxLength={10000} rows={8} placeholder="문제 배경, 접속 안내, 힌트 등을 Markdown 형식으로 작성하세요." value={challengeForm.description} onChange={(event) => setChallengeForm({ ...challengeForm, description: event.target.value })} aria-describedby="description-help" />
               </label>
                   {challengeForm.description && <details className="wide description-preview"><summary><span>문제 설명 미리보기</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg></summary><ChallengeDescription content={challengeForm.description} /></details>}
-                  <div className="challenge-form-actions"><p className={`admin-notice ${noticeTone}`} aria-live="polite">{notice}</p><div><button type="button" className="button button-ghost" onClick={resetChallengeForm}>취소</button><button className="button button-primary" disabled={isSaving}>{isSaving ? '저장 중…' : editingChallengeId ? '문제 저장' : '문제 만들기'}</button></div></div>
+                  <div className="challenge-form-actions"><p className={`admin-notice ${noticeTone}`} aria-live="polite">{notice || (isChallengeDirty ? '저장되지 않은 변경사항이 있습니다.' : '')}</p><div><button type="button" className="button button-ghost" onClick={() => void closeChallengeEditor()}>취소</button><button className="button button-primary" disabled={isSaving}>{isSaving ? '저장 중…' : editingChallengeId ? '문제 저장' : '문제 만들기'}</button></div></div>
                 </form>
               </div>
             )}
@@ -824,7 +856,7 @@ export default function AdminDashboard({
                     </div>
                     {challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}
                   </div>
-                  <div className="challenge-list-actions"><button type="button" onClick={() => editChallenge(challenge)}>수정</button><button type="button" className="danger" disabled={isSaving} onClick={() => void deleteChallenge(challenge)}>삭제</button></div>
+                  <div className="challenge-list-actions"><button type="button" onClick={() => void editChallenge(challenge)}>수정</button><button type="button" className="danger" disabled={isSaving} onClick={() => void deleteChallenge(challenge)}>삭제</button></div>
                 </article>
               ))}
             </div>
