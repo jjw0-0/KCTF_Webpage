@@ -781,12 +781,12 @@ export default function AdminDashboard({
                   </span>
                 </label>
 
-                <label className="admin-file-field deployment-file-field">
+                <div className="admin-file-field deployment-file-field">
                     <span className="field-label-row">
                       <strong>Deploy ZIP</strong>
                       <small>최대 50MB</small>
                     </span>
-                    <span className="file-picker">
+                    <label className="file-picker">
                       <input name="deploymentFile" required={!editingChallenge?.deploymentName} type="file" accept=".zip,application/zip" onChange={(event) => setDeploymentFile(event.target.files?.[0] ?? null)} />
                       <span className={!deploymentFile && editingChallenge ? `deployment-file-status ${deploymentStatusCopy[editingChallenge.deploymentStatus].tone}` : undefined}>
                         {deploymentFile?.name || (editingChallenge?.usesVm && editingChallenge.deploymentStatus !== 'NONE'
@@ -794,9 +794,14 @@ export default function AdminDashboard({
                           : editingChallenge?.deploymentName || 'ZIP 파일 선택')}
                       </span>
                       <em>찾아보기</em>
-                    </span>
-                    {!deploymentFile && editingChallenge?.deploymentStatus === 'FAILED' && editingChallenge.deploymentError && <small className="deployment-field-error">{editingChallenge.deploymentError}</small>}
-                </label>
+                    </label>
+                    {!deploymentFile && editingChallenge?.deploymentStatus === 'FAILED' && editingChallenge.deploymentError && (
+                      <details className="deployment-error-detail">
+                        <summary>배포 오류 확인</summary>
+                        <p>{editingChallenge.deploymentError}</p>
+                      </details>
+                    )}
+                </div>
               </div>
 
               <div className={`vm-runtime-reveal wide${challengeForm.usesVm ? ' is-visible' : ''}`} aria-hidden={!challengeForm.usesVm}>
@@ -854,7 +859,12 @@ export default function AdminDashboard({
                         {challenge.usesVm && <small className={`deployment-status ${deploymentStatusCopy[challenge.deploymentStatus].tone}`}>{deploymentStatusCopy[challenge.deploymentStatus].label}</small>}
                       </div>
                     </div>
-                    {challenge.deploymentError && <small className="deployment-error">{challenge.deploymentError}</small>}
+                    {challenge.deploymentError && (
+                      <details className="deployment-error-detail">
+                        <summary>배포 오류 확인</summary>
+                        <p>{challenge.deploymentError}</p>
+                      </details>
+                    )}
                   </div>
                   <div className="challenge-list-actions"><button type="button" onClick={() => void editChallenge(challenge)}>수정</button><button type="button" className="danger" disabled={isSaving} onClick={() => void deleteChallenge(challenge)}>삭제</button></div>
                 </article>

@@ -10,6 +10,7 @@ if (parsed.hostname !== '127.0.0.1' || parsed.port !== '5433' || parsed.pathname
 }
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+const longDeploymentError = 'Docker image build failed: the deployment archive contains an invalid multi-stage configuration and the final runtime image could not resolve the requested entrypoint. Review the complete build output before uploading a corrected archive.';
 
 try {
   await prisma.cTF.upsert({
@@ -35,6 +36,7 @@ try {
       summary: 'A concise web challenge.',
       description: '# Signal\n\nRead the **response headers** to find the flag.\n\n- Inspect the request\n- Compare the cache',
       connectionType: 'HTTP' as const, connectionUrl: 'https://example.com/challenge', flag: 'KCTF{e2e_signal}',
+      isVisible: true,
     },
     {
       id: 'e2e-tcp', title: 'Socket Relay', categoryId: 'e2e-pwn', points: 200,
@@ -43,20 +45,31 @@ try {
         + Array.from({ length: 20 }, (_, index) => `## Stage ${index + 1}\n\nInspect the request and keep the connection open until the next response arrives.`).join('\n\n')
         + '\n\n```text\n' + Array.from({ length: 40 }, (_, index) => `TRACE ${String(index + 1).padStart(2, '0')} HELLO relay`).join('\n') + '\n```',
       connectionType: 'TCP' as const, connectionUrl: 'relay.example.com:31337', flag: 'KCTF{e2e_relay}',
+      isVisible: true,
     },
     {
       id: 'e2e-instance', title: 'HTTP Workshop', categoryId: 'e2e-web', points: 150,
       summary: 'Start the isolated HTTP service.',
-      description: '# Workshop\n\nOpen the isolated service and inspect its response.',
+      description: '# Workshop\n\nOpen the isolated service and inspect its response.\n\n'
+        + Array.from({ length: 14 }, (_, index) => `## Check ${index + 1}\n\nFollow the response chain and compare each header before submitting the flag.`).join('\n\n'),
       connectionType: 'HTTP' as const, connectionUrl: null, flag: 'KCTF{e2e_instance}',
       fileUrl: 'https://example.com/workshop.zip', attachmentName: 'workshop.zip',
       usesVm: true, instanceSlug: 'e2e-http', deploymentStatus: 'READY' as const,
+      isVisible: true,
+    },
+    {
+      id: 'e2e-failed-deployment', title: 'Failed Deployment Fixture', categoryId: 'e2e-web', points: 50,
+      summary: 'Administrator-only deployment failure fixture.',
+      description: 'This hidden challenge verifies complete deployment error disclosure.',
+      connectionType: 'HTTP' as const, connectionUrl: null, flag: 'KCTF{e2e_hidden}',
+      usesVm: true, deploymentStatus: 'FAILED' as const, deploymentError: longDeploymentError,
+      isVisible: false,
     },
   ]) {
     await prisma.challenge.upsert({
       where: { id: challenge.id },
-      create: { ...challenge, ctfId: 'kctf-2026', isVisible: true, difficulty: 'BEGINNER' },
-      update: { ...challenge, isVisible: true },
+      create: { ...challenge, ctfId: 'kctf-2026', difficulty: 'BEGINNER' },
+      update: challenge,
     });
   }
 

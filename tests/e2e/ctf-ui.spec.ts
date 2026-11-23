@@ -58,15 +58,22 @@ test('challenge dialog traps focus from its initial focus target', async ({ page
 test('the dialog stays single-column even with a legacy layout parameter', async ({ page }) => {
   await page.setViewportSize({ width: 1180, height: 820 });
   await signIn(page, '/challenges?challenge=e2e-markdown');
-  const descriptionDialog = await page.getByRole('dialog').boundingBox();
+  const dialog = page.getByRole('dialog');
+  await dialog.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
+  const descriptionDialog = await dialog.boundingBox();
   await expect(page.locator('.dialog-workspace')).toHaveCSS('flex-direction', 'column');
   await expect(page.locator('.dialog-workspace')).toHaveCSS('overflow', 'hidden');
   await expect(page.locator('.dialog-body')).toHaveCSS('overflow-y', 'auto');
 
   await page.goto('/challenges?challenge=e2e-instance&modalLayout=console');
   await expect(page.locator('.dialog-workspace')).toHaveCSS('flex-direction', 'column');
-  await expect(page.getByRole('dialog')).not.toHaveClass(/is-console-layout/);
-  const instanceDialog = await page.getByRole('dialog').boundingBox();
+  await expect(dialog).not.toHaveClass(/is-console-layout/);
+  await dialog.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
+  const instanceDialog = await dialog.boundingBox();
   expect(instanceDialog?.width).toBe(descriptionDialog?.width);
   expect(instanceDialog?.height).toBe(descriptionDialog?.height);
 });
@@ -179,8 +186,7 @@ test('mobile challenge cards stay angled and overlapping without clipping', asyn
   }))).toBeLessThan(0.001);
 });
 
-test('short landscape dialogs contain long submission errors without moving fixed actions', async ({ page }) => {
-  await page.setViewportSize({ width: 844, height: 390 });
+test('short dialogs keep long descriptions, active Instance actions, and long errors contained', async ({ page }) => {
   await page.route('**/api/challenges/e2e-instance/submit', async (route) => {
     await route.fulfill({
       status: 500,
@@ -189,13 +195,39 @@ test('short landscape dialogs contain long submission errors without moving fixe
     });
   });
   await signIn(page, '/challenges?challenge=e2e-instance');
-  const dialog = page.getByRole('dialog', { name: 'HTTP Workshop' });
-  await dialog.getByLabel('플래그 제출').fill('KCTF{retry}');
-  await dialog.getByRole('button', { name: '제출', exact: true }).click();
-  await expect(dialog.getByRole('status')).toContainText('플래그를 제출하지 못했습니다.');
-  await expect(dialog.getByLabel('플래그 제출')).toBeInViewport();
-  await expect(dialog.getByRole('button', { name: '제출', exact: true })).toBeInViewport();
-  await expect(dialog.getByRole('link', { name: /workshop\.zip/ })).toBeInViewport();
+  for (const viewport of [{ width: 844, height: 390 }, { width: 320, height: 568 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/challenges?challenge=e2e-instance');
+    const dialog = page.getByRole('dialog', { name: 'HTTP Workshop' });
+    const body = dialog.getByRole('region', { name: '문제 설명' });
+    const instance = dialog.getByRole('region', { name: 'Challenge Instance' });
+    const targets = [
+      dialog.getByRole('heading', { name: 'HTTP Workshop' }),
+      dialog.getByRole('link', { name: /workshop\.zip/ }),
+      instance.getByText('http://instance.example.test:10022'),
+      instance.getByRole('button', { name: 'Instance 주소 복사' }),
+      instance.getByRole('link', { name: '열기' }),
+      instance.getByRole('button', { name: 'Instance 종료' }),
+      dialog.getByLabel('플래그 제출'),
+      dialog.getByRole('button', { name: '제출', exact: true }),
+    ];
+
+    await expect.poll(() => body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+    await dialog.getByLabel('플래그 제출').fill('KCTF{retry}');
+    await dialog.getByRole('button', { name: '제출', exact: true }).click();
+    await expect(dialog.getByRole('status')).toContainText('플래그를 제출하지 못했습니다.');
+    for (const target of targets) await expect(target).toBeInViewport();
+
+    const dock = page.locator('.dialog-dock');
+    const before = await dock.boundingBox();
+    await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    const after = await dock.boundingBox();
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+    expect(Math.abs(after!.y - before!.y)).toBeLessThan(1);
+    expect(Math.abs(after!.height - before!.height)).toBeLessThan(1);
+    for (const target of targets) await expect(target).toBeInViewport();
+  }
 });
 
 test('long descriptions show a scroll continuation hint until the end', async ({ page }) => {

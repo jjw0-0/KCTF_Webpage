@@ -92,6 +92,47 @@ test('mobile admin navigation keeps the active section fully visible', async ({ 
     return item.left >= nav.left && item.right <= nav.right;
   })).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+  const assertTouchTargets = async (selector: string) => {
+    const targets = page.locator(selector).filter({ visible: true });
+    expect(await targets.count()).toBeGreaterThan(0);
+    const sizes = await targets.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
+    expect(sizes.every((height) => height >= 44)).toBe(true);
+  };
+
+  await assertTouchTargets('.challenge-add-button, .challenge-admin-table button');
+  await page.getByRole('button', { name: '문제 추가하기', exact: true }).click();
+  await assertTouchTargets('.challenge-editor-close, .challenge-form-actions button');
+  await page.getByRole('button', { name: '문제 추가 닫기' }).click();
+
+  await page.getByRole('button', { name: '카테고리 관리', exact: true }).click();
+  await assertTouchTargets('.category-order button, .delete-category, .visibility-toggle');
+
+  await page.getByRole('button', { name: '사용자 관리', exact: true }).click();
+  await assertTouchTargets('.participant-role .ui-select-trigger, .participant-delete');
+
+  await page.getByRole('button', { name: '로그', exact: true }).click();
+  await assertTouchTargets('.admin-log-tabs button, .admin-log-filters button, .admin-log-search');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('admin deployment errors disclose the complete build output on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setExtraHTTPHeaders({ 'x-real-ip': '198.51.100.97' });
+  await page.goto('/login?callbackUrl=%2Fadmin');
+  await page.getByLabel('이메일').fill('e2e-admin@example.test');
+  await page.getByLabel('비밀번호').fill('e2e-password-123');
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.waitForLoadState('networkidle');
+
+  const fixture = page.locator('.challenge-admin-table article').filter({ hasText: 'Failed Deployment Fixture' });
+  const details = fixture.locator('.deployment-error-detail');
+  await details.getByText('배포 오류 확인').click();
+  const completeError = 'Docker image build failed: the deployment archive contains an invalid multi-stage configuration and the final runtime image could not resolve the requested entrypoint. Review the complete build output before uploading a corrected archive.';
+  await expect(details.locator('p')).toHaveText(completeError);
+  await expect(details.locator('p')).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
 test('admin editor controls follow the active theme after switching both ways', async ({ page }) => {
