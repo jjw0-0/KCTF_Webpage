@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
+const webServerCommand = process.env.PLAYWRIGHT_WEB_SERVER_COMMAND
+  ?? `npm run dev -- --webpack --hostname 127.0.0.1 --port ${port}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -17,7 +19,7 @@ export default defineConfig({
     { name: 'webkit-accessibility', testMatch: 'accessibility.spec.ts', use: devices['Desktop Safari'] },
   ],
   webServer: {
-    command: `npm run dev -- --webpack --hostname 127.0.0.1 --port ${port}`,
+    command: webServerCommand,
     url: `http://127.0.0.1:${port}/login`,
     reuseExistingServer: false,
     timeout: 120_000,

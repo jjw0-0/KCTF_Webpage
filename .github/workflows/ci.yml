@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  workflow_call:
   pull_request:
   push:
     branches: [Master]
@@ -24,10 +23,6 @@ jobs:
       - run: npm run lint
       - run: npm run type-check
       - run: npm test
-      - run: npm run build
-        env:
-          AUTH_SECRET: ci-build-only-secret-keep-out-of-production
-          DATABASE_URL: postgresql://kctf_test:kctf_test@127.0.0.1:5433/kctf_test
       - run: npm audit --omit=dev --audit-level=moderate
       - run: npm ci
         working-directory: services/instancer
@@ -63,8 +58,16 @@ jobs:
       - run: npm run prisma:generate
       - run: npx prisma migrate deploy
       - run: npm run test:e2e:seed
+      - run: npm run build
+      - name: Prepare production server artifact
+        run: |
+          mkdir -p .next/standalone/public .next/standalone/.next/static
+          cp -R public/. .next/standalone/public/
+          cp -R .next/static/. .next/standalone/.next/static/
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:e2e
+        env:
+          PLAYWRIGHT_WEB_SERVER_COMMAND: HOSTNAME=127.0.0.1 PORT=3100 node .next/standalone/server.js
       - if: failure()
         uses: actions/upload-artifact@v7
         with:

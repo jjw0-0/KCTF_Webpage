@@ -5,10 +5,22 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   verify:
-    uses: ./.github/workflows/ci.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require successful CI for this Master revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/Master
+          count=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f branch=Master -f head_sha="$GITHUB_SHA" -f event=push -f status=success -f per_page=1 \
+            --jq '.total_count')
+          test "$count" -ge 1 || { echo "A successful Master push CI run is required for $GITHUB_SHA." >&2; exit 1; }
 
   deploy:
     needs: verify

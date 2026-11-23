@@ -26,14 +26,14 @@ export DATABASE_URL=postgresql://kctf_test:kctf_test@127.0.0.1:5433/kctf_test
 npm run prisma:generate
 npx prisma migrate deploy
 npm run test:e2e:seed
-npx playwright install chromium firefox webkit
-npm run test:e2e
+npx playwright install chromium
+npm run test:e2e:chromium
 docker stop kctf-e2e-db
 ```
 
-The seed rejects other database hosts, ports, or names. The fixture player is `e2e@example.test` and the fixture administrator is `e2e-admin@example.test`; both use `e2e-password-123` in that isolated database only. Playwright starts its own development server on port 3100. The default run executes the browser suite in Chromium and `tests/e2e/accessibility.spec.ts` in Firefox and WebKit. Local development and database setup are described in the [README](README.en.md). Keep migrations with schema changes and update both READMEs when public setup or behavior changes.
+The seed rejects other database hosts, ports, or names. The fixture player is `e2e@example.test` and the fixture administrator is `e2e-admin@example.test`; both use `e2e-password-123` in that isolated database only. Playwright starts its own development server on port 3100. On this ARM64 project host, install and run Chromium only with the commands above; do not download Firefox or WebKit. GitHub-hosted CI installs all three browsers and runs the full Chromium suite plus focused Firefox and WebKit accessibility checks. Local development and database setup are described in the [README](README.en.md). Keep migrations with schema changes and update both READMEs when public setup or behavior changes.
 
-The [CI workflow](.github/workflows/ci.yml) runs lint, types, unit tests, build, dependency audits, instancer tests, the Chromium browser suite, and focused Firefox and WebKit accessibility tests on pull requests and pushes to `Master`. The separate [release workflow](.github/workflows/release.yml) is manually dispatched, runs CI first, then publishes revision-tagged web and instancer images to GHCR when dispatched from `Master`. The [production deployment workflow](.github/workflows/deploy.yml) is also manually dispatched and calls CI before a reviewed SSH deployment. Maintainers must configure required reviewers in both the `release` and `production` environments to make those steps wait for approval; see [policy setup](docs/policy-setup.md) and [operations](docs/operations.md).
+The [CI workflow](.github/workflows/ci.yml) runs lint, types, unit tests, dependency audits, instancer tests, a production Next.js build, the Chromium browser suite, and focused Firefox and WebKit accessibility tests on pull requests and pushes to `Master`. Browser tests start the built standalone server rather than the development server. The separate [release workflow](.github/workflows/release.yml) is manually dispatched, requires a successful `Master` push CI run for the exact revision, then publishes revision-tagged amd64/arm64 web and instancer images to GHCR. The [production deployment workflow](.github/workflows/deploy.yml) is also manually dispatched, requires the same successful CI evidence, and then performs a reviewed SSH deployment without repeating the full test suite. Maintainers must configure required reviewers in both the `release` and `production` environments to make those steps wait for approval; see [policy setup](docs/policy-setup.md) and [operations](docs/operations.md).
 
 ## Submitting a change
 
